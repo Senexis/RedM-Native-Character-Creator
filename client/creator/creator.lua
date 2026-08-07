@@ -5,6 +5,7 @@ local defaults = {
     stateChangeTime = 0,
     headRequests = {},
     bodyRequests = {},
+    mode = CREATOR_MODE.DEFAULT,
 }
 
 Creator = setmetatable({}, { __index = defaults })
@@ -500,6 +501,23 @@ function Creator:ReleaseBodies()
     end
 
     self:ClearFlag(EDITOR_FLAG.BODIES_REQUESTED)
+end
+
+function Creator:SetMode(mode)
+    self.mode = mode
+    CreatorRenderer:UpdateText()
+end
+
+function Creator:GetMode()
+    return self.mode
+end
+
+function Creator:IsDefaultMode()
+    return self.mode == CREATOR_MODE.DEFAULT
+end
+
+function Creator:IsAdvancedMode()
+    return self.mode == CREATOR_MODE.ADVANCED
 end
 
 function Creator:IsFlagSet(flag)
