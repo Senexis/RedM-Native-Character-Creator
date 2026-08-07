@@ -18,8 +18,6 @@ CreatorConfig.Attributes = {
     Deadeye = { Default = 1, Min = 1, Max = 10 }
 }
 
-CreatorConfig.RespectPresetLimits = true
-
 -- The height corresponds to the key of the CreatorConfig.Heights table minus 1 (2 is the third entry)
 CreatorConfig.DefaultHeight = 2
 

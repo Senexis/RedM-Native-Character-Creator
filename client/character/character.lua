@@ -26,6 +26,8 @@ local defaults = {
     beard = 0,
     beardColor = 0,
 
+    ignoreLimits = false,
+
     presets = {
         [PED_EXPRESSION_ZONE.CHEEKS]  = 0,
         [PED_EXPRESSION_ZONE.EARS]    = 0,
@@ -429,7 +431,7 @@ end
 function Character:GetExpressionGameBounds(expressionId)
     local min, max = -1.0, 1.0
 
-    if CreatorConfig.RespectPresetLimits then
+    if not self.ignoreLimits then
         local data = CreatorPresets:GetFineTuningData()
         local tuning = data[expressionId]
         if tuning then
@@ -479,34 +481,39 @@ function Character:ApplyExpressionValue(expressionId, uiValue, update)
     self:SetExpression(expressionId, gameValue, update)
 end
 
-function Character:ApplyAllStoredExpressions()
-    for id, uiValue in pairs(self.expressions) do
-        self:ApplyExpressionValue(id, uiValue, false)
+function Character:ApplyAllExpressions()
+    local expressions = PED_EXPRESSION:Values()
+    for _, expressionId in pairs(expressions) do
+        self:ApplyExpressionValue(expressionId, nil, false)
     end
 
     self:RequestUpdate()
 end
 
 function Character:ApplyExpressionZonePreset(zone)
-    if not PED_EXPRESSION_ZONE:GetQuery(zone) then return end
+    local expressions = PED_EXPRESSION_ZONE:GetExpressions(zone) or {}
 
-    local presetIndex = self.presets[zone] or 0
-    local expressions = CreatorPresets:GetExpressionZoneData(zone, presetIndex)
+    if not PED_EXPRESSION_ZONE:GetQuery(zone) then
+        for _, expressionId in ipairs(expressions) do
+            self:ApplyExpressionValue(expressionId, nil, false)
+        end
+    else
+        local presetIndex = self.presets[zone] or 0
+        local presetValues = CreatorPresets:GetExpressionZoneData(zone, presetIndex)
 
-    for id, gameValue in pairs(expressions) do
-        local uiValue = self:ExpressionGameToUiValue(id, gameValue)
-        self.expressions[id] = uiValue
+        for _, expressionId in ipairs(expressions) do
+            local presetValue = presetValues[expressionId]
 
-        self:SetExpression(id, gameValue, false)
+            if presetValue ~= nil then
+                local uiValue = self:ExpressionGameToUiValue(expressionId, presetValue)
+                self:ApplyExpressionValue(expressionId, uiValue, false)
+            else
+                self:ApplyExpressionValue(expressionId, nil, false)
+            end
+        end
     end
 
     self:RequestUpdate()
-end
-
-function Character:ApplyExpressions()
-    for _, zone in ipairs(PED_EXPRESSION_ZONE:Values()) do
-        self:ApplyExpressionZonePreset(zone)
-    end
 end
 
 function Character:SetExpression(expressionId, gameValue, update)
@@ -984,11 +991,7 @@ function Character:ApplyHeritage(value, apply)
 
     self:ApplyHead(false)
     self:ApplyAgeBlend(apply)
-
-    local zones = PED_EXPRESSION_ZONE:Values()
-    for _, zone in ipairs(zones) do
-        self:ApplyPreset(zone)
-    end
+    self:ApplyAllExpressions()
 end
 
 function Character:ApplyPreset(zone, value)

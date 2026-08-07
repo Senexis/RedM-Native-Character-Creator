@@ -280,7 +280,7 @@ function CreatorMenu:GetMenu()
                 Type = "STEPPER",
                 Label = "Time of Day",
                 Data = {
-                    ItemDescription = "Change the time of day used.",
+                    ItemDescription = "Change the time of day. Note: Depending on the lighting preset, certain times of day may cause visual issues.",
                     StepperOptions = self:GetTimeOfDayLabels(),
                     StepperValue = self.settingTime or 1,
                     StepperVisible = true,
@@ -370,11 +370,35 @@ function CreatorMenu:GetMenu()
                             local value = event.Data.StepperValue or ROTATION_SETTING.ANIMATED
                             Intro:SetRotationLevel(value)
                             self.settingRotation = value
-                            self:Refresh()
                         end,
                     },
                 },
             },
+            {
+                Id = "SETTING_HERITAGE_LIMITS",
+                Tab = "TAB_SETTINGS",
+                Type = "STEPPER",
+                Label = "Heritage Limits",
+                Data = {
+                    ItemDescription = "Toggles whether heritage Fine Tune limits are ignored. Note: This may cause the character to change.",
+                    StepperOptions = {
+                        "Enabled",
+                        "Disabled",
+                    },
+                    StepperValue = self.settingHeritageLimits or 1,
+                    StepperVisible = true,
+                },
+                Prompts = {
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or 1
+                            Character.ignoreLimits = value == 2
+                            Character:ApplyAll()
+                            self.settingHeritageLimits = value
+                        end,
+                    },
+                },
+            }
         },
     }
 end
