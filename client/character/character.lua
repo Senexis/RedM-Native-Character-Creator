@@ -582,7 +582,6 @@ function Character:ApplyBody(value)
         self.bodyType = value
     end
 
-    local body = self:GetBodyShopItems()
     self:ApplyBodyShopItems()
 
     local OUTFITS <const> = {
@@ -593,6 +592,7 @@ function Character:ApplyBody(value)
         [`CLOTHING_MP_BODY_TYPE_HEAVY`]           = `MPCREATOR_HEAVY`,
     }
 
+    local body = self:GetBodyShopItems()
     local outfit = OUTFITS[body.outfit]
     if not outfit then
         error(string.format("No outfit found for body build: %s", tostring(body.outfit)), 2)
