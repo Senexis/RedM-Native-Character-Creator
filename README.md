@@ -59,6 +59,43 @@ AddEventHandler("native_cc:cc_closed", function(mode)
 end)
 ```
 
+## Testing & Linting
+
+This resource runs inside RedM, so many files depend on native runtime globals and RedM-specific syntax. For local automation, this repository now includes:
+
+- **Unit tests** with [Busted](https://olivinelabs.com/busted/) for portable modules
+- **Mocked RedM natives** in `spec/spec_helper.lua` (for example `AddEventHandler` and `GetCurrentResourceName`)
+- **Linting** with [Luacheck](https://github.com/lunarmodules/luacheck) for files compatible with standard Lua parsing
+
+### Local setup
+
+Install Lua 5.4 and LuaRocks, then install tooling:
+
+```bash
+luarocks install busted
+luarocks install luacheck
+```
+
+### Run tests
+
+From the repository root:
+
+```bash
+REPO_ROOT="$(pwd)" busted --helper spec/spec_helper.lua spec
+```
+
+### Run lint
+
+```bash
+luacheck client/signals.lua client/utils.lua spec
+```
+
+### CI workflow
+
+GitHub Actions runs both commands automatically in:
+
+`/home/runner/work/RedM-Native-Character-Creator/RedM-Native-Character-Creator/.github/workflows/lua-tests-and-lint.yml`
+
 ## Attribution
 
 This project builds upon the hard work and research of many talented individuals in the RedM community. Their contributions made this Native Character Creator implementation possible:

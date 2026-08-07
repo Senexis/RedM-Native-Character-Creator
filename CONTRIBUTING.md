@@ -34,6 +34,31 @@ git push origin your-branch-name
 
 6. Create a pull request by visiting the original repository and clicking the "New pull request" button.
 
+## Testing and Linting
+
+Before opening a pull request, run the local quality checks:
+
+1. Install tooling:
+
+```bash
+luarocks install busted
+luarocks install luacheck
+```
+
+2. Run unit tests:
+
+```bash
+REPO_ROOT="$(pwd)" busted --helper spec/spec_helper.lua spec
+```
+
+3. Run lint:
+
+```bash
+luacheck client/signals.lua client/utils.lua spec
+```
+
+> Note: Full resource linting is limited because many files use RedM-specific syntax and runtime natives that standard Lua linters cannot parse or execute directly.
+
 ## Reporting Bugs or Requesting Features
 If you encounter a bug or have a feature request, please [open an issue](https://github.com/Senexis/RedM-Native-Character-Creator/issues/new/choose) on the GitHub repository page. When opening an issue, please provide as much detail as possible, including the steps to reproduce the bug or a detailed description of the feature request.
 

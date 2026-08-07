@@ -1,0 +1,37 @@
+name: Lua Tests and Lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v11
+        with:
+          luaVersion: "5.4"
+
+      - name: Setup LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install test dependencies
+        run: |
+          luarocks install busted
+          luarocks install luacheck
+
+      - name: Run unit tests
+        env:
+          REPO_ROOT: ${{ github.workspace }}
+        run: busted --helper spec/spec_helper.lua spec
+
+      - name: Run lint (portable files)
+        run: luacheck client/signals.lua client/utils.lua spec
+
