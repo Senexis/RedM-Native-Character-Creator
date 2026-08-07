@@ -535,8 +535,8 @@ function Character:GetBodyShopItems()
     return CreatorPresets:GetBodyShopItems(self.skintone, build)
 end
 
-function Character:ApplyBodyShopItems(body)
-    body = body or self:GetBodyShopItems()
+function Character:ApplyBodyShopItems()
+    local body = self:GetBodyShopItems()
 
     self:ApplyShopItem(body.upper)
     self:ApplyShopItem(body.lower)
@@ -583,7 +583,7 @@ function Character:ApplyBody(value)
     end
 
     local body = self:GetBodyShopItems()
-    self:ApplyBodyShopItems(body)
+    self:ApplyBodyShopItems()
 
     local OUTFITS <const> = {
         [`CLOTHING_MP_BODY_TYPE_SKINNY_MUSCULAR`] = `MPCREATOR_SKINNY_MUSCULAR`,
