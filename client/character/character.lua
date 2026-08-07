@@ -1015,7 +1015,7 @@ function Character:RandomizeAll()
     self:RandomizeOverlays()
     self:RandomizeOverlayPresets()
 
-    if CreatorState:IsAdvancedMode() then
+    if Creator:IsAdvancedMode() then
         self:RandomizeHeight()
         self:RandomizeWeight()
     end

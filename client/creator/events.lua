@@ -9,6 +9,53 @@ function CreatorEvents:OnToggleBeard()
 end
 
 function CreatorEvents:Maintain()
+    -- Zooming isn't handled through events anymore
+    if CreatorState.isZooming == false and IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+        CreatorState.isZooming = true
+        SignalBus:emit("zoom_updated", true)
+    elseif CreatorState.isZooming == true and not IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+        CreatorState.isZooming = false
+        SignalBus:emit("zoom_updated", false)
+    end
+
+    -- Poll the X grid of the currently focused item if we should
+    if CreatorState.shouldPollGridX or CreatorState.shouldPollGridXY then
+        -- Check if the focused item is a grid item
+        local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorState.currentFocusedItem)
+        if focusedItem and focusedItem ~= UI_ITEM_ID.INVALID then
+            local itemType = UI_ITEM_ID:GetType(focusedItem)
+            if itemType == UI_ITEM_TYPE.GRID_X or itemType == UI_ITEM_TYPE.GRID_XY then
+                -- Update the X value
+                local gridXValue = CreatorDatabinding:ReadFloat(DATABINDING_ID.ROOT__GRID__X_VALUE)
+
+                -- Only trigger events if the value changes
+                if CreatorState.currentGridXValue ~= gridXValue then
+                    CreatorState.currentGridXValue = gridXValue
+                    SignalBus:emit("grid_x_changed", focusedItem, gridXValue)
+                end
+            end
+        end
+    end
+
+    -- Poll the Y grid of the currently focused item if we should
+    if CreatorState.shouldPollGridXY then
+        -- Check if the focused item is a grid item
+        local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorState.currentFocusedItem)
+        if focusedItem and focusedItem ~= UI_ITEM_ID.INVALID then
+            local itemType = UI_ITEM_ID:GetType(focusedItem)
+            if itemType == UI_ITEM_TYPE.GRID_XY then
+                -- Update the Y value
+                local gridYValue = CreatorDatabinding:ReadFloat(DATABINDING_ID.ROOT__GRID__Y_VALUE)
+
+                -- Only trigger events if the value changes
+                if CreatorState.currentGridYValue ~= gridYValue then
+                    CreatorState.currentGridYValue = gridYValue
+                    SignalBus:emit("grid_y_changed", focusedItem, gridYValue)
+                end
+            end
+        end
+    end
+
     while EventsUiIsPending(`ui_character_creator_events`) do
         local data = DataView.ArrayBuffer(8 * 4)
 
