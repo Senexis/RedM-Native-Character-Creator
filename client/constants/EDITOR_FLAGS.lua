@@ -21,6 +21,7 @@ local EDITOR_FLAGS = {
     NAME_PROMPT        = 1 << 14,
     IMPORT_PROMPT      = 1 << 15,
     QUICK_SWITCH       = 1 << 16,
+    BODIES_REQUESTED   = 1 << 17,
 }
 
 ---@type EDITOR_FLAGS | EnumRegistry

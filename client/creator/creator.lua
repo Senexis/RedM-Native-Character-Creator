@@ -4,6 +4,7 @@ local defaults = {
     state = EDITOR_STATE.INIT,
     stateChangeTime = 0,
     headRequests = {},
+    bodyRequests = {},
     mode = CREATOR_MODE.DEFAULT,
 }
 
@@ -202,6 +203,10 @@ function Creator:UpdateStateSetup()
         return
     end
 
+    if not self:PreloadBodies() then
+        return
+    end
+
     Character:ApplyAll()
 
     self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
@@ -335,6 +340,7 @@ function Creator:UpdateStateTeardown()
     end
 
     self:ReleaseHeads()
+    self:ReleaseBodies()
     RemoveAnimDict("face_human@gen_male@base")
 
     if self:IsFlagSet(EDITOR_FLAG.CONFIRMED) then
@@ -421,7 +427,7 @@ function Creator:InitHeadRequests()
 end
 
 function Creator:PreloadHeads()
-    if self:IsFlagSet(EDITOR_FLAG.HEADS_REQUESTED) then
+    if not self:IsFlagSet(EDITOR_FLAG.HEADS_REQUESTED) then
         self:InitHeadRequests()
         self:SetFlag(EDITOR_FLAG.HEADS_REQUESTED)
         return false
@@ -443,6 +449,58 @@ function Creator:ReleaseHeads()
     end
 
     self:ClearFlag(EDITOR_FLAG.HEADS_REQUESTED)
+end
+
+function Creator:InitBodyRequests()
+    local pedType = GetMetaPedType(Character.ped)
+    local skintones = CreatorPresets:GetSkintones()
+    local bodyBuilds = CreatorPresets:GetBodyBuilds()
+
+    for _, skintoneItem in ipairs(skintones) do
+        for _, buildItem in ipairs(bodyBuilds) do
+            local build = CreatorPresets:GetBodyBuild(buildItem.index)
+            local body = CreatorPresets:GetBodyShopItems(skintoneItem.skintone, build)
+
+            local upperHandle = RequestMetaPedComponent(pedType, body.upper, 0, 1, 1)
+            self.bodyRequests[#self.bodyRequests + 1] = {
+                hash = body.upper,
+                handle = upperHandle,
+                loaded = false,
+            }
+
+            local lowerHandle = RequestMetaPedComponent(pedType, body.lower, 0, 1, 1)
+            self.bodyRequests[#self.bodyRequests + 1] = {
+                hash = body.lower,
+                handle = lowerHandle,
+                loaded = false,
+            }
+        end
+    end
+end
+
+function Creator:PreloadBodies()
+    if not self:IsFlagSet(EDITOR_FLAG.BODIES_REQUESTED) then
+        self:InitBodyRequests()
+        self:SetFlag(EDITOR_FLAG.BODIES_REQUESTED)
+        return false
+    end
+
+    local allLoaded = true
+    for _, request in ipairs(self.bodyRequests) do
+        request.loaded = HasMetaPedAssetLoaded(request.handle) == 1
+        if not request.loaded then allLoaded = false end
+    end
+
+    return allLoaded
+end
+
+function Creator:ReleaseBodies()
+    for _, item in ipairs(self.bodyRequests) do
+        ReleaseMetaPedAssetRequest(item.handle)
+        item.loaded = false
+    end
+
+    self:ClearFlag(EDITOR_FLAG.BODIES_REQUESTED)
 end
 
 function Creator:SetMode(mode)
