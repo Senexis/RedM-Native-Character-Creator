@@ -1,5 +1,5 @@
 local MENU_ID <const> = "NCC_MAIN_MENU"
-local TIMES <const> = { 10, 12, 14, 16, 18, 20, 22, 0, 2, 4, 6, 8 }
+local TIMES <const> = { 10, 12, 14, 16, 18, 20, 6, 8 }
 
 CreatorMenu = {
     rerolling = false,
@@ -106,7 +106,7 @@ function CreatorMenu:GetTimeOfDayLabels()
 
         local label = shouldUse24
             and string.format("%02d:00", hour)
-            or string.format("%02d:00 %s", hour12, suffix12)
+            or string.format("%d:00 %s", hour12, suffix12)
 
         labels[#labels + 1] = label
     end
