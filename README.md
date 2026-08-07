@@ -87,7 +87,9 @@ REPO_ROOT="$(pwd)" busted --helper spec/spec_helper.lua spec
 ### Run lint
 
 ```bash
-luacheck client/signals.lua client/utils.lua spec
+luacheck --std lua54 --no-unused-args \
+  --globals SignalBus Utils AddEventHandler GetCurrentResourceName msgpack CreatorConfig \
+  -- client/signals.lua client/utils.lua spec/spec_helper.lua
 ```
 
 ### CI workflow

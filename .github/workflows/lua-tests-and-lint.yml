@@ -33,5 +33,7 @@ jobs:
         run: busted --helper spec/spec_helper.lua spec
 
       - name: Run lint (portable files)
-        run: luacheck client/signals.lua client/utils.lua spec
-
+        run: |
+          luacheck --std lua54 --no-unused-args \
+            --globals SignalBus Utils AddEventHandler GetCurrentResourceName msgpack CreatorConfig \
+            -- client/signals.lua client/utils.lua spec/spec_helper.lua

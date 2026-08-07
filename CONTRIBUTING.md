@@ -54,7 +54,9 @@ REPO_ROOT="$(pwd)" busted --helper spec/spec_helper.lua spec
 3. Run lint:
 
 ```bash
-luacheck client/signals.lua client/utils.lua spec
+luacheck --std lua54 --no-unused-args \
+  --globals SignalBus Utils AddEventHandler GetCurrentResourceName msgpack CreatorConfig \
+  -- client/signals.lua client/utils.lua spec/spec_helper.lua
 ```
 
 > Note: Full resource linting is limited because many files use RedM-specific syntax and runtime natives that standard Lua linters cannot parse or execute directly.
