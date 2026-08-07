@@ -5,12 +5,14 @@ CreatorRenderer = {
     },
     subheaderOverride = nil,
     text = {},
+    shouldPollGridX = false,
+    shouldPollGridXY = false,
 }
 
 function CreatorRenderer:UpdateText()
     self:CreateNewText()
 
-    if CreatorState:IsDefaultMode() then
+    if Creator:IsDefaultMode() then
         self:SetTextDefault()
     else
         self:SetTextAdvanced()
@@ -224,27 +226,27 @@ end
 function CreatorRenderer:UpdateSubheaderOverride(pageId)
     if pageId == UI_PAGE_ID.EYES then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__EYES_PRESET__VALUE)
-        local label = CreatorState:IsDefaultMode() and "EXPRESSION_PRESET_EYES_%02d" or "NATIVE_CREATOR_TORSO_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EYES_%02d" or "NATIVE_CREATOR_TORSO_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.NOSE then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__NOSE_PRESET__VALUE)
-        local label = CreatorState:IsDefaultMode() and "EXPRESSION_PRESET_NOSE_%02d" or "NATIVE_CREATOR_CORNERS_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_NOSE_%02d" or "NATIVE_CREATOR_CORNERS_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.MOUTH then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__MOUTH_PRESET__VALUE)
-        local label = CreatorState:IsDefaultMode() and "EXPRESSION_PRESET_MOUTH_%02d" or "NATIVE_CREATOR_CRANIAL_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_MOUTH_%02d" or "NATIVE_CREATOR_CRANIAL_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.JAW then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__JAW_PRESET__VALUE)
-        local label = CreatorState:IsDefaultMode() and "EXPRESSION_PRESET_JAW_%02d" or "NATIVE_CREATOR_LIMBS_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_JAW_%02d" or "NATIVE_CREATOR_LIMBS_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.EARS then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__EARS_PRESET__VALUE)
-        local label = CreatorState:IsDefaultMode() and "EXPRESSION_PRESET_EARS_%02d" or ""
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EARS_%02d" or ""
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.CHEEKS then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__CHEEKS_PRESET__VALUE)
-        local label = CreatorState:IsDefaultMode() and "EXPRESSION_PRESET_CHEEKS_%02d" or ""
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_CHEEKS_%02d" or ""
         self.subheaderOverride = string.format(label, preset)
     else
         self.subheaderOverride = nil
@@ -355,10 +357,10 @@ function CreatorRenderer:ShowGrid(itemId)
     end
 
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__X_VISIBLE, itemType == UI_ITEM_TYPE.GRID_X)
-    CreatorState.shouldPollGridX = itemType == UI_ITEM_TYPE.GRID_X
+    CreatorRenderer.shouldPollGridX = itemType == UI_ITEM_TYPE.GRID_X
 
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__XY_VISIBLE, itemType == UI_ITEM_TYPE.GRID_XY)
-    CreatorState.shouldPollGridXY = itemType == UI_ITEM_TYPE.GRID_XY
+    CreatorRenderer.shouldPollGridXY = itemType == UI_ITEM_TYPE.GRID_XY
 
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__LEFT_LABEL, labels.Left or "")
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__RIGHT_LABEL, labels.Right or "")
@@ -391,10 +393,10 @@ end
 
 function CreatorRenderer:HideGrid()
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__X_VISIBLE, false)
-    CreatorState.shouldPollGridX = false
+    CreatorRenderer.shouldPollGridX = false
 
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__XY_VISIBLE, false)
-    CreatorState.shouldPollGridXY = false
+    CreatorRenderer.shouldPollGridXY = false
 
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__LEFT_LABEL, "")
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__RIGHT_LABEL, "")
@@ -409,12 +411,12 @@ function CreatorRenderer:RequestSwatchTextures()
     DestroySwatchTextureDict()
 
     local config = {
-        SKIN_TONE       = CreatorState:GetSkintoneSwatches(),
-        EYE_COLOR       = CreatorState:GetEyeSwatches(),
-        HAIR_COLOR      = CreatorState:GetHairSwatches(),
-        BEARD_COLOR     = CreatorState:GetBeardSwatches(),
-        EYESHADOW_COLOR = CreatorState:GetOverlaySwatches(OVERLAY_LAYER.EYESHADOW),
-        LIPSTICK_COLOR  = CreatorState:GetOverlaySwatches(OVERLAY_LAYER.LIPSTICK),
+        SKIN_TONE       = self:GetSkintoneSwatches(),
+        EYE_COLOR       = self:GetEyeSwatches(),
+        HAIR_COLOR      = self:GetHairSwatches(),
+        BEARD_COLOR     = self:GetBeardSwatches(),
+        EYESHADOW_COLOR = self:GetOverlaySwatches(OVERLAY_LAYER.EYESHADOW),
+        LIPSTICK_COLOR  = self:GetOverlaySwatches(OVERLAY_LAYER.LIPSTICK),
     }
 
     local entryId = 0
@@ -546,6 +548,256 @@ function CreatorRenderer:GetSwatchTextures(itemId)
     local swatches = {}
     for _, entry in ipairs(entries) do
         swatches[#swatches + 1] = { dict = entry.dict, texture = entry.texture }
+    end
+
+    return swatches
+end
+
+function CreatorRenderer:GetHeritageLabels()
+    local heritages = CreatorPresets:GetHeritages()
+    local labels = {}
+
+    for _, heritage in ipairs(heritages) do
+        labels[#labels + 1] = heritage.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetSkintoneSwatches()
+    local skintones = CreatorPresets:GetSkintones()
+    local components = {}
+
+    for _, skintone in ipairs(skintones) do
+        components[#components + 1] = skintone.id
+    end
+
+    return components
+end
+
+function CreatorRenderer:GetBodyBuildLabels()
+    local builds = CreatorPresets:GetBodyBuilds()
+    local labels = {}
+
+    for _, build in pairs(builds) do
+        labels[#labels + 1] = build.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetPresetLabels(zone)
+    local labels = {}
+
+    if PED_EXPRESSION_ZONE:GetQuery(zone) then
+        local presets = CreatorPresets:GetExpressionZonePresets(zone)
+        for _, preset in ipairs(presets) do
+            labels[#labels + 1] = preset.id
+        end
+    else
+        local format = "NATIVE_CREATOR_%s_%02d"
+        local name = PED_EXPRESSION_ZONE:GetName(zone)
+        labels[#labels + 1] = string.format(format, name, 0)
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetHairLabels()
+    local gender = Character:GetGenderShort()
+    local hairs = {}
+    local custom = {}
+
+    if Character:IsMale() then
+        hairs = CreatorConfig.MaleHairs
+        custom = CreatorConfig.CustomMaleHairs
+    else
+        hairs = CreatorConfig.FemaleHairs
+        custom = CreatorConfig.CustomFemaleHairs
+    end
+
+    local labels = {}
+    for _, item in ipairs(hairs) do
+        if item == "NONE" then
+            labels[#labels + 1] = "CLOTHING_ITEM_HAIR_NONE"
+        else
+            labels[#labels + 1] = string.format("BARBER_STYLE_%s_HAIR_%03d_PAGE", gender, item)
+        end
+    end
+
+    for _, item in ipairs(custom) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetHairSwatches()
+    local gender = Character:GetGenderShort()
+
+    local components = {}
+    for _, item in ipairs(CreatorConfig.HairColors) do
+        components[#components + 1] = string.format("CLOTHING_ITEM_%s_HAIR_%03d_%s", gender, 1, item)
+    end
+
+    return components
+end
+
+function CreatorRenderer:GetBeardLabels()
+    if Character:IsFemale() then return {} end
+
+    local labels = {}
+    for _, item in ipairs(CreatorConfig.MaleBeards) do
+        if item == "NONE" then
+            labels[#labels + 1] = "CLOTHING_ITEM_BEARD_NONE"
+        else
+            labels[#labels + 1] = string.format("BARBER_STYLE_M_BEARD_%03d_PAGE", item)
+        end
+    end
+
+    for _, item in ipairs(CreatorConfig.CustomMaleBeards) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetBeardSwatches()
+    if Character:IsFemale() then return {} end
+
+    local components = {}
+    for _, color in ipairs(CreatorConfig.HairColors) do
+        components[#components + 1] = string.format("CLOTHING_ITEM_M_BEARD_%03d_%s", 1, color)
+    end
+
+    return components
+end
+
+function CreatorRenderer:GetTeethLabels()
+    local gender = Character:GetGenderShort()
+
+    local labels = {}
+    for _, item in ipairs(CreatorConfig.Teeth) do
+        labels[#labels + 1] = string.format("CLOTHING_ITEM_%s_TEETH_%03d", gender, item)
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetEyeSwatches()
+    local gender = Character:GetGenderShort()
+
+    local components = {}
+    for _, item in ipairs(CreatorConfig.Eyes) do
+        components[#components + 1] = string.format("CLOTHING_ITEM_%s_EYES_001_TINT_%03d", gender, item)
+    end
+
+    return components
+end
+
+function CreatorRenderer:GetWhistleLabels()
+    local labels = {}
+    for _, item in ipairs(CreatorConfig.Whistles) do
+        labels[#labels + 1] = string.format("CHAR_CREATOR_WHISTLE_STYLE_%d", item)
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetHeightLabels()
+    local labels = {}
+    for _, item in ipairs(CreatorConfig.Heights) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetWeightLabels()
+    local labels = {}
+    for _, item in ipairs(CreatorConfig.Weights) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetVoiceLabels()
+    local labels = {}
+    for _, item in ipairs(CreatorConfig.Voices) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetOverlayLabels(layer)
+    local overlay = CreatorConfig.Overlays[layer]
+    if not overlay then
+        error(string.format("Invalid layer: %s", layer))
+    end
+
+    local labels = { [1] = "CHAR_CREATOR_LAYER_NONE" }
+    for index, data in pairs(overlay) do
+        if not data.id then
+            error(string.format("Item %s in layer %s is missing an ID", index, layer))
+        end
+
+        local label = data.id
+        if layer == OVERLAY_LAYER.EYEBROWS or layer == OVERLAY_LAYER.HEAD_HAIR then
+            label = string.format(label, Character:GetHairColorString())
+        elseif layer == OVERLAY_LAYER.FACIAL_HAIR then
+            label = string.format(label, Character:GetBeardColorString())
+        end
+
+        if not data.gender or data.gender == Character:GetGenderShort() then
+            labels[#labels + 1] = label
+        end
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetOverlayLabel(layer, index)
+    local labels = self:GetOverlayLabels(layer)
+
+    local label = labels[index]
+    if not label then
+        error(string.format("No label found for index %s in layer %s", index, layer))
+    end
+
+    return label
+end
+
+function CreatorRenderer:GetOverlaySwatches(layer)
+    if Character:IsMale() then return {} end
+
+    local layerColors = CharacterOverlay:GetLayerColors(layer)
+
+    local swatches = {}
+    for layerBlend, layerColor in pairs(layerColors) do
+        if layerBlend == "BLEND_NONE" then goto continue end
+
+        for _, colorBlend in ipairs(layerColor) do
+            if colorBlend == "BLEND_NONE" then goto continue end
+
+            local data = CharacterBlends:Get(layer, colorBlend)
+            if not data.palette or data.palette == 0 then
+                error(string.format("No palette found for blend %s in layer %s, skipping swatch generation", colorBlend, layer))
+            end
+
+            swatches[colorBlend] = {
+                swatch = "UISW_FLAT_CK000",
+                palette = data.palette,
+                tint0 = data.tint0,
+                tint1 = data.tint1,
+                tint2 = data.tint2,
+            }
+
+            ::continue::
+        end
+
+        ::continue::
     end
 
     return swatches

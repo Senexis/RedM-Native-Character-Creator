@@ -2237,7 +2237,7 @@ function Intro:RegisterCharacterPrompts(toggle)
 end
 
 function Intro:RegisterEditorPrompts(toggle)
-    local text = CreatorState:IsAdvancedMode() and "Basic Options" or "Advanced Options"
+    local text = Creator:IsAdvancedMode() and "Basic Options" or "Advanced Options"
 
     self:RegisterPrompts({
         quickSwitch = {
@@ -2444,6 +2444,7 @@ end
 Citizen.CreateThread(function()
     while true do
         Intro:Maintain()
+        Creator:Maintain()
         Wait(0)
     end
 end)

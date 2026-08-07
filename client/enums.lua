@@ -55,7 +55,7 @@ function EnumRegistry:GetProp(id, attrName)
     if not attrTable then return nil end
 
     if self._modeAware[attrName] then
-        local mode = CreatorState:GetMode()
+        local mode = Creator:GetMode()
         local modeTable = attrTable[mode]
         return modeTable and modeTable[id]
     end
@@ -70,7 +70,7 @@ function EnumRegistry:GetIdByProp(value, attrName)
     if not revTable then return nil end
 
     if self._modeAware[attrName] then
-        local mode = CreatorState:GetMode()
+        local mode = Creator:GetMode()
         local modeRevTable = revTable[mode]
         return modeRevTable and modeRevTable[value]
     end
