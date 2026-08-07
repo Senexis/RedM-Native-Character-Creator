@@ -5,6 +5,8 @@ CreatorRenderer = {
     },
     subheaderOverride = nil,
     text = {},
+    shouldPollGridX = false,
+    shouldPollGridXY = false,
 }
 
 function CreatorRenderer:UpdateText()
@@ -355,10 +357,10 @@ function CreatorRenderer:ShowGrid(itemId)
     end
 
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__X_VISIBLE, itemType == UI_ITEM_TYPE.GRID_X)
-    CreatorState.shouldPollGridX = itemType == UI_ITEM_TYPE.GRID_X
+    CreatorRenderer.shouldPollGridX = itemType == UI_ITEM_TYPE.GRID_X
 
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__XY_VISIBLE, itemType == UI_ITEM_TYPE.GRID_XY)
-    CreatorState.shouldPollGridXY = itemType == UI_ITEM_TYPE.GRID_XY
+    CreatorRenderer.shouldPollGridXY = itemType == UI_ITEM_TYPE.GRID_XY
 
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__LEFT_LABEL, labels.Left or "")
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__RIGHT_LABEL, labels.Right or "")
@@ -391,10 +393,10 @@ end
 
 function CreatorRenderer:HideGrid()
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__X_VISIBLE, false)
-    CreatorState.shouldPollGridX = false
+    CreatorRenderer.shouldPollGridX = false
 
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__XY_VISIBLE, false)
-    CreatorState.shouldPollGridXY = false
+    CreatorRenderer.shouldPollGridXY = false
 
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__LEFT_LABEL, "")
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__GRID__RIGHT_LABEL, "")

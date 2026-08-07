@@ -1,7 +1,15 @@
-CreatorEvents = {}
+CreatorEvents = {
+    currentPage = 0,
+    currentFocusedItem = 0,
+    isZooming = false,
+    currentGridXValue = 0.0,
+    currentGridYValue = 0.0,
+    shouldHideBeard = false,
+    pageCamera = nil,
+}
 
 function CreatorEvents:OnToggleBeard()
-    if CreatorState.shouldHideBeard == true then
+    if CreatorEvents.shouldHideBeard == true then
         Character:RemoveBeard()
     else
         Character:ApplyBeard()
@@ -10,18 +18,18 @@ end
 
 function CreatorEvents:Maintain()
     -- Zooming isn't handled through events anymore
-    if CreatorState.isZooming == false and IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
-        CreatorState.isZooming = true
+    if CreatorEvents.isZooming == false and IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+        CreatorEvents.isZooming = true
         SignalBus:emit("zoom_updated", true)
-    elseif CreatorState.isZooming == true and not IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
-        CreatorState.isZooming = false
+    elseif CreatorEvents.isZooming == true and not IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+        CreatorEvents.isZooming = false
         SignalBus:emit("zoom_updated", false)
     end
 
     -- Poll the X grid of the currently focused item if we should
-    if CreatorState.shouldPollGridX or CreatorState.shouldPollGridXY then
+    if CreatorRenderer.shouldPollGridX or CreatorRenderer.shouldPollGridXY then
         -- Check if the focused item is a grid item
-        local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorState.currentFocusedItem)
+        local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorEvents.currentFocusedItem)
         if focusedItem and focusedItem ~= UI_ITEM_ID.INVALID then
             local itemType = UI_ITEM_ID:GetType(focusedItem)
             if itemType == UI_ITEM_TYPE.GRID_X or itemType == UI_ITEM_TYPE.GRID_XY then
@@ -29,8 +37,8 @@ function CreatorEvents:Maintain()
                 local gridXValue = CreatorDatabinding:ReadFloat(DATABINDING_ID.ROOT__GRID__X_VALUE)
 
                 -- Only trigger events if the value changes
-                if CreatorState.currentGridXValue ~= gridXValue then
-                    CreatorState.currentGridXValue = gridXValue
+                if CreatorEvents.currentGridXValue ~= gridXValue then
+                    CreatorEvents.currentGridXValue = gridXValue
                     SignalBus:emit("grid_x_changed", focusedItem, gridXValue)
                 end
             end
@@ -38,9 +46,9 @@ function CreatorEvents:Maintain()
     end
 
     -- Poll the Y grid of the currently focused item if we should
-    if CreatorState.shouldPollGridXY then
+    if CreatorRenderer.shouldPollGridXY then
         -- Check if the focused item is a grid item
-        local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorState.currentFocusedItem)
+        local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorEvents.currentFocusedItem)
         if focusedItem and focusedItem ~= UI_ITEM_ID.INVALID then
             local itemType = UI_ITEM_ID:GetType(focusedItem)
             if itemType == UI_ITEM_TYPE.GRID_XY then
@@ -48,8 +56,8 @@ function CreatorEvents:Maintain()
                 local gridYValue = CreatorDatabinding:ReadFloat(DATABINDING_ID.ROOT__GRID__Y_VALUE)
 
                 -- Only trigger events if the value changes
-                if CreatorState.currentGridYValue ~= gridYValue then
-                    CreatorState.currentGridYValue = gridYValue
+                if CreatorEvents.currentGridYValue ~= gridYValue then
+                    CreatorEvents.currentGridYValue = gridYValue
                     SignalBus:emit("grid_y_changed", focusedItem, gridYValue)
                 end
             end
@@ -65,14 +73,14 @@ function CreatorEvents:Maintain()
             local parameter = data:GetInt32(16)
 
             if event == `ITEM_FOCUSED` then
-                CreatorState.currentFocusedItem = parameter
+                CreatorEvents.currentFocusedItem = parameter
                 local ok, error = pcall(CreatorEvents.OnItemFocused, CreatorEvents, parameter)
                 if not ok then
                     local enum = UI_ITEM_ID:GetIdFromHash(parameter)
                     Utils:Debug(string.format("Failed to handle item focused event on item %s: %s", enum, error))
                 end
             elseif event == `DATA_ADJUSTABLE_CHANGED` then
-                parameter = CreatorState.currentFocusedItem
+                parameter = CreatorEvents.currentFocusedItem
                 local ok, error = pcall(CreatorEvents.OnDataAdjustableChanged, CreatorEvents, parameter, index)
                 if not ok then
                     local enum = UI_ITEM_ID:GetIdFromHash(parameter)
@@ -85,7 +93,7 @@ function CreatorEvents:Maintain()
                     Utils:Debug(string.format("Failed to handle item selected event on item %s: %s", enum, error))
                 end
             elseif event == `NEW_PAGE` then
-                CreatorState.currentPage = parameter
+                CreatorEvents.currentPage = parameter
                 local ok, error = pcall(CreatorEvents.OnNewPage, CreatorEvents, parameter)
                 if not ok then
                     local enum = UI_PAGE_ID:GetIdFromHash(parameter)
@@ -125,7 +133,7 @@ function CreatorEvents:OnItemFocused(parameter)
         CreatorRenderer:ShowGrid(itemId)
     end
 
-    local camera = UI_ITEM_ID:GetCamera(itemId) or CreatorState.pageCamera
+    local camera = UI_ITEM_ID:GetCamera(itemId) or CreatorEvents.pageCamera
     if camera then
         SignalBus:emit("camera_updated", camera)
     end
@@ -175,17 +183,17 @@ function CreatorEvents:OnItemSelected(parameter)
     local actionId = UI_ACTION_ID:GetIdFromHash(parameter)
     if not actionId or actionId == UI_ACTION_ID.INVALID then return end
 
-    local itemId = UI_ITEM_ID:GetIdFromHash(CreatorState.currentFocusedItem)
+    local itemId = UI_ITEM_ID:GetIdFromHash(CreatorEvents.currentFocusedItem)
 
     if actionId == UI_ACTION_ID.TOGGLE_FACIAL_HAIR then
-        if CreatorState.shouldHideBeard == true then
-            CreatorState.shouldHideBeard = false
+        if CreatorEvents.shouldHideBeard == true then
+            CreatorEvents.shouldHideBeard = false
         else
-            CreatorState.shouldHideBeard = true
+            CreatorEvents.shouldHideBeard = true
         end
         self:OnToggleBeard()
     elseif actionId == UI_ACTION_ID.RESET_FACIAL_HAIR then
-        CreatorState.shouldHideBeard = false
+        CreatorEvents.shouldHideBeard = false
         self:OnToggleBeard()
     elseif actionId == UI_ACTION_ID.MATCH_HAIR_COLOR then
         if itemId == UI_ITEM_ID.HAIR__BEARD_COLOR then
@@ -227,13 +235,13 @@ function CreatorEvents:OnNewPage(parameter)
     CreatorRenderer:UpdateSubheaderOverride(pageId)
     CreatorRenderer:UpdateSubheaderLabel(uiData.Subheader)
 
-    if CreatorState.shouldHideBeard == true then
-        CreatorState.shouldHideBeard = false
+    if CreatorEvents.shouldHideBeard == true then
+        CreatorEvents.shouldHideBeard = false
         self:OnToggleBeard()
     end
 
     local camera = UI_PAGE_ID:GetCamera(pageId)
-    CreatorState.pageCamera = camera or { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE }
+    CreatorEvents.pageCamera = camera or { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE }
 end
 
 function CreatorEvents:OnIndexChangeRequested(parameter)
@@ -284,7 +292,7 @@ end)
 SignalBus:on("overlay_applied", function(layer)
     CreatorDatabinding:UpdateBlockedOverlays()
 
-    local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorState.currentFocusedItem)
+    local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorEvents.currentFocusedItem)
     if focusedItem then CreatorRenderer:UpdateItemFooter(focusedItem) end
 
     local supportsTint = OVERLAY_LAYER:GetSupportsTint(layer)
@@ -306,7 +314,7 @@ end)
 SignalBus:on("overlay_removed", function(layer)
     CreatorDatabinding:UpdateBlockedOverlays()
 
-    local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorState.currentFocusedItem)
+    local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorEvents.currentFocusedItem)
     if focusedItem then CreatorRenderer:UpdateItemFooter(focusedItem) end
 
     local supportsTint = OVERLAY_LAYER:GetSupportsTint(layer)
