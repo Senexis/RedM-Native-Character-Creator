@@ -1,0 +1,161 @@
+---@class OVERLAY_LAYERS : EnumRegistry
+---@field GetHash fun(self, id: number): integer|nil
+---@field GetIdFromHash fun(self, hash: integer): number|nil
+---@field GetNameFromId fun(self, id: number): string|nil
+---@field GetIdFromName fun(self, name: string): number|nil
+---@field GetDatabinding fun(self, id: number): table|nil
+---@field GetPriority fun(self, id: number): number|nil
+---@field GetSkintoneAlphas fun(self, id: number): table|nil
+---@field GetSupportsTint fun(self, id: number): boolean
+---@field GetSupportsHair fun(self, id: number): boolean
+---@field GetSupportsPresets fun(self, id: number): boolean
+---@field GetRandomized fun(self, id: number): boolean
+---@field ToString fun(self, id: number): string
+local OVERLAY_LAYERS = {
+    ROOT          = 0,
+    SKIN_MOTTLING = 1,
+    AGEING        = 2,
+    COMPLEXION    = 3,
+    COMPLEXION_2  = 4,
+    FRECKLES      = 5,
+    MOLES         = 6,
+    SPOTS         = 7,
+    SCAR          = 8,
+    FOUNDATION    = 9,
+    BLUSHER       = 10,
+    EYELINER      = 11,
+    EYESHADOW     = 12,
+    LIPSTICK      = 13,
+    EYEBROWS      = 14,
+
+    -- Advanced mode
+    FACIAL_HAIR   = 15,
+    GRIME         = 16,
+    HEAD_HAIR     = 17,
+    SCAR_2        = 18,
+}
+
+---@type OVERLAY_LAYERS | EnumRegistry
+OVERLAY_LAYER = Enums.CreateRegistry(OVERLAY_LAYERS)
+
+OVERLAY_LAYER:AddAttribute("Hash", {
+    [OVERLAY_LAYERS.ROOT]          = `MPC_OVERLAY_LAYER_ROOT`,
+    [OVERLAY_LAYERS.SKIN_MOTTLING] = `MPC_OVERLAY_LAYER_SKIN_MOTTLING`,
+    [OVERLAY_LAYERS.AGEING]        = `MPC_OVERLAY_LAYER_AGEING`,
+    [OVERLAY_LAYERS.COMPLEXION]    = `MPC_OVERLAY_LAYER_COMPLEXION`,
+    [OVERLAY_LAYERS.COMPLEXION_2]  = `MPC_OVERLAY_LAYER_COMPLEXION_2`,
+    [OVERLAY_LAYERS.FRECKLES]      = `MPC_OVERLAY_LAYER_FRECKLES`,
+    [OVERLAY_LAYERS.MOLES]         = `MPC_OVERLAY_LAYER_MOLES`,
+    [OVERLAY_LAYERS.SPOTS]         = `MPC_OVERLAY_LAYER_SPOTS`,
+    [OVERLAY_LAYERS.SCAR]          = `MPC_OVERLAY_LAYER_SCAR`,
+    [OVERLAY_LAYERS.FOUNDATION]    = `MPC_OVERLAY_LAYER_FOUNDATION`,
+    [OVERLAY_LAYERS.BLUSHER]       = `MPC_OVERLAY_LAYER_BLUSHER`,
+    [OVERLAY_LAYERS.EYELINER]      = `MPC_OVERLAY_LAYER_EYELINER`,
+    [OVERLAY_LAYERS.EYESHADOW]     = `MPC_OVERLAY_LAYER_EYESHADOW`,
+    [OVERLAY_LAYERS.LIPSTICK]      = `MPC_OVERLAY_LAYER_LIPSTICK`,
+    [OVERLAY_LAYERS.EYEBROWS]      = `MPC_OVERLAY_LAYER_EYEBROWS`,
+    [OVERLAY_LAYERS.FACIAL_HAIR]   = `MPC_OVERLAY_LAYER_FACIAL_HAIR`,
+    [OVERLAY_LAYERS.GRIME]         = `MPC_OVERLAY_LAYER_GRIME`,
+    [OVERLAY_LAYERS.HEAD_HAIR]     = `MPC_OVERLAY_LAYER_HEAD_HAIR`,
+    [OVERLAY_LAYERS.SCAR_2]        = `MPC_OVERLAY_LAYER_SCAR_2`,
+})
+
+OVERLAY_LAYER:AddModeAttribute("Databinding", {
+    [CREATOR_MODE.DEFAULT] = {
+        [OVERLAY_LAYERS.SKIN_MOTTLING] = { Enabled = DATABINDING_ID.LIFESTYLE__MOTTLING__ENABLED, Value = DATABINDING_ID.LIFESTYLE__MOTTLING__VALUE },
+        [OVERLAY_LAYERS.COMPLEXION]    = { Enabled = DATABINDING_ID.LIFESTYLE__COMPLEXION__ENABLED, Value = DATABINDING_ID.LIFESTYLE__COMPLEXION__VALUE },
+        [OVERLAY_LAYERS.COMPLEXION_2]  = { Enabled = DATABINDING_ID.LIFESTYLE__COMPLEXION_2__ENABLED, Value = DATABINDING_ID.LIFESTYLE__COMPLEXION_2__VALUE },
+        [OVERLAY_LAYERS.FRECKLES]      = { Enabled = DATABINDING_ID.LIFESTYLE__FRECKLES__ENABLED, Value = DATABINDING_ID.LIFESTYLE__FRECKLES__VALUE },
+        [OVERLAY_LAYERS.MOLES]         = { Enabled = DATABINDING_ID.LIFESTYLE__MOLES__ENABLED, Value = DATABINDING_ID.LIFESTYLE__MOLES__VALUE },
+        [OVERLAY_LAYERS.SPOTS]         = { Enabled = DATABINDING_ID.LIFESTYLE__SPOTS__ENABLED, Value = DATABINDING_ID.LIFESTYLE__SPOTS__VALUE },
+        [OVERLAY_LAYERS.SCAR]          = { Enabled = DATABINDING_ID.LIFESTYLE__SCAR__ENABLED, Value = DATABINDING_ID.LIFESTYLE__SCAR__VALUE },
+        [OVERLAY_LAYERS.FOUNDATION]    = { Enabled = DATABINDING_ID.MAKEUP__FOUNDATION__ENABLED, Value = DATABINDING_ID.MAKEUP__FOUNDATION__VALUE },
+        [OVERLAY_LAYERS.BLUSHER]       = { Enabled = DATABINDING_ID.MAKEUP__BLUSHER__ENABLED, Value = DATABINDING_ID.MAKEUP__BLUSHER__VALUE },
+        [OVERLAY_LAYERS.EYELINER]      = { Enabled = DATABINDING_ID.MAKEUP__EYELINER__ENABLED, Value = DATABINDING_ID.MAKEUP__EYELINER__VALUE },
+        [OVERLAY_LAYERS.EYESHADOW]     = { Enabled = DATABINDING_ID.MAKEUP__EYESHADOW__ENABLED, Value = DATABINDING_ID.MAKEUP__EYESHADOW__VALUE },
+        [OVERLAY_LAYERS.LIPSTICK]      = { Enabled = DATABINDING_ID.MAKEUP__LIPSTICK__ENABLED, Value = DATABINDING_ID.MAKEUP__LIPSTICK__VALUE },
+        [OVERLAY_LAYERS.EYEBROWS]      = { Enabled = DATABINDING_ID.APPEARANCE__EYEBROWS__ENABLED, Value = DATABINDING_ID.APPEARANCE__EYEBROWS__VALUE },
+        [OVERLAY_LAYERS.FACIAL_HAIR]   = { Enabled = DATABINDING_ID.HAIR__BEARD_STUBBLE__ENABLED, Value = DATABINDING_ID.HAIR__BEARD_STUBBLE__VALUE },
+    },
+    [CREATOR_MODE.ADVANCED] = {
+        [OVERLAY_LAYERS.GRIME]     = { Enabled = DATABINDING_ID.LIFESTYLE__MOTTLING__ENABLED, Value = DATABINDING_ID.LIFESTYLE__MOTTLING__VALUE },
+        [OVERLAY_LAYERS.AGEING]    = { Enabled = DATABINDING_ID.LIFESTYLE__COMPLEXION__ENABLED, Value = DATABINDING_ID.LIFESTYLE__COMPLEXION__VALUE },
+        [OVERLAY_LAYERS.HEAD_HAIR] = { Enabled = DATABINDING_ID.LIFESTYLE__COMPLEXION_2__ENABLED, Value = DATABINDING_ID.LIFESTYLE__COMPLEXION_2__VALUE },
+        [OVERLAY_LAYERS.SCAR_2]    = { Enabled = DATABINDING_ID.LIFESTYLE__FRECKLES__ENABLED, Value = DATABINDING_ID.LIFESTYLE__FRECKLES__VALUE },
+    }
+})
+
+OVERLAY_LAYER:AddAttribute("Priority", {
+    [OVERLAY_LAYERS.SKIN_MOTTLING] = 10,
+    [OVERLAY_LAYERS.AGEING]        = 20,
+    [OVERLAY_LAYERS.COMPLEXION]    = 30,
+    [OVERLAY_LAYERS.COMPLEXION_2]  = 31,
+    [OVERLAY_LAYERS.FRECKLES]      = 50,
+    [OVERLAY_LAYERS.MOLES]         = 60,
+    [OVERLAY_LAYERS.SPOTS]         = 70,
+    [OVERLAY_LAYERS.SCAR]          = 75,
+    [OVERLAY_LAYERS.SCAR_2]        = 76,
+    [OVERLAY_LAYERS.FOUNDATION]    = 90,
+    [OVERLAY_LAYERS.BLUSHER]       = 100,
+    [OVERLAY_LAYERS.EYESHADOW]     = 110,
+    [OVERLAY_LAYERS.EYELINER]      = 120,
+    [OVERLAY_LAYERS.LIPSTICK]      = 130,
+    [OVERLAY_LAYERS.EYEBROWS]      = 140,
+    [OVERLAY_LAYERS.FACIAL_HAIR]   = 150,
+    [OVERLAY_LAYERS.GRIME]         = 160,
+    [OVERLAY_LAYERS.HEAD_HAIR]     = 180,
+})
+
+OVERLAY_LAYER:AddAttribute("SkintoneAlphas", {
+    [OVERLAY_LAYERS.SKIN_MOTTLING] = { 0.85, 0.85, 0.85, 0.95, 1.0, 1.0 },
+    [OVERLAY_LAYERS.FRECKLES]      = { 0.75, 0.75, 0.75, 0.9, 1.0, 1.0 },
+    [OVERLAY_LAYERS.FOUNDATION]    = { 0.75, 0.65, 0.75, 0.5, 0.4, 0.4 },
+})
+
+OVERLAY_LAYER:AddAttribute("SupportsTint", {
+    [OVERLAY_LAYERS.EYESHADOW] = true,
+    [OVERLAY_LAYERS.LIPSTICK]  = true,
+})
+
+OVERLAY_LAYER:AddAttribute("SupportsHair", {
+    [OVERLAY_LAYERS.EYEBROWS]    = true,
+    [OVERLAY_LAYERS.FACIAL_HAIR] = true,
+    [OVERLAY_LAYERS.HEAD_HAIR]   = true,
+})
+
+OVERLAY_LAYER:AddAttribute("SupportsPresets", {
+    [OVERLAY_LAYERS.FOUNDATION] = true,
+    [OVERLAY_LAYERS.BLUSHER]    = true,
+    [OVERLAY_LAYERS.EYELINER]   = true,
+    [OVERLAY_LAYERS.EYESHADOW]  = true,
+    [OVERLAY_LAYERS.LIPSTICK]   = true,
+})
+
+OVERLAY_LAYER:AddModeAttribute("Randomized", {
+    [CREATOR_MODE.DEFAULT] = {
+        [OVERLAY_LAYERS.SKIN_MOTTLING] = true,
+        [OVERLAY_LAYERS.COMPLEXION]    = true,
+        [OVERLAY_LAYERS.COMPLEXION_2]  = true,
+        [OVERLAY_LAYERS.FRECKLES]      = true,
+        [OVERLAY_LAYERS.MOLES]         = true,
+        [OVERLAY_LAYERS.SPOTS]         = true,
+        [OVERLAY_LAYERS.SCAR]          = true,
+        [OVERLAY_LAYERS.EYEBROWS]      = true,
+        [OVERLAY_LAYERS.FACIAL_HAIR]   = true,
+    },
+    [CREATOR_MODE.ADVANCED] = {
+        [OVERLAY_LAYERS.SKIN_MOTTLING] = true,
+        [OVERLAY_LAYERS.COMPLEXION]    = true,
+        [OVERLAY_LAYERS.COMPLEXION_2]  = true,
+        [OVERLAY_LAYERS.FRECKLES]      = true,
+        [OVERLAY_LAYERS.MOLES]         = true,
+        [OVERLAY_LAYERS.SPOTS]         = true,
+        [OVERLAY_LAYERS.SCAR]          = true,
+        [OVERLAY_LAYERS.EYEBROWS]      = true,
+        [OVERLAY_LAYERS.FACIAL_HAIR]   = true,
+        [OVERLAY_LAYERS.GRIME]         = true,
+        [OVERLAY_LAYERS.AGEING]        = true,
+        [OVERLAY_LAYERS.HEAD_HAIR]     = true,
+        [OVERLAY_LAYERS.SCAR_2]        = true,
+    }
+})

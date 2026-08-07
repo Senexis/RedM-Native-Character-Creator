@@ -1,0 +1,61 @@
+---@class UI_ACTION_IDS : EnumRegistry
+---@field GetHash fun(self, id: number): integer|nil
+---@field GetIdFromHash fun(self, hash: integer): number|nil
+---@field GetNameFromId fun(self, id: number): string|nil
+---@field GetIdFromName fun(self, name: string): number|nil
+---@field GetAction fun(self, id: number): number|nil
+---@field GetIdFromAction fun(self, action: table): number|nil
+---@field ToString fun(self, id: number): string
+local UI_ACTION_IDS = {
+    INVALID               = -1,
+    APPLY_BEARD_COLOR     = 0,
+    APPLY_EYE_COLOR       = 1,
+    APPLY_EYELINER_COLOR  = 2,
+    APPLY_EYESHADOW_COLOR = 3,
+    APPLY_HAIR_COLOR      = 4,
+    APPLY_LIPSTICK_COLOR  = 5,
+    APPLY_SKIN_TONE       = 6,
+    CANCEL_EDIT           = 7,
+    CONFIRM_EDIT          = 8,
+    ENTER_NAME            = 9,
+    MATCH_HAIR_COLOR      = 10,
+    PLAY_WHISTLE_SOUND    = 11,
+    RANDOMIZE_ITEM        = 12,
+    RESET_FACIAL_HAIR     = 13,
+    ROTATE                = 14,
+    TOGGLE_FACIAL_HAIR    = 15,
+}
+
+---@type UI_ACTION_IDS | EnumRegistry
+UI_ACTION_ID = Enums.CreateRegistry(UI_ACTION_IDS)
+
+UI_ACTION_ID:AddAttribute("Hash", {
+    [UI_ACTION_IDS.INVALID]               = 0,
+    [UI_ACTION_IDS.APPLY_BEARD_COLOR]     = `MPCC_UI_SELECT_EVENT_APPLY_BEARD_COLOR`,
+    [UI_ACTION_IDS.APPLY_EYE_COLOR]       = `MPCC_UI_SELECT_EVENT_APPLY_EYE_COLOR`,
+    [UI_ACTION_IDS.APPLY_EYELINER_COLOR]  = `MPCC_UI_SELECT_EVENT_APPLY_EYELINER_COLOR`,
+    [UI_ACTION_IDS.APPLY_EYESHADOW_COLOR] = `MPCC_UI_SELECT_EVENT_APPLY_EYESHADOW_COLOR`,
+    [UI_ACTION_IDS.APPLY_HAIR_COLOR]      = `MPCC_UI_SELECT_EVENT_APPLY_HAIR_COLOR`,
+    [UI_ACTION_IDS.APPLY_LIPSTICK_COLOR]  = `MPCC_UI_SELECT_EVENT_APPLY_LIPSTICK_COLOR`,
+    [UI_ACTION_IDS.APPLY_SKIN_TONE]       = `MPCC_UI_SELECT_EVENT_APPLY_SKIN_TONE`,
+    [UI_ACTION_IDS.CANCEL_EDIT]           = `MPCC_UI_SELECT_EVENT_CANCEL_EDIT`,
+    [UI_ACTION_IDS.CONFIRM_EDIT]          = `MPCC_UI_SELECT_EVENT_CONFIRM_EDIT`,
+    [UI_ACTION_IDS.ENTER_NAME]            = `MPCC_UI_FOCUS_ITEM_ENTER_NAME`,
+    [UI_ACTION_IDS.MATCH_HAIR_COLOR]      = `MPCC_UI_MATCH_HAIR_COLOR`,
+    [UI_ACTION_IDS.PLAY_WHISTLE_SOUND]    = `MPCC_UI_PLAY_WHISTLE_SOUND`,
+    [UI_ACTION_IDS.RANDOMIZE_ITEM]        = `MPCC_UI_RANDOMIZE_ITEM`,
+    [UI_ACTION_IDS.RESET_FACIAL_HAIR]     = `MPCC_UI_RESET_FACIAL_HAIR`,
+    [UI_ACTION_IDS.ROTATE]                = `MPCC_UI_ROTATE`,
+    [UI_ACTION_IDS.TOGGLE_FACIAL_HAIR]    = `MPCC_UI_TOGGLE_FACIAL_HAIR`,
+})
+
+UI_ACTION_ID:AddModeAttribute("Action", {
+    [CREATOR_MODE.DEFAULT] = {
+        [UI_ACTION_ID.PLAY_WHISTLE_SOUND] = CHARACTER_ACTION.PLAY_WHISTLE_SOUND,
+        [UI_ACTION_ID.RANDOMIZE_ITEM]     = CHARACTER_ACTION.RANDOMIZE_ITEM,
+    },
+    [CREATOR_MODE.ADVANCED] = {
+        [UI_ACTION_ID.PLAY_WHISTLE_SOUND] = CHARACTER_ACTION.PLAY_VOCALIZATION,
+        [UI_ACTION_ID.RANDOMIZE_ITEM]     = CHARACTER_ACTION.RANDOMIZE_ADVANCED_ITEM,
+    }
+})
