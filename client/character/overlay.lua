@@ -4,6 +4,7 @@ CharacterOverlay = {
     normal = 0,
     material = 0,
     layers = {},
+    layerAlphas = {},
     flags = 0,
 }
 
@@ -203,7 +204,7 @@ function CharacterOverlay:SetLayerBlend(layer, blend, apply)
         self.layers[layer] = nil
     else
         local data = CharacterBlends:Get(layer, blend)
-        data.alpha = self.layers[layer] and self.layers[layer].alpha or 1.0
+        data.alpha = self.layerAlphas[layer] or (self.layers[layer] and self.layers[layer].alpha or 1.0)
 
         self.layers[layer] = data
     end
@@ -216,6 +217,7 @@ function CharacterOverlay:SetLayerAlpha(layer, alpha, apply)
 
     local data = self.layers[layer]
     data.alpha = alpha
+    self.layerAlphas[layer] = alpha
 
     self.layers[layer] = data
 
