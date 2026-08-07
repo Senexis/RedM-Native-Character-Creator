@@ -955,7 +955,7 @@ function Intro:MaintainCustomizePed()
         self.editorResult = INTRO_EDITOR_STATUS.RUNNING
     end
 
-    if IsUiappRunningByHash("shop_menu") ~= 1 and IsUiappRunningByHash("character_creator") ~= 1 and UpdateOnscreenKeyboard() ~= 0 then
+    if IsAnyUiappRunning() ~= 1 and UpdateOnscreenKeyboard() ~= 0 then
         if GetGameTimer() - self.editorLastTime > TIMEOUT_GENERIC then
             self:Error("Failed to start the Character Creator. Please try again.", 1301)
         end
