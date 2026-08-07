@@ -856,6 +856,7 @@ function Character:ApplyOverlayBlend(layer, value, apply)
     end
 
     if blend == "BLEND_NONE" then
+        self.layers[layer].alpha = 1.0
         SignalBus:emit("overlay_removed", layer)
     else
         SignalBus:emit("overlay_applied", layer)
@@ -1015,7 +1016,7 @@ function Character:RandomizeAll()
     self:RandomizeOverlays()
     self:RandomizeOverlayPresets()
 
-    if CreatorState:IsAdvancedMode() then
+    if Creator:IsAdvancedMode() then
         self:RandomizeHeight()
         self:RandomizeWeight()
     end

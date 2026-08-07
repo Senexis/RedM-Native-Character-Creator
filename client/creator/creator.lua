@@ -61,7 +61,7 @@ function Creator:OpenEditor(mode)
         return
     end
 
-    CreatorState:SetMode(mode)
+    self:SetMode(mode)
     self:SetFlag(EDITOR_FLAG.EDITOR_ACTIVE)
 end
 
@@ -71,7 +71,7 @@ function Creator:CloseEditor(confirmed)
     end
 
     if confirmed and CreatorMenu then
-        CreatorMenu:SetConfirmed(CreatorState:GetMode(), true)
+        CreatorMenu:SetConfirmed(self:GetMode(), true)
     end
 
     self:ClearFlag(EDITOR_FLAG.EDITOR_ACTIVE)
@@ -276,7 +276,6 @@ function Creator:UpdateStateInEditor()
     SetControlContext(4, `Creator`)
 
     CreatorEvents:Maintain()
-    CreatorState:Maintain()
 
     if not self:IsFlagSet(EDITOR_FLAG.EDITOR_RUNNING) then
         DisableAllControlActions(0)
@@ -374,7 +373,7 @@ function Creator:UpdateStateQuickSwitch()
     self:ClearFlag(EDITOR_FLAG.MENU_RUNNING)
     self:ClearFlag(EDITOR_FLAG.EDITOR_RUNNING)
 
-    if CreatorState:IsAdvancedMode() then
+    if self:IsAdvancedMode() then
         self:OpenEditor(CREATOR_MODE.DEFAULT)
     else
         self:OpenEditor(CREATOR_MODE.ADVANCED)
@@ -516,13 +515,6 @@ function Creator:ClearFlag(flag)
     Utils:Debug(string.format("Clearing flag %s", EDITOR_FLAG:ToString(flag)))
     self.flags = (self.flags or 0) & (~flag)
 end
-
-Citizen.CreateThread(function()
-    while true do
-        Creator:Maintain()
-        Wait(0)
-    end
-end)
 
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end

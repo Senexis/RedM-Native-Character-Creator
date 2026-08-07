@@ -34,7 +34,6 @@ client_scripts {
     "client/creator/presets.lua",
     "client/creator/xml.lua",
     "client/creator/databinding.lua",
-    "client/creator/state.lua",
     "client/creator/events.lua",
     "client/creator/renderer.lua",
     "client/creator/menu.lua",
