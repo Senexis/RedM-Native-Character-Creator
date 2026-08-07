@@ -530,18 +530,6 @@ function Character:ApplyHead(apply)
     CharacterOverlay:UpdateBaseLayer(head.id, apply)
 end
 
-function Character:GetBodyShopItems()
-    local build = CreatorPresets:GetBodyBuild(self.bodyType)
-    return CreatorPresets:GetBodyShopItems(self.skintone, build)
-end
-
-function Character:ApplyBodyShopItems()
-    local body = self:GetBodyShopItems()
-
-    self:ApplyShopItem(body.upper)
-    self:ApplyShopItem(body.lower)
-end
-
 function Character:ApplyAgeBlend(apply)
     local ages = CreatorConfig.Overlays[OVERLAY_LAYER.AGEING]
     local normalized = self.heritage % #ages
@@ -582,7 +570,11 @@ function Character:ApplyBody(value)
         self.bodyType = value
     end
 
-    self:ApplyBodyShopItems()
+    local build = CreatorPresets:GetBodyBuild(self.bodyType)
+    local body = CreatorPresets:GetBodyShopItems(self.skintone, build)
+
+    self:ApplyShopItem(body.upper)
+    self:ApplyShopItem(body.lower)
 
     local OUTFITS <const> = {
         [`CLOTHING_MP_BODY_TYPE_SKINNY_MUSCULAR`] = `MPCREATOR_SKINNY_MUSCULAR`,
@@ -592,7 +584,6 @@ function Character:ApplyBody(value)
         [`CLOTHING_MP_BODY_TYPE_HEAVY`]           = `MPCREATOR_HEAVY`,
     }
 
-    local body = self:GetBodyShopItems()
     local outfit = OUTFITS[body.outfit]
     if not outfit then
         error(string.format("No outfit found for body build: %s", tostring(body.outfit)), 2)
@@ -1334,7 +1325,8 @@ function Character:StripClothingFromPed(level)
         end
     end
 
-    self:ApplyBodyShopItems()
+    self:ApplyBody()
+    self:RequestUpdate()
 end
 
 -- Restore the ped's clothing to the state it was in before any clothing level change.
