@@ -81,15 +81,13 @@ luarocks install luacheck
 From the repository root:
 
 ```bash
-REPO_ROOT="$(pwd)" busted --helper spec/spec_helper.lua spec
+busted --helper spec/spec_helper.lua spec
 ```
 
 ### Run lint
 
 ```bash
-luacheck --std lua54 --no-unused-args \
-  --globals SignalBus Utils AddEventHandler GetCurrentResourceName msgpack CreatorConfig \
-  -- client/signals.lua client/utils.lua spec/spec_helper.lua
+luacheck client/signals.lua client/utils.lua client/enums.lua client/character/blend.lua spec/spec_helper.lua
 ```
 
 ### CI workflow

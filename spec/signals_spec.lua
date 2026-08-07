@@ -1,11 +1,9 @@
 describe("SignalBus", function()
-    local signalsPath = os.getenv("REPO_ROOT") .. "/client/signals.lua"
-
     before_each(function()
         _G.SignalBus = nil
         _G.__eventHandlers = {}
         _G.__currentResourceName = "native_cc_test"
-        dofile(signalsPath)
+        dofile("client/signals.lua")
         SignalBus:clear()
     end)
 
@@ -50,4 +48,3 @@ describe("SignalBus", function()
         assert.equal(1, called)
     end)
 end)
-

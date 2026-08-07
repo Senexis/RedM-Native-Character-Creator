@@ -1,10 +1,8 @@
 describe("Utils", function()
-    local utilsPath = os.getenv("REPO_ROOT") .. "/client/utils.lua"
-
     before_each(function()
         _G.Utils = nil
         _G.CreatorConfig = { Debug = false }
-        dofile(utilsPath)
+        dofile("client/utils.lua")
     end)
 
     it("deep copies tables and excludes non-serializable values", function()
@@ -73,4 +71,3 @@ describe("Utils", function()
         assert.equal("[NativeCC] hello 123", output[1])
     end)
 end)
-

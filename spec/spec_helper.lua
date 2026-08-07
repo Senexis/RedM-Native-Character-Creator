@@ -1,8 +1,6 @@
-local repoRoot = assert(os.getenv("REPO_ROOT"), "REPO_ROOT environment variable must be set")
-
 package.path = table.concat({
-    repoRoot .. "/?.lua",
-    repoRoot .. "/?/init.lua",
+    "./?.lua",
+    "./?/init.lua",
     package.path
 }, ";")
 
@@ -29,4 +27,3 @@ _G.msgpack = {
         error("msgpack.unpack mock not configured for test")
     end
 }
-

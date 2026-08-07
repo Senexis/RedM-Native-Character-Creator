@@ -30,12 +30,7 @@ jobs:
           luarocks install luacheck
 
       - name: Run unit tests
-        env:
-          REPO_ROOT: ${{ github.workspace }}
         run: busted --helper spec/spec_helper.lua spec
 
       - name: Run lint (portable files)
-        run: |
-          luacheck --std lua54 --no-unused-args \
-            --globals SignalBus Utils AddEventHandler GetCurrentResourceName msgpack CreatorConfig \
-            -- client/signals.lua client/utils.lua spec/spec_helper.lua
+        run: luacheck client/signals.lua client/utils.lua client/enums.lua client/character/blend.lua spec/spec_helper.lua
