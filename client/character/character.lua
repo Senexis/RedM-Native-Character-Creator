@@ -538,10 +538,8 @@ end
 function Character:ApplyBodyShopItems(body)
     body = body or self:GetBodyShopItems()
 
-    ApplyShopItemToPed(self.ped, body.upper, false, true, true)
-    ApplyShopItemToPed(self.ped, body.lower, false, true, true)
-
-    self:RequestUpdate()
+    self:ApplyShopItem(body.upper)
+    self:ApplyShopItem(body.lower)
 end
 
 function Character:ApplyAgeBlend(apply)
