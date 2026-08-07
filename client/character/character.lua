@@ -1324,6 +1324,12 @@ function Character:StripClothingFromPed(level)
         end
     end
 
+    if level == CLOTHING_SETTING.NUDE then
+        local build = CreatorPresets:GetBodyBuild(self.bodyType)
+        local body = CreatorPresets:GetBodyShopItems(self.skintone, build)
+        ApplyShopItemToPed(self.ped, body.lower, false, true, true)
+    end
+
     self:RequestUpdate()
 end
 
