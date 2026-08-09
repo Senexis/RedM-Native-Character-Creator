@@ -436,13 +436,6 @@ function Intro:MaintainApplyClothes()
     local femalePed = self.presetPeds[EDITOR_CONFIG.FEMALE]
     local femaleOutfits = IntroConfig.Outfits[EDITOR_CONFIG.FEMALE]
 
-    local INVALID_TAGS <const> = {
-        COMPONENT_TAG.HAT,
-        COMPONENT_TAG.HAT_ACCESSORIES,
-        COMPONENT_TAG.HAT_BANDS,
-        COMPONENT_TAG.HEADWEAR,
-    }
-
     if IsPedReadyToRender(malePed) ~= 1 or IsPedReadyToRender(femalePed) ~= 1 then
         if GetGameTimer() - self.stateChangeTime > TIMEOUT_GENERIC then
             self:Error("Failed to create the characters. Please try again.", 0601)
@@ -470,16 +463,6 @@ function Intro:MaintainApplyClothes()
 
     self.savedOutfitItems[EDITOR_CONFIG.FEMALE] = femaleOutfitClothes
     Utils:Debug("MAINTAIN_APPLY_CLOTHES - applied clothes to female ped")
-
-    for _, tag in ipairs(INVALID_TAGS) do
-        local hash = COMPONENT_TAG:GetHash(tag)
-        if not hash then goto continue end
-
-        RemoveTagFromMetaPed(malePed, hash, 0)
-        RemoveTagFromMetaPed(femalePed, hash, 0)
-
-        ::continue::
-    end
 
     self:SetState(INTRO_STATE.APPLY_RANDOMIZATION)
 end

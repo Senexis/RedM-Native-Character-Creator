@@ -108,6 +108,10 @@ local defaults = {
         [PED_EXPRESSION.MOUTHCRN_L_LIP_DIST] = 0.5,
         [PED_EXPRESSION.MOUTHCRN_R_LIP_DIST] = 0.5,
         [PED_EXPRESSION.LOWER_LEGS]          = 0.5,
+
+        -- TODO: Figure out what these do, female only, used in body builds
+        [PED_EXPRESSION.UNK_1]               = 0.5,
+        [PED_EXPRESSION.UNK_2]               = 0.5,
     },
 
     layers = {
@@ -583,20 +587,20 @@ function Character:ApplyBody(value)
     self:ApplyShopItem(body.upper)
     self:ApplyShopItem(body.lower)
 
-    local OUTFITS <const> = {
-        [`CLOTHING_MP_BODY_TYPE_SKINNY_MUSCULAR`] = `MPCREATOR_SKINNY_MUSCULAR`,
-        [`CLOTHING_MP_BODY_TYPE_SKINNY`]          = `MPCREATOR_SKINNY`,
-        [`CLOTHING_MP_BODY_TYPE_NEUTRAL`]         = `MPCREATOR_NEUTRAL`,
-        [`CLOTHING_MP_BODY_TYPE_HEAVY_MUSCULAR`]  = `MPCREATOR_HEAVY_MUSCULAR`,
-        [`CLOTHING_MP_BODY_TYPE_HEAVY`]           = `MPCREATOR_HEAVY`,
-    }
-
-    local outfit = OUTFITS[body.outfit]
-    if not outfit then
+    local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
+    local bodyBuild = bodyBuilds[body.outfit]
+    if not bodyBuild then
         error(string.format("No outfit found for body build: %s", tostring(body.outfit)), 2)
     end
 
-    self:ApplyMetaPedOutfit(outfit)
+    self:ApplyMetaPedOutfit(bodyBuild.outfit)
+
+    for expressionKey, expressionValue in pairs(bodyBuild.expressions) do
+        local uiValue = self:ExpressionGameToUiValue(expressionKey, expressionValue)
+        self:ApplyExpressionValue(expressionKey, uiValue, false)
+    end
+
+    self:RequestUpdate()
 end
 
 function Character:ApplyEyeColor(value)
@@ -753,7 +757,7 @@ function Character:ApplyBeardColor(value, apply)
 end
 
 function Character:WearingBeard()
-    if self:IsPedUsingTag(COMPONENT_TAG.BEARDS) then return true end
+    if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_COMPLETE) then return true end
     if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_CHOPS) then return true end
     if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_CHIN) then return true end
     if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_MUSTACHE) then return true end
@@ -762,8 +766,7 @@ end
 
 function Character:RemoveBeard(skipEvent)
     if self:IsFemale() then return end
-    self:RemoveTagFromPed(COMPONENT_TAG.MISC)
-    self:RemoveTagFromPed(COMPONENT_TAG.BEARDS)
+    self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_COMPLETE)
     self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_CHOPS)
     self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_CHIN)
     self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_MUSTACHE)

@@ -73,6 +73,8 @@ local PED_EXPRESSIONS = {
     MOUTHCRN_L_LIP_DIST = 22344, -- Limbs & Lips > Lip Distance
     MOUTHCRN_R_LIP_DIST = 9423,  -- Limbs & Lips > Lip Distance
     LOWER_LEGS          = 42067, -- Limbs & Lips > Lower Leg Shape
+    UNK_1               = 46240, -- Unknown, used in body builds, female only
+    UNK_2               = 8991,  -- Unknown, used in body builds, female only
 }
 
 ---@type PED_EXPRESSIONS | EnumRegistry
@@ -147,16 +149,16 @@ PED_EXPRESSION:AddAttribute("Hash", {
 })
 
 PED_EXPRESSION:AddAttribute("IsReversed", {
-    [PED_EXPRESSIONS.BROW_HEIGHT] = true,
-    [PED_EXPRESSIONS.EAR_SIZE] = true,
-    [PED_EXPRESSIONS.CHEEKS_HEIGHT] = true,
-    [PED_EXPRESSIONS.JAW_HEIGHT] = true,
-    [PED_EXPRESSIONS.CHIN_TILT] = true,
-    [PED_EXPRESSIONS.EYE_HEIGHT] = true,
-    [PED_EXPRESSIONS.EYE_V_POS] = true,
-    [PED_EXPRESSIONS.NOSE_LENGTH] = true,
-    [PED_EXPRESSIONS.NOSE_TILT] = true,
-    [PED_EXPRESSIONS.MOUTH_DEPTH] = true,
+    [PED_EXPRESSIONS.BROW_HEIGHT]         = true,
+    [PED_EXPRESSIONS.EAR_SIZE]            = true,
+    [PED_EXPRESSIONS.CHEEKS_HEIGHT]       = true,
+    [PED_EXPRESSIONS.JAW_HEIGHT]          = true,
+    [PED_EXPRESSIONS.CHIN_TILT]           = true,
+    [PED_EXPRESSIONS.EYE_HEIGHT]          = true,
+    [PED_EXPRESSIONS.EYE_V_POS]           = true,
+    [PED_EXPRESSIONS.NOSE_LENGTH]         = true,
+    [PED_EXPRESSIONS.NOSE_TILT]           = true,
+    [PED_EXPRESSIONS.MOUTH_DEPTH]         = true,
     [PED_EXPRESSIONS.UPPER_LIP_THICKNESS] = true,
 })
 
@@ -165,23 +167,23 @@ PED_EXPRESSION:AddModeAttribute("Randomized", {
         -- Default mode only randomizes the presets
     },
     [CREATOR_MODE.ADVANCED] = {
-        [PED_EXPRESSIONS.SHOULDERS_WIDTH]     = true,
-        [PED_EXPRESSIONS.SHOULDERS_DEPTH]     = true,
-        [PED_EXPRESSIONS.SHOULDERS_HEIGHT]    = true,
-        [PED_EXPRESSIONS.CHEST_WIDTH]         = true,
-        [PED_EXPRESSIONS.CHEST_DEPTH]         = true,
-        [PED_EXPRESSIONS.BELLY_WIDTH]         = true,
-        [PED_EXPRESSIONS.BELLY_DEPTH]         = true,
-        [PED_EXPRESSIONS.LATS]                = true,
-        [PED_EXPRESSIONS.TRAPS]               = true,
-        [PED_EXPRESSIONS.FACE_WIDTH]          = true,
-        [PED_EXPRESSIONS.NECK_WIDTH]          = true,
-        [PED_EXPRESSIONS.NECK_DEPTH]          = true,
-        [PED_EXPRESSIONS.MOUTH_H_POS]         = true,
-        [PED_EXPRESSIONS.CHEEKS_FULLNESS]     = true,
-        [PED_EXPRESSIONS.UPPER_ARMS]          = true,
-        [PED_EXPRESSIONS.FOREARMS]            = true,
-        [PED_EXPRESSIONS.UPPER_LEGS]          = true,
-        [PED_EXPRESSIONS.LOWER_LEGS]          = true,
+        [PED_EXPRESSIONS.SHOULDERS_WIDTH]  = true,
+        [PED_EXPRESSIONS.SHOULDERS_DEPTH]  = true,
+        [PED_EXPRESSIONS.SHOULDERS_HEIGHT] = true,
+        [PED_EXPRESSIONS.CHEST_WIDTH]      = true,
+        [PED_EXPRESSIONS.CHEST_DEPTH]      = true,
+        [PED_EXPRESSIONS.BELLY_WIDTH]      = true,
+        [PED_EXPRESSIONS.BELLY_DEPTH]      = true,
+        [PED_EXPRESSIONS.LATS]             = true,
+        [PED_EXPRESSIONS.TRAPS]            = true,
+        [PED_EXPRESSIONS.FACE_WIDTH]       = true,
+        [PED_EXPRESSIONS.NECK_WIDTH]       = true,
+        [PED_EXPRESSIONS.NECK_DEPTH]       = true,
+        [PED_EXPRESSIONS.MOUTH_H_POS]      = true,
+        [PED_EXPRESSIONS.CHEEKS_FULLNESS]  = true,
+        [PED_EXPRESSIONS.UPPER_ARMS]       = true,
+        [PED_EXPRESSIONS.FOREARMS]         = true,
+        [PED_EXPRESSIONS.UPPER_LEGS]       = true,
+        [PED_EXPRESSIONS.LOWER_LEGS]       = true,
     }
 })
