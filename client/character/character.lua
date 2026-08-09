@@ -29,16 +29,20 @@ local defaults = {
     ignoreLimits = false,
 
     presets = {
-        [PED_EXPRESSION_ZONE.CHEEKS]  = 0,
-        [PED_EXPRESSION_ZONE.EARS]    = 0,
-        [PED_EXPRESSION_ZONE.EYES]    = 0,
-        [PED_EXPRESSION_ZONE.JAW]     = 0,
-        [PED_EXPRESSION_ZONE.MOUTH]   = 0,
-        [PED_EXPRESSION_ZONE.NOSE]    = 0,
-        [PED_EXPRESSION_ZONE.TORSO]   = 0,
-        [PED_EXPRESSION_ZONE.CORNERS] = 0,
-        [PED_EXPRESSION_ZONE.CRANIAL] = 0,
-        [PED_EXPRESSION_ZONE.LIMBS]   = 0,
+        [PED_EXPRESSION_ZONE.EYES]      = 0,
+        [PED_EXPRESSION_ZONE.NOSE]      = 0,
+        [PED_EXPRESSION_ZONE.MOUTH]     = 0,
+        [PED_EXPRESSION_ZONE.JAW]       = 0,
+        [PED_EXPRESSION_ZONE.EARS]      = 0,
+        [PED_EXPRESSION_ZONE.CHEEKS]    = 0,
+
+        -- Advanced
+        [PED_EXPRESSION_ZONE.SHOULDERS] = 0,
+        [PED_EXPRESSION_ZONE.LIMBS]     = 0,
+        [PED_EXPRESSION_ZONE.MOUTH_2]   = 0,
+        [PED_EXPRESSION_ZONE.TORSO]     = 0,
+        [PED_EXPRESSION_ZONE.FACE]      = 0,
+        [PED_EXPRESSION_ZONE.NECK]      = 0,
     },
 
     expressions = {
@@ -80,6 +84,7 @@ local defaults = {
         [PED_EXPRESSION.CHEEKS_HEIGHT]       = 0.5,
         [PED_EXPRESSION.CHEEKS_DEPTH]        = 0.5,
 
+        -- Advanced
         [PED_EXPRESSION.SHOULDERS_WIDTH]     = 0.5,
         [PED_EXPRESSION.SHOULDERS_DEPTH]     = 0.5,
         [PED_EXPRESSION.SHOULDERS_HEIGHT]    = 0.5,
@@ -89,29 +94,27 @@ local defaults = {
         [PED_EXPRESSION.BELLY_DEPTH]         = 0.5,
         [PED_EXPRESSION.LATS]                = 0.5,
         [PED_EXPRESSION.TRAPS]               = 0.5,
+        [PED_EXPRESSION.UPPER_ARMS]          = 0.5,
+        [PED_EXPRESSION.FOREARMS]            = 0.5,
+        [PED_EXPRESSION.UPPER_LEGS]          = 0.5,
+        [PED_EXPRESSION.LOWER_LEGS]          = 0.5,
+        [PED_EXPRESSION.NECK_WIDTH]          = 0.5,
+        [PED_EXPRESSION.NECK_DEPTH]          = 0.5,
         [PED_EXPRESSION.MOUTHCRN_L_WIDTH]    = 0.5,
         [PED_EXPRESSION.MOUTHCRN_R_WIDTH]    = 0.5,
+        [PED_EXPRESSION.MOUTH_H_POS]         = 0.5,
         [PED_EXPRESSION.MOUTHCRN_L_DEPTH]    = 0.5,
         [PED_EXPRESSION.MOUTHCRN_R_DEPTH]    = 0.5,
         [PED_EXPRESSION.MOUTHCRN_L_HEIGHT]   = 0.5,
         [PED_EXPRESSION.MOUTHCRN_R_HEIGHT]   = 0.5,
-        [PED_EXPRESSION.FACE_WIDTH]          = 0.5,
-        [PED_EXPRESSION.EYELID_L_POS]        = 0.5,
-        [PED_EXPRESSION.EYELID_R_POS]        = 0.5,
-        [PED_EXPRESSION.NECK_WIDTH]          = 0.5,
-        [PED_EXPRESSION.NECK_DEPTH]          = 0.5,
-        [PED_EXPRESSION.MOUTH_H_POS]         = 0.5,
-        [PED_EXPRESSION.CHEEKS_FULLNESS]     = 0.5,
-        [PED_EXPRESSION.UPPER_ARMS]          = 0.5,
-        [PED_EXPRESSION.FOREARMS]            = 0.5,
-        [PED_EXPRESSION.UPPER_LEGS]          = 0.5,
         [PED_EXPRESSION.MOUTHCRN_L_LIP_DIST] = 0.5,
         [PED_EXPRESSION.MOUTHCRN_R_LIP_DIST] = 0.5,
-        [PED_EXPRESSION.LOWER_LEGS]          = 0.5,
-
-        -- TODO: Figure out what these do, female only, used in body builds
-        [PED_EXPRESSION.UNK_1]               = 0.5,
-        [PED_EXPRESSION.UNK_2]               = 0.5,
+        [PED_EXPRESSION.FACE_WIDTH]          = 0.5,
+        [PED_EXPRESSION.CHEEKS_FULLNESS]     = 0.5,
+        [PED_EXPRESSION.GLUTES]              = 0.5,
+        [PED_EXPRESSION.EYELID_L_POS]        = 0.5,
+        [PED_EXPRESSION.EYELID_R_POS]        = 0.5,
+        [PED_EXPRESSION.CHEST_SAG]           = 0.5,
     },
 
     layers = {
@@ -130,6 +133,8 @@ local defaults = {
         [OVERLAY_LAYER.LIPSTICK]      = { id = 0, alpha = 1.0 },
         [OVERLAY_LAYER.EYEBROWS]      = { id = 0, alpha = 1.0 },
         [OVERLAY_LAYER.FACIAL_HAIR]   = { id = 0, alpha = 1.0 },
+
+        -- Advanced
         [OVERLAY_LAYER.GRIME]         = { id = 0, alpha = 1.0 },
         [OVERLAY_LAYER.HEAD_HAIR]     = { id = 0, alpha = 1.0 },
         [OVERLAY_LAYER.SCAR_2]        = { id = 0, alpha = 1.0 },
@@ -435,6 +440,7 @@ end
 function Character:GetExpressionGameBounds(expressionId)
     local min, max = -1.0, 1.0
 
+    -- Fill the limites from the heritage if applicable and desired
     if not self.ignoreLimits then
         local data = CreatorPresets:GetFineTuningData()
         local tuning = data[expressionId]
@@ -444,7 +450,7 @@ function Character:GetExpressionGameBounds(expressionId)
     end
 
     -- Swap bounds if the expression is flagged as reversed
-    if PED_EXPRESSION:GetIsReversed(expressionId) then
+    if PED_EXPRESSION:GetReversed(expressionId) then
         return max, min
     end
 
@@ -573,27 +579,27 @@ function Character:ApplySkintone(value, apply)
     end
 
     self:ApplyHead(apply)
-    self:ApplyBody()
+    self:ApplyBodyBuild()
 end
 
-function Character:ApplyBody(value)
+function Character:ApplyBodyBuild(value)
     if value ~= nil then
         self.bodyType = value
     end
 
-    local build = CreatorPresets:GetBodyBuild(self.bodyType)
-    local body = CreatorPresets:GetBodyShopItems(self.skintone, build)
-
-    self:ApplyShopItem(body.upper)
-    self:ApplyShopItem(body.lower)
-
     local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
-    local bodyBuild = bodyBuilds[body.outfit]
-    if not bodyBuild then
-        error(string.format("No outfit found for body build: %s", tostring(body.outfit)), 2)
-    end
+    local normalized = self.bodyType % #bodyBuilds
+    local bodyBuild = bodyBuilds[normalized + 1]
 
-    self:ApplyMetaPedOutfit(bodyBuild.outfit)
+    local presetBodyBuild = CreatorPresets:GetBodyBuild(bodyBuild.build)
+    local shopItems = CreatorPresets:GetBodyShopItems(self.skintone, presetBodyBuild)
+
+    self:ApplyShopItem(shopItems.upper)
+    self:ApplyShopItem(shopItems.lower)
+
+    local outfit = CHARACTER_BODY_BUILD:GetOutfit(bodyBuild.build)
+
+    self:ApplyMetaPedOutfit(outfit)
 
     for expressionKey, expressionValue in pairs(bodyBuild.expressions) do
         local uiValue = self:ExpressionGameToUiValue(expressionKey, expressionValue)
@@ -1011,7 +1017,7 @@ function Character:RandomizeAll()
     self:RandomizeHeritage()
     self:RandomizeSkintone()
     self:RandomizeAge()
-    self:RandomizeBody()
+    self:RandomizeBodyBuild()
     self:RandomizeEyes()
     self:RandomizeTeeth()
     self:RandomizeHair()
@@ -1051,9 +1057,9 @@ function Character:RandomizeAge()
     SignalBus:emit("age_randomized", self.age)
 end
 
-function Character:RandomizeBody()
-    local bodyTypes = CreatorPresets:GetBodyBuilds()
-    self:ApplyBody(GetRandomIntInRange(0, #bodyTypes))
+function Character:RandomizeBodyBuild()
+    local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
+    self:ApplyBodyBuild(GetRandomIntInRange(0, #bodyBuilds))
     SignalBus:emit("body_randomized", self.bodyType)
 end
 
@@ -1331,7 +1337,7 @@ function Character:StripClothingFromPed(level)
         end
     end
 
-    self:ApplyBody()
+    self:ApplyBodyBuild()
     self:RequestUpdate()
 end
 
@@ -1419,8 +1425,8 @@ SignalBus:on("adjustable_changed", function(itemId, value)
         Character:ApplySkintone(value, true)
     elseif action == CHARACTER_ACTION.APPLY_AGE_ALPHA then
         Character:ApplyAgeAlpha(value, true)
-    elseif action == CHARACTER_ACTION.APPLY_BODY then
-        Character:ApplyBody(value)
+    elseif action == CHARACTER_ACTION.APPLY_BODY_BUILD then
+        Character:ApplyBodyBuild(value)
     elseif action == CHARACTER_ACTION.APPLY_EYE_COLOR then
         Character:ApplyEyeColor(value)
     elseif action == CHARACTER_ACTION.APPLY_TEETH then
@@ -1443,7 +1449,7 @@ SignalBus:on("adjustable_changed", function(itemId, value)
         -- TODO: Attributes support
     elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_STAMINA then
         -- TODO: Attributes support
-    elseif action == CHARACTER_ACTION.APPLY_ATTRIBURE_DEADEYE then
+    elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_DEADEYE then
         -- TODO: Attributes support
     elseif action == CHARACTER_ACTION.APPLY_HEIGHT then
         Character:ApplyHeight(value)

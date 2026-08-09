@@ -36,17 +36,21 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_HAIR_COLOR_TOOLTIP", "Change your character's hair and eyebrows color.")
     AddTextEntry("NATIVE_CREATOR_HEIGHT_TOOLTIP", "Adjust the height of your character.")
     AddTextEntry("NATIVE_CREATOR_WEIGHT_TOOLTIP", "Adjust the weight of your character.")
+    AddTextEntry("NATIVE_CREATOR_SHOULDERS_TOOLTIP", "Change your character's shoulders and back.")
+    AddTextEntry("NATIVE_CREATOR_LIMBS_TOOLTIP", "Change your character's limbs.")
+    AddTextEntry("NATIVE_CREATOR_MOUTH_2_TOOLTIP", "Change your character's mouth.")
     AddTextEntry("NATIVE_CREATOR_TORSO_TOOLTIP", "Change your character's torso.")
-    AddTextEntry("NATIVE_CREATOR_CORNERS_TOOLTIP", "Change your character's mouth corners.")
-    AddTextEntry("NATIVE_CREATOR_CRANIAL_TOOLTIP", "Change your character's facial proportions.")
-    AddTextEntry("NATIVE_CREATOR_LIMBS_TOOLTIP", "Change your character's limbs and lips.")
+    AddTextEntry("NATIVE_CREATOR_FACE_TOOLTIP", "Change your character's face.")
+    AddTextEntry("NATIVE_CREATOR_NECK_TOOLTIP", "Change your character's neck.")
     AddTextEntry("NATIVE_CREATOR_HEAD_HAIR_TOOLTIP", "Only visible when your character is bald.")
     AddTextEntry("NATIVE_CREATOR_AGEING_TOOLTIP", "Tweaks the aging layer used on your character.")
 
-    AddTextEntry("NATIVE_CREATOR_TORSO_00", "Neutral")
-    AddTextEntry("NATIVE_CREATOR_CORNERS_00", "Neutral")
-    AddTextEntry("NATIVE_CREATOR_CRANIAL_00", "Neutral")
+    AddTextEntry("NATIVE_CREATOR_SHOULDERS_00", "Neutral")
     AddTextEntry("NATIVE_CREATOR_LIMBS_00", "Neutral")
+    AddTextEntry("NATIVE_CREATOR_MOUTH_2_00", "Neutral")
+    AddTextEntry("NATIVE_CREATOR_TORSO_00", "Neutral")
+    AddTextEntry("NATIVE_CREATOR_FACE_00", "Neutral")
+    AddTextEntry("NATIVE_CREATOR_NECK_00", "Neutral")
 
     for _, height in ipairs(CreatorConfig.Heights) do
         if height.label then AddTextEntry(height.id, height.label) end
@@ -82,51 +86,20 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_VOICE_TOOLTIP", "Adjust how your character's voice sounds.")
     AddTextEntry("NATIVE_CREATOR_VOICE_STYLE_TOOLTIP", "Choose a voice style.")
 
+    AddTextEntry("NATIVE_CREATOR_SHOULDERS_HEADING", "SHOULDERS & BACK")
+    AddTextEntry("NATIVE_CREATOR_LIMBS_HEADING", "LIMBS")
+    AddTextEntry("NATIVE_CREATOR_MOUTH_2_HEADING", "MOUTH")
     AddTextEntry("NATIVE_CREATOR_TORSO_HEADING", "TORSO")
-    AddTextEntry("NATIVE_CREATOR_CORNERS_HEADING", "MOUTH CORNERS")
-    AddTextEntry("NATIVE_CREATOR_CRANIAL_HEADING", "FACIAL PROPORTIONS")
-    AddTextEntry("NATIVE_CREATOR_LIMBS_HEADING", "LIMBS & LIPS")
+    AddTextEntry("NATIVE_CREATOR_FACE_HEADING", "FACE")
+    AddTextEntry("NATIVE_CREATOR_NECK_HEADING", "NECK")
     AddTextEntry("NATIVE_CREATOR_LIFESTYLE_2_HEADING", "LIFESTYLE")
-    AddTextEntry("NATIVE_CREATOR_LIFESTYLE_2_SUBHEADING", "Options")
 
-    AddTextEntry("NATIVE_CREATOR_BELLY_DEPTH_BOTTOM", "Rounded")
-    AddTextEntry("NATIVE_CREATOR_LATS_LEFT", "Back Wide")
-    AddTextEntry("NATIVE_CREATOR_LATS_RIGHT", "Back Narrow")
-    AddTextEntry("NATIVE_CREATOR_TRAPS_TOP", "Lower Traps")
-    AddTextEntry("NATIVE_CREATOR_TRAPS_BOTTOM", "Higher Traps")
-
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_WIDTH_LEFT", "Left Wide")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_WIDTH_RIGHT", "Left Narrow")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_WIDTH_TOP", "Right Narrow")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_WIDTH_BOTTOM", "Right Wide")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_DEPTH_LEFT", "Left Outward")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_DEPTH_RIGHT", "Left Inward")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_DEPTH_TOP", "Right Inward")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_DEPTH_BOTTOM", "Right Outward")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_HEIGHT_LEFT", "Left Up")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_HEIGHT_RIGHT", "Left Down")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_HEIGHT_TOP", "Right Down")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_HEIGHT_BOTTOM", "Right Up")
-
-    AddTextEntry("NATIVE_CREATOR_FOREHEAD_SIZE_LEFT", "Small")
-    AddTextEntry("NATIVE_CREATOR_FOREHEAD_SIZE_RIGHT", "Large")
-    AddTextEntry("NATIVE_CREATOR_EYELID_L_POS_LEFT", "Left Closed")
-    AddTextEntry("NATIVE_CREATOR_EYELID_L_POS_RIGHT", "Left Open")
-    AddTextEntry("NATIVE_CREATOR_EYELID_R_POS_TOP", "Right Open")
-    AddTextEntry("NATIVE_CREATOR_EYELID_R_POS_BOTTOM", "Right Closed")
-    AddTextEntry("NATIVE_CREATOR_MOUTH_H_POS_LEFT", "Mouth Right")
-    AddTextEntry("NATIVE_CREATOR_MOUTH_H_POS_RIGHT", "Mouth Left")
-    AddTextEntry("NATIVE_CREATOR_CHEEKS_FULLNESS_TOP", "Sunken")
-    AddTextEntry("NATIVE_CREATOR_CHEEKS_FULLNESS_BOTTOM", "Full")
-
-    AddTextEntry("NATIVE_CREATOR_UPPER_ARMS_LEFT", "Arms Thick")
-    AddTextEntry("NATIVE_CREATOR_UPPER_ARMS_RIGHT", "Arms Thin")
-    AddTextEntry("NATIVE_CREATOR_FOREARMS_TOP", "Forearms Thin")
-    AddTextEntry("NATIVE_CREATOR_FOREARMS_BOTTOM", "Forearms Thick")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_LIP_DIST_LEFT", "Left Long")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_L_LIP_DIST_RIGHT", "Left Short")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_LIP_DIST_TOP", "Right Short")
-    AddTextEntry("NATIVE_CREATOR_MOUTHCRN_R_LIP_DIST_BOTTOM", "Right Long")
+    AddTextEntry("NATIVE_CREATOR_GRID_TEXT_EYELID_CLOSED", "Closed")
+    AddTextEntry("NATIVE_CREATOR_GRID_TEXT_EYELID_OPEN", "Open")
+    AddTextEntry("NATIVE_CREATOR_GRID_TEXT_VOLUME_FLAT", "Flat")
+    AddTextEntry("NATIVE_CREATOR_GRID_TEXT_VOLUME_FULL", "Full")
+    AddTextEntry("NATIVE_CREATOR_GRID_TEXT_SAG_HIGH", "Perky")
+    AddTextEntry("NATIVE_CREATOR_GRID_TEXT_SAG_LOW", "Sagging")
 end
 
 function CreatorRenderer:SetTextDefault()
@@ -140,28 +113,34 @@ function CreatorRenderer:SetTextDefault()
     AddTextEntry("CHAR_CREATOR_EYEBROWS", "Eyebrows")
 
     AddTextEntry("CHAR_CREATOR_EYES_AND_BROWS_LABEL", "Eyes & Brows")
+    AddTextEntry("CHAR_CREATOR_NOSE_LABEL", "Nose")
+    AddTextEntry("CHAR_CREATOR_MOUTH_AND_LIPS_LABEL", "Mouth & Lips")
+    AddTextEntry("CHAR_CREATOR_JAW_AND_CHIN_LABEL", "Jaw & Chin")
+    AddTextEntry("CHAR_CREATOR_EARS_LABEL", "Ears")
+    AddTextEntry("CHAR_CREATOR_CHEEKS_LABEL", "Cheeks")
+
     AddTextEntry("CHAR_CREATOR_BROW_SHAPE", "Brow Shape")
     AddTextEntry("CHAR_CREATOR_BROW_DEPTH", "Brow Depth")
     AddTextEntry("CHAR_CREATOR_EYE_SIZE", "Eye Size")
-    AddTextEntry("CHAR_CREATOR_EYE_SOCKET", "Eye Socket")
-    AddTextEntry("CHAR_CREATOR_EYE_POSITION", "Eye Position")
 
-    AddTextEntry("CHAR_CREATOR_NOSE_LABEL", "Nose")
     AddTextEntry("CHAR_CREATOR_NOSE_OPTION", "Nose Size")
     AddTextEntry("CHAR_CREATOR_NOSE_SHAPE", "Nose Shape")
-    AddTextEntry("CHAR_CREATOR_NOSE_TIP", "Nose Tip")
 
-    AddTextEntry("CHAR_CREATOR_MOUTH_AND_LIPS_LABEL", "Mouth & Lips")
+    AddTextEntry("CHAR_CREATOR_MOUTH", "Mouth")
     AddTextEntry("CHAR_CREATOR_MOUTH_POSITION", "Mouth Position")
     AddTextEntry("CHAR_CREATOR_UPPER_LIP_SHAPE", "Upper Lip Shape")
     AddTextEntry("CHAR_CREATOR_LOWER_LIP_SHAPE", "Lower Lip Shape")
     AddTextEntry("CHAR_CREATOR_LIPS_DEPTH", "Lips Depth")
 
-    AddTextEntry("CHAR_CREATOR_JAW_AND_CHIN_LABEL", "Jaw & Chin")
     AddTextEntry("CHAR_CREATOR_JAW_SHAPE", "Jaw Shape")
     AddTextEntry("CHAR_CREATOR_JAW_DEPTH", "Jaw Depth")
     AddTextEntry("CHAR_CREATOR_CHIN_SHAPE", "Chin Shape")
     AddTextEntry("CHAR_CREATOR_CHIN_DEPTH", "Chin Depth")
+
+    AddTextEntry("CHAR_CREATOR_EAR_SHAPE", "Ear Shape")
+    AddTextEntry("CHAR_CREATOR_EAR_SIZE", "Ear Size")
+
+    AddTextEntry("CHAR_CREATOR_CHEEK_SHAPE", "Cheek Shape")
 
     AddTextEntry("CHAR_CREATOR_SKIN_MOTTLING", "Skin Mottling")
     AddTextEntry("CHAR_CREATOR_COMPLEXION", "Complexion")
@@ -180,29 +159,35 @@ function CreatorRenderer:SetTextAdvanced()
     AddTextEntry("CHAR_CREATOR_BODY_PAGE_BUILD_OPTION", "Height")
     AddTextEntry("CHAR_CREATOR_EYEBROWS", "Weight")
 
-    AddTextEntry("CHAR_CREATOR_EYES_AND_BROWS_LABEL", "Torso")
-    AddTextEntry("CHAR_CREATOR_BROW_SHAPE", "Shoulder Shape")
+    AddTextEntry("CHAR_CREATOR_EYES_AND_BROWS_LABEL", "Shoulders & Back")
+    AddTextEntry("CHAR_CREATOR_NOSE_LABEL", "Limbs")
+    AddTextEntry("CHAR_CREATOR_MOUTH_AND_LIPS_LABEL", "Mouth")
+    AddTextEntry("CHAR_CREATOR_JAW_AND_CHIN_LABEL", "Torso")
+    AddTextEntry("CHAR_CREATOR_EARS_LABEL", "Face")
+    AddTextEntry("CHAR_CREATOR_CHEEKS_LABEL", "Neck")
+
+    AddTextEntry("CHAR_CREATOR_BROW_SHAPE", "Shoulder Frame")
     AddTextEntry("CHAR_CREATOR_BROW_DEPTH", "Shoulder Height")
-    AddTextEntry("CHAR_CREATOR_EYE_SIZE", "Chest Shape")
-    AddTextEntry("CHAR_CREATOR_EYE_SOCKET", "Belly Shape")
-    AddTextEntry("CHAR_CREATOR_EYE_POSITION", "Upper Back")
+    AddTextEntry("CHAR_CREATOR_EYE_SIZE", "Upper Back")
 
-    AddTextEntry("CHAR_CREATOR_NOSE_LABEL", "Mouth Corners")
-    AddTextEntry("CHAR_CREATOR_NOSE_OPTION", "Corner Width")
-    AddTextEntry("CHAR_CREATOR_NOSE_SHAPE", "Corner Depth")
-    AddTextEntry("CHAR_CREATOR_NOSE_TIP", "Corner Height")
+    AddTextEntry("CHAR_CREATOR_NOSE_OPTION", "Arms Size")
+    AddTextEntry("CHAR_CREATOR_NOSE_SHAPE", "Legs Size")
 
-    AddTextEntry("CHAR_CREATOR_MOUTH_AND_LIPS_LABEL", "Facial Proportions")
-    AddTextEntry("CHAR_CREATOR_MOUTH_POSITION", "Face Width")
-    AddTextEntry("CHAR_CREATOR_UPPER_LIP_SHAPE", "Eyelid Position")
-    AddTextEntry("CHAR_CREATOR_LOWER_LIP_SHAPE", "Neck Shape")
-    AddTextEntry("CHAR_CREATOR_LIPS_DEPTH", "Mouth & Cheeks")
+    AddTextEntry("CHAR_CREATOR_MOUTH", "Corner Width")
+    AddTextEntry("CHAR_CREATOR_MOUTH_POSITION", "Mouth Position")
+    AddTextEntry("CHAR_CREATOR_UPPER_LIP_SHAPE", "Corner Depth")
+    AddTextEntry("CHAR_CREATOR_LOWER_LIP_SHAPE", "Corner Height")
+    AddTextEntry("CHAR_CREATOR_LIPS_DEPTH", "Corner Separation")
 
-    AddTextEntry("CHAR_CREATOR_JAW_AND_CHIN_LABEL", "Limbs & Lips")
-    AddTextEntry("CHAR_CREATOR_JAW_SHAPE", "Arm Proportions")
-    AddTextEntry("CHAR_CREATOR_JAW_DEPTH", "Upper Leg Shape")
-    AddTextEntry("CHAR_CREATOR_CHIN_SHAPE", "Lip Distance")
-    AddTextEntry("CHAR_CREATOR_CHIN_DEPTH", "Lower Leg Shape")
+    AddTextEntry("CHAR_CREATOR_JAW_SHAPE", "Chest Size")
+    AddTextEntry("CHAR_CREATOR_JAW_DEPTH", "Chest Sag")
+    AddTextEntry("CHAR_CREATOR_CHIN_SHAPE", "Midsection")
+    AddTextEntry("CHAR_CREATOR_CHIN_DEPTH", "Glutes")
+
+    AddTextEntry("CHAR_CREATOR_EAR_SHAPE", "Shape")
+    AddTextEntry("CHAR_CREATOR_EAR_SIZE", "Eyelids")
+
+    AddTextEntry("CHAR_CREATOR_CHEEK_SHAPE", "Shape")
 
     AddTextEntry("CHAR_CREATOR_SKIN_MOTTLING", "Grime")
     AddTextEntry("CHAR_CREATOR_COMPLEXION", "Aging")
@@ -226,27 +211,27 @@ end
 function CreatorRenderer:UpdateSubheaderOverride(pageId)
     if pageId == UI_PAGE_ID.EYES then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__EYES_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EYES_%02d" or "NATIVE_CREATOR_TORSO_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EYES_%02d" or "NATIVE_CREATOR_SHOULDERS_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.NOSE then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__NOSE_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_NOSE_%02d" or "NATIVE_CREATOR_CORNERS_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_NOSE_%02d" or "NATIVE_CREATOR_LIMBS_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.MOUTH then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__MOUTH_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_MOUTH_%02d" or "NATIVE_CREATOR_CRANIAL_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_MOUTH_%02d" or "NATIVE_CREATOR_MOUTH_2_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.JAW then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__JAW_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_JAW_%02d" or "NATIVE_CREATOR_LIMBS_%02d"
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_JAW_%02d" or "NATIVE_CREATOR_TORSO_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.EARS then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__EARS_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EARS_%02d" or ""
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EARS_%02d" or "NATIVE_CREATOR_FACE_%02d"
         self.subheaderOverride = string.format(label, preset)
     elseif pageId == UI_PAGE_ID.CHEEKS then
         local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__CHEEKS_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_CHEEKS_%02d" or ""
+        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_CHEEKS_%02d" or "NATIVE_CREATOR_NECK_%02d"
         self.subheaderOverride = string.format(label, preset)
     else
         self.subheaderOverride = nil
@@ -576,7 +561,7 @@ function CreatorRenderer:GetSkintoneSwatches()
 end
 
 function CreatorRenderer:GetBodyBuildLabels()
-    local builds = CreatorPresets:GetBodyBuilds()
+    local builds = Character:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
     local labels = {}
 
     for _, build in pairs(builds) do

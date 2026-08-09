@@ -3,7 +3,8 @@
 ---@field GetIdFromHash fun(self, hash: integer): number|nil
 ---@field GetNameFromId fun(self, id: number): string|nil
 ---@field GetIdFromName fun(self, name: string): number|nil
----@field GetIsReversed fun(self, id: number): boolean|nil
+---@field GetReversed fun(self, id: number): boolean|nil
+---@field GetRandomized fun(self, id: number): boolean|nil
 ---@field ToString fun(self, id: number): string
 local PED_EXPRESSIONS = {
     BROW_WIDTH          = 12281, -- Eyes & Brows > Brow Shape
@@ -45,36 +46,36 @@ local PED_EXPRESSIONS = {
     CHEEKS_DEPTH        = 13709, -- Cheeks > Cheek Depth
 
     -- Advanced mode
-    SHOULDERS_WIDTH     = 50039, -- Torso > Shoulder Shape
-    SHOULDERS_DEPTH     = 7010,  -- Torso > Shoulder Shape
-    SHOULDERS_HEIGHT    = 15833, -- Torso > Shoulder Height
-    CHEST_WIDTH         = 41478, -- Torso > Chest Shape
-    CHEST_DEPTH         = 27779, -- Torso > Chest Shape
-    BELLY_WIDTH         = 50460, -- Torso > Belly Shape
-    BELLY_DEPTH         = 49787, -- Torso > Belly Shape
-    LATS                = 18046, -- Torso > Upper Back
-    TRAPS               = 33485, -- Torso > Upper Back
-    MOUTHCRN_L_WIDTH    = 57350, -- Mouth Corners > Corner Width
-    MOUTHCRN_R_WIDTH    = 60292, -- Mouth Corners > Corner Width
-    MOUTHCRN_L_DEPTH    = 40950, -- Mouth Corners > Corner Depth
-    MOUTHCRN_R_DEPTH    = 49299, -- Mouth Corners > Corner Depth
-    MOUTHCRN_L_HEIGHT   = 46661, -- Mouth Corners > Corner Height
-    MOUTHCRN_R_HEIGHT   = 55718, -- Mouth Corners > Corner Height
-    FACE_WIDTH          = 34006, -- Facial Proportions > Face Width
-    EYELID_L_POS        = 52902, -- Facial Proportions > Eyelid Position
-    EYELID_R_POS        = 22421, -- Facial Proportions > Eyelid Position
-    NECK_WIDTH          = 36277, -- Facial Proportions > Neck Shape
-    NECK_DEPTH          = 60890, -- Facial Proportions > Neck Shape
-    MOUTH_H_POS         = 31427, -- Facial Proportions > Mouth & Cheeks
-    CHEEKS_FULLNESS     = 41396, -- Facial Proportions > Mouth & Cheeks
-    UPPER_ARMS          = 46032, -- Limbs & Lips > Arm Proportions
-    FOREARMS            = 8420,  -- Limbs & Lips > Arm Proportions
-    UPPER_LEGS          = 64834, -- Limbs & Lips > Upper Leg Shape
-    MOUTHCRN_L_LIP_DIST = 22344, -- Limbs & Lips > Lip Distance
-    MOUTHCRN_R_LIP_DIST = 9423,  -- Limbs & Lips > Lip Distance
-    LOWER_LEGS          = 42067, -- Limbs & Lips > Lower Leg Shape
-    UNK_1               = 46240, -- Unknown, used in body builds, female only
-    UNK_2               = 8991,  -- Unknown, used in body builds, female only
+    SHOULDERS_WIDTH     = 50039, -- Back > Shoulder Frame
+    SHOULDERS_DEPTH     = 7010,  -- Back > Shoulder Frame
+    SHOULDERS_HEIGHT    = 15833, -- Back > Shoulder Height
+    LATS                = 18046, -- Back > Upper Back
+    TRAPS               = 33485, -- Back > Upper Back
+    UPPER_ARMS          = 46032, -- Limbs > Arm Thickness
+    FOREARMS            = 8420,  -- Limbs > Arm Thickness
+    UPPER_LEGS          = 64834, -- Limbs > Leg Thickness
+    LOWER_LEGS          = 42067, -- Limbs > Leg Thickness
+    MOUTHCRN_L_WIDTH    = 57350, -- Mouth > Corner Width
+    MOUTHCRN_R_WIDTH    = 60292, -- Mouth > Corner Width
+    MOUTH_H_POS         = 31427, -- Mouth > Mouth Horizontal Shift
+    MOUTHCRN_L_DEPTH    = 40950, -- Mouth > Corner Depth
+    MOUTHCRN_R_DEPTH    = 49299, -- Mouth > Corner Depth
+    MOUTHCRN_L_HEIGHT   = 46661, -- Mouth > Corner Height
+    MOUTHCRN_R_HEIGHT   = 55718, -- Mouth > Corner Height
+    MOUTHCRN_L_LIP_DIST = 22344, -- Mouth > Corner Separation
+    MOUTHCRN_R_LIP_DIST = 9423,  -- Mouth > Corner Separation
+    CHEST_WIDTH         = 41478, -- Torso > Chest Size
+    CHEST_DEPTH         = 27779, -- Torso > Chest Size
+    CHEST_SAG           = 46240, -- Torso > Chest Sag
+    BELLY_WIDTH         = 50460, -- Torso > Midsection
+    BELLY_DEPTH         = 49787, -- Torso > Midsection
+    GLUTES              = 8991,  -- Torso > Glute Volume
+    FACE_WIDTH          = 34006, -- Face > Shape
+    CHEEKS_FULLNESS     = 41396, -- Face > Shape
+    EYELID_L_POS        = 52902, -- Face > Eyelid Height
+    EYELID_R_POS        = 22421, -- Face > Eyelid Height
+    NECK_WIDTH          = 36277, -- Neck > Neck Proportions
+    NECK_DEPTH          = 60890, -- Neck > Neck Proportions
 }
 
 ---@type PED_EXPRESSIONS | EnumRegistry
@@ -118,6 +119,8 @@ PED_EXPRESSION:AddAttribute("Hash", {
     [PED_EXPRESSIONS.CHEEKS_WIDTH]        = `PEDEXPRESS_CHEEKS_WIDTH`,
     [PED_EXPRESSIONS.CHEEKS_HEIGHT]       = `PEDEXPRESS_CHEEKS_HEIGHT`,
     [PED_EXPRESSIONS.CHEEKS_DEPTH]        = `PEDEXPRESS_CHEEKS_DEPTH`,
+
+    -- Advanced mode
     [PED_EXPRESSIONS.SHOULDERS_WIDTH]     = `PEDEXPRESS_SHOULDERS_WIDTH`,
     [PED_EXPRESSIONS.SHOULDERS_DEPTH]     = `PEDEXPRESS_SHOULDERS_DEPTH`,
     [PED_EXPRESSIONS.SHOULDERS_HEIGHT]    = `PEDEXPRESS_SHOULDERS_HEIGHT`,
@@ -127,28 +130,30 @@ PED_EXPRESSION:AddAttribute("Hash", {
     [PED_EXPRESSIONS.BELLY_DEPTH]         = `PEDEXPRESS_BELLY_DEPTH`,
     [PED_EXPRESSIONS.LATS]                = `PEDEXPRESS_LATS`,
     [PED_EXPRESSIONS.TRAPS]               = `PEDEXPRESS_TRAPS`,
+    [PED_EXPRESSIONS.UPPER_ARMS]          = `PEDEXPRESS_UPPER_ARMS`,
+    [PED_EXPRESSIONS.FOREARMS]            = `PEDEXPRESS_FOREARMS`,
+    [PED_EXPRESSIONS.UPPER_LEGS]          = `PEDEXPRESS_UPPER_LEGS`,
+    [PED_EXPRESSIONS.LOWER_LEGS]          = `PEDEXPRESS_LOWER_LEGS`,
+    [PED_EXPRESSIONS.NECK_WIDTH]          = `PEDEXPRESS_NECK_WIDTH`,
+    [PED_EXPRESSIONS.NECK_DEPTH]          = `PEDEXPRESS_NECK_DEPTH`,
     [PED_EXPRESSIONS.MOUTHCRN_L_WIDTH]    = `PEDEXPRESS_MOUTHCRN_L_WIDTH`,
     [PED_EXPRESSIONS.MOUTHCRN_R_WIDTH]    = `PEDEXPRESS_MOUTHCRN_R_WIDTH`,
+    [PED_EXPRESSIONS.MOUTH_H_POS]         = `PEDEXPRESS_MOUTH_H_POS`,
     [PED_EXPRESSIONS.MOUTHCRN_L_DEPTH]    = `PEDEXPRESS_MOUTHCRN_L_DEPTH`,
     [PED_EXPRESSIONS.MOUTHCRN_R_DEPTH]    = `PEDEXPRESS_MOUTHCRN_R_DEPTH`,
     [PED_EXPRESSIONS.MOUTHCRN_L_HEIGHT]   = `PEDEXPRESS_MOUTHCRN_L_HEIGHT`,
     [PED_EXPRESSIONS.MOUTHCRN_R_HEIGHT]   = `PEDEXPRESS_MOUTHCRN_R_HEIGHT`,
-    [PED_EXPRESSIONS.FACE_WIDTH]          = `PEDEXPRESS_FACE_WIDTH`,
-    [PED_EXPRESSIONS.EYELID_L_POS]        = `PEDEXPRESS_EYELID_L_POS`,
-    [PED_EXPRESSIONS.EYELID_R_POS]        = `PEDEXPRESS_EYELID_R_POS`,
-    [PED_EXPRESSIONS.NECK_WIDTH]          = `PEDEXPRESS_NECK_WIDTH`,
-    [PED_EXPRESSIONS.NECK_DEPTH]          = `PEDEXPRESS_NECK_DEPTH`,
-    [PED_EXPRESSIONS.MOUTH_H_POS]         = `PEDEXPRESS_MOUTH_H_POS`,
-    [PED_EXPRESSIONS.CHEEKS_FULLNESS]     = `PEDEXPRESS_CHEEKS_FULLNESS`,
-    [PED_EXPRESSIONS.UPPER_ARMS]          = `PEDEXPRESS_UPPER_ARMS`,
-    [PED_EXPRESSIONS.FOREARMS]            = `PEDEXPRESS_FOREARMS`,
-    [PED_EXPRESSIONS.UPPER_LEGS]          = `PEDEXPRESS_UPPER_LEGS`,
     [PED_EXPRESSIONS.MOUTHCRN_L_LIP_DIST] = `PEDEXPRESS_MOUTHCRN_L_LIP_DIST`,
     [PED_EXPRESSIONS.MOUTHCRN_R_LIP_DIST] = `PEDEXPRESS_MOUTHCRN_R_LIP_DIST`,
-    [PED_EXPRESSIONS.LOWER_LEGS]          = `PEDEXPRESS_LOWER_LEGS`,
+    [PED_EXPRESSIONS.FACE_WIDTH]          = `PEDEXPRESS_FACE_WIDTH`,
+    [PED_EXPRESSIONS.CHEEKS_FULLNESS]     = `PEDEXPRESS_CHEEKS_FULLNESS`,
+    [PED_EXPRESSIONS.GLUTES]              = `PEDEXPRESS_GLUTES`,
+    [PED_EXPRESSIONS.EYELID_L_POS]        = `PEDEXPRESS_EYELID_L_POS`,
+    [PED_EXPRESSIONS.EYELID_R_POS]        = `PEDEXPRESS_EYELID_R_POS`,
+    [PED_EXPRESSIONS.CHEST_SAG]           = `PEDEXPRESS_CHEST_SAG`,
 })
 
-PED_EXPRESSION:AddAttribute("IsReversed", {
+PED_EXPRESSION:AddAttribute("Reversed", {
     [PED_EXPRESSIONS.BROW_HEIGHT]         = true,
     [PED_EXPRESSIONS.EAR_SIZE]            = true,
     [PED_EXPRESSIONS.CHEEKS_HEIGHT]       = true,
@@ -160,6 +165,7 @@ PED_EXPRESSION:AddAttribute("IsReversed", {
     [PED_EXPRESSIONS.NOSE_TILT]           = true,
     [PED_EXPRESSIONS.MOUTH_DEPTH]         = true,
     [PED_EXPRESSIONS.UPPER_LIP_THICKNESS] = true,
+    [PED_EXPRESSIONS.CHEST_SAG]           = true,
 })
 
 PED_EXPRESSION:AddModeAttribute("Randomized", {
@@ -176,14 +182,15 @@ PED_EXPRESSION:AddModeAttribute("Randomized", {
         [PED_EXPRESSIONS.BELLY_DEPTH]      = true,
         [PED_EXPRESSIONS.LATS]             = true,
         [PED_EXPRESSIONS.TRAPS]            = true,
-        [PED_EXPRESSIONS.FACE_WIDTH]       = true,
-        [PED_EXPRESSIONS.NECK_WIDTH]       = true,
-        [PED_EXPRESSIONS.NECK_DEPTH]       = true,
-        [PED_EXPRESSIONS.MOUTH_H_POS]      = true,
-        [PED_EXPRESSIONS.CHEEKS_FULLNESS]  = true,
         [PED_EXPRESSIONS.UPPER_ARMS]       = true,
         [PED_EXPRESSIONS.FOREARMS]         = true,
         [PED_EXPRESSIONS.UPPER_LEGS]       = true,
         [PED_EXPRESSIONS.LOWER_LEGS]       = true,
+        [PED_EXPRESSIONS.NECK_WIDTH]       = true,
+        [PED_EXPRESSIONS.NECK_DEPTH]       = true,
+        [PED_EXPRESSIONS.FACE_WIDTH]       = true,
+        [PED_EXPRESSIONS.CHEEKS_FULLNESS]  = true,
+        [PED_EXPRESSIONS.GLUTES]           = true,
+        [PED_EXPRESSIONS.CHEST_SAG]        = true,
     }
 })

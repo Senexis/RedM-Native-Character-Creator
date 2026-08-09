@@ -505,12 +505,12 @@ function CreatorDatabinding:FilloutUiData()
         self:WriteHashArray(id.APPEARANCE__BODY_BUILD__ARRAY, CreatorRenderer:GetHeightLabels())
         self:WriteHashArray(id.APPEARANCE__EYEBROWS__ARRAY, CreatorRenderer:GetWeightLabels())
         self:WriteHashArray(id.APPEARANCE__TEETH__ARRAY, {})
-        self:WriteHashArray(id.APPEARANCE__EYES_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.TORSO))
-        self:WriteHashArray(id.APPEARANCE__NOSE_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.CORNERS))
-        self:WriteHashArray(id.APPEARANCE__MOUTH_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.CRANIAL))
-        self:WriteHashArray(id.APPEARANCE__JAW_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.LIMBS))
-        self:WriteHashArray(id.APPEARANCE__EARS_PRESET__ARRAY, {})
-        self:WriteHashArray(id.APPEARANCE__CHEEKS_PRESET__ARRAY, {})
+        self:WriteHashArray(id.APPEARANCE__EYES_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.SHOULDERS))
+        self:WriteHashArray(id.APPEARANCE__NOSE_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.LIMBS))
+        self:WriteHashArray(id.APPEARANCE__MOUTH_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.MOUTH_2))
+        self:WriteHashArray(id.APPEARANCE__JAW_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.TORSO))
+        self:WriteHashArray(id.APPEARANCE__EARS_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.FACE))
+        self:WriteHashArray(id.APPEARANCE__CHEEKS_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.NECK))
 
         self:WriteHashArray(id.LIFESTYLE__MOTTLING__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.GRIME))
         self:WriteHashArray(id.LIFESTYLE__COMPLEXION__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.AGEING))
@@ -554,6 +554,11 @@ function CreatorDatabinding:FilloutUiData()
             self:WriteBool(id.ROOT__HAIR_MATCH__ENABLED, false)
         end
     else
+        -- Chest Sag and Glutes are not available for male characters
+        self:WriteBool(id.JAW__JAW_DEPTH__VISIBLE, Character:IsFemale())
+        self:WriteBool(id.JAW__CHIN_DEPTH__VISIBLE, Character:IsFemale())
+
+        -- Beard stubble is not available for female characters
         self:WriteBool(id.LIFESTYLE__MOLES__VISIBLE, Character:IsMale())
     end
 
