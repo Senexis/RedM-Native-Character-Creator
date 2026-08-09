@@ -1,12 +1,14 @@
 describe("Enums", function()
     before_each(function()
         _G.Enums = nil
-        _G.CreatorState = {
+        local modeContext = {
             mode = 1,
             GetMode = function(self)
                 return self.mode
             end
         }
+        _G.CreatorState = modeContext
+        _G.Creator = modeContext
 
         dofile("client/enums.lua")
     end)
@@ -49,10 +51,12 @@ describe("Enums", function()
         })
 
         CreatorState.mode = 1
+        Creator.mode = 1
         assert.equal("Open A", Status:GetLabel(1))
         assert.equal(2, Status:GetIdFromLabel("Closed A"))
 
         CreatorState.mode = 2
+        Creator.mode = 2
         assert.equal("Open B", Status:GetLabel(1))
         assert.equal(2, Status:GetIdFromLabel("Closed B"))
     end)
@@ -75,4 +79,3 @@ describe("Enums", function()
         }, mapped)
     end)
 end)
-

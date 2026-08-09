@@ -30,6 +30,25 @@ describe("IntroConfig", function()
         assert.is_true(#IntroConfig.Names.surnames > 0)
     end)
 
+    it("uses a valid fidget cooldown range", function()
+        assert.is_number(IntroConfig.FidgetCooldownMin)
+        assert.is_number(IntroConfig.FidgetCooldownMax)
+        assert.is_true(IntroConfig.FidgetCooldownMin > 0)
+        assert.is_true(IntroConfig.FidgetCooldownMax >= IntroConfig.FidgetCooldownMin)
+    end)
+
+    it("defines non-empty outfit item entries", function()
+        for _, outfits in pairs(IntroConfig.Outfits) do
+            for _, outfit in ipairs(outfits) do
+                assert.is_true(#outfit > 0)
+                for _, item in ipairs(outfit) do
+                    assert.is_string(item)
+                    assert.is_true(#item > 0)
+                end
+            end
+        end
+    end)
+
     it("includes valid timecycle modifier entries", function()
         assert.is_true(#IntroConfig.TimecycleModifiers > 0)
 
