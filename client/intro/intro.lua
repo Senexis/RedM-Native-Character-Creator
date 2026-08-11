@@ -210,13 +210,21 @@ function Intro:MaintainLoadAssets()
     end
 
     if PrepareSoundset("RDRO_Character_Creator_Sounds", false) ~= 1 then
-        Utils:Debug("MAINTAIN_LOAD_ASSETS - Sound not loaded! - RDRO_Character_Creator_Sounds | EXIT")
-        return
+        if GetGameTimer() - self.stateChangeTime < 1000 then
+            Utils:Debug("MAINTAIN_LOAD_ASSETS - Sound not loaded! - RDRO_Character_Creator_Sounds | EXIT")
+            return
+        end
+
+        Utils:Debug("MAINTAIN_LOAD_ASSETS - Sound not loaded! - RDRO_Character_Creator_Sounds | SKIP")
     end
 
     if PrepareSoundset("HUD_Donate_Sounds", false) ~= 1 then
-        Utils:Debug("MAINTAIN_LOAD_ASSETS - Sound not loaded! - HUD_Donate_Sounds | EXIT")
-        return
+        if GetGameTimer() - self.stateChangeTime < 1000 then
+            Utils:Debug("MAINTAIN_LOAD_ASSETS - Sound not loaded! - HUD_Donate_Sounds | EXIT")
+            return
+        end
+
+        Utils:Debug("MAINTAIN_LOAD_ASSETS - Sound not loaded! - HUD_Donate_Sounds | SKIP")
     end
 
     if TextBlockIsLoaded("CHARAUD") ~= 1 then
