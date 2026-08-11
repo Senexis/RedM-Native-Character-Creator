@@ -405,7 +405,7 @@ function CreatorMenu:GetMenu()
                 Type = "STEPPER",
                 Label = "Overlay Limits",
                 Data = {
-                    ItemDescription = "Toggles whether overlay Fine Tune limits are ignored. Note: This may cause the character to change.",
+                    ItemDescription = "Toggles whether overlay opacity limits are ignored. Note: This may cause the character to change.",
                     StepperOptions = {
                         "Enabled",
                         "Disabled",
