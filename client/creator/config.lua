@@ -215,29 +215,6 @@ CreatorConfig.MakeupPresets = {
 CreatorConfig.MaleBodyBuilds = {
     {
         id = "MPBODY_BUILD_MALE_1",
-        build = CHARACTER_BODY_BUILD.SKINNY_MUSCULAR,
-        expressions = {
-            [PED_EXPRESSION.NECK_WIDTH]       = -0.2,
-            [PED_EXPRESSION.NECK_DEPTH]       = -0.4,
-            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.6,
-            [PED_EXPRESSION.SHOULDERS_DEPTH]  = 0.3,
-            [PED_EXPRESSION.SHOULDERS_WIDTH]  = -0.1,
-            [PED_EXPRESSION.TRAPS]            = 0.7,
-            [PED_EXPRESSION.LATS]             = 0.3,
-            [PED_EXPRESSION.CHEST_WIDTH]      = -0.8,
-            [PED_EXPRESSION.CHEST_DEPTH]      = -0.7,
-            [PED_EXPRESSION.CHEST_SAG]     = 0.0,
-            [PED_EXPRESSION.BELLY_WIDTH]      = -0.8,
-            [PED_EXPRESSION.BELLY_DEPTH]      = -0.8,
-            [PED_EXPRESSION.GLUTES]           = 0.0,
-            [PED_EXPRESSION.UPPER_ARMS]       = -0.4,
-            [PED_EXPRESSION.FOREARMS]         = -0.7,
-            [PED_EXPRESSION.UPPER_LEGS]       = -0.3,
-            [PED_EXPRESSION.LOWER_LEGS]       = -0.8,
-        }
-    },
-    {
-        id = "MPBODY_BUILD_MALE_2",
         build = CHARACTER_BODY_BUILD.SKINNY,
         expressions = {
             [PED_EXPRESSION.NECK_WIDTH]       = -0.9,
@@ -256,6 +233,29 @@ CreatorConfig.MaleBodyBuilds = {
             [PED_EXPRESSION.UPPER_ARMS]       = -0.7,
             [PED_EXPRESSION.FOREARMS]         = -0.7,
             [PED_EXPRESSION.UPPER_LEGS]       = -0.8,
+            [PED_EXPRESSION.LOWER_LEGS]       = -0.8,
+        }
+    },
+    {
+        id = "MPBODY_BUILD_MALE_2",
+        build = CHARACTER_BODY_BUILD.SKINNY_MUSCULAR,
+        expressions = {
+            [PED_EXPRESSION.NECK_WIDTH]       = -0.2,
+            [PED_EXPRESSION.NECK_DEPTH]       = -0.4,
+            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.6,
+            [PED_EXPRESSION.SHOULDERS_DEPTH]  = 0.3,
+            [PED_EXPRESSION.SHOULDERS_WIDTH]  = -0.1,
+            [PED_EXPRESSION.TRAPS]            = 0.7,
+            [PED_EXPRESSION.LATS]             = 0.3,
+            [PED_EXPRESSION.CHEST_WIDTH]      = -0.8,
+            [PED_EXPRESSION.CHEST_DEPTH]      = -0.7,
+            [PED_EXPRESSION.CHEST_SAG]     = 0.0,
+            [PED_EXPRESSION.BELLY_WIDTH]      = -0.8,
+            [PED_EXPRESSION.BELLY_DEPTH]      = -0.8,
+            [PED_EXPRESSION.GLUTES]           = 0.0,
+            [PED_EXPRESSION.UPPER_ARMS]       = -0.4,
+            [PED_EXPRESSION.FOREARMS]         = -0.7,
+            [PED_EXPRESSION.UPPER_LEGS]       = -0.3,
             [PED_EXPRESSION.LOWER_LEGS]       = -0.8,
         }
     },
@@ -284,29 +284,6 @@ CreatorConfig.MaleBodyBuilds = {
     },
     {
         id = "MPBODY_BUILD_MALE_4",
-        build = CHARACTER_BODY_BUILD.HEAVY_MUSCULAR,
-        expressions = {
-            [PED_EXPRESSION.NECK_WIDTH]       = 0.9,
-            [PED_EXPRESSION.NECK_DEPTH]       = 0.5,
-            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.8,
-            [PED_EXPRESSION.SHOULDERS_DEPTH]  = 0.8,
-            [PED_EXPRESSION.SHOULDERS_WIDTH]  = 0.6,
-            [PED_EXPRESSION.TRAPS]            = 1.0,
-            [PED_EXPRESSION.LATS]             = 0.8,
-            [PED_EXPRESSION.CHEST_WIDTH]      = 0.8,
-            [PED_EXPRESSION.CHEST_DEPTH]      = 0.8,
-            [PED_EXPRESSION.CHEST_SAG]     = 0.0,
-            [PED_EXPRESSION.BELLY_WIDTH]      = 0.7,
-            [PED_EXPRESSION.BELLY_DEPTH]      = 0.8,
-            [PED_EXPRESSION.GLUTES]           = 0.0,
-            [PED_EXPRESSION.UPPER_ARMS]       = 0.8,
-            [PED_EXPRESSION.FOREARMS]         = 0.7,
-            [PED_EXPRESSION.UPPER_LEGS]       = 0.6,
-            [PED_EXPRESSION.LOWER_LEGS]       = -0.7,
-        }
-    },
-    {
-        id = "MPBODY_BUILD_MALE_5",
         build = CHARACTER_BODY_BUILD.HEAVY,
         expressions = {
             [PED_EXPRESSION.NECK_WIDTH]       = 0.8,
@@ -328,34 +305,34 @@ CreatorConfig.MaleBodyBuilds = {
             [PED_EXPRESSION.LOWER_LEGS]       = -0.3,
         }
     },
+    {
+        id = "MPBODY_BUILD_MALE_5",
+        build = CHARACTER_BODY_BUILD.HEAVY_MUSCULAR,
+        expressions = {
+            [PED_EXPRESSION.NECK_WIDTH]       = 0.9,
+            [PED_EXPRESSION.NECK_DEPTH]       = 0.5,
+            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.8,
+            [PED_EXPRESSION.SHOULDERS_DEPTH]  = 0.8,
+            [PED_EXPRESSION.SHOULDERS_WIDTH]  = 0.6,
+            [PED_EXPRESSION.TRAPS]            = 1.0,
+            [PED_EXPRESSION.LATS]             = 0.8,
+            [PED_EXPRESSION.CHEST_WIDTH]      = 0.8,
+            [PED_EXPRESSION.CHEST_DEPTH]      = 0.8,
+            [PED_EXPRESSION.CHEST_SAG]     = 0.0,
+            [PED_EXPRESSION.BELLY_WIDTH]      = 0.7,
+            [PED_EXPRESSION.BELLY_DEPTH]      = 0.8,
+            [PED_EXPRESSION.GLUTES]           = 0.0,
+            [PED_EXPRESSION.UPPER_ARMS]       = 0.8,
+            [PED_EXPRESSION.FOREARMS]         = 0.7,
+            [PED_EXPRESSION.UPPER_LEGS]       = 0.6,
+            [PED_EXPRESSION.LOWER_LEGS]       = -0.7,
+        }
+    },
 }
 
 CreatorConfig.FemaleBodyBuilds = {
     {
         id = "MPBODY_BUILD_FEMALE_1",
-        build = CHARACTER_BODY_BUILD.SKINNY_MUSCULAR,
-        expressions = {
-            [PED_EXPRESSION.NECK_WIDTH]       = 0.3,
-            [PED_EXPRESSION.NECK_DEPTH]       = 0.3,
-            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.5,
-            [PED_EXPRESSION.SHOULDERS_DEPTH]  = -0.5,
-            [PED_EXPRESSION.SHOULDERS_WIDTH]  = 0.4,
-            [PED_EXPRESSION.TRAPS]            = 0.8,
-            [PED_EXPRESSION.LATS]             = 0.5,
-            [PED_EXPRESSION.CHEST_WIDTH]      = -0.3,
-            [PED_EXPRESSION.CHEST_DEPTH]      = -0.6,
-            [PED_EXPRESSION.CHEST_SAG]     = 0.8,
-            [PED_EXPRESSION.BELLY_WIDTH]      = -0.7,
-            [PED_EXPRESSION.BELLY_DEPTH]      = -0.7,
-            [PED_EXPRESSION.GLUTES]           = -0.5,
-            [PED_EXPRESSION.UPPER_ARMS]       = -0.2,
-            [PED_EXPRESSION.FOREARMS]         = -0.4,
-            [PED_EXPRESSION.UPPER_LEGS]       = -0.2,
-            [PED_EXPRESSION.LOWER_LEGS]       = -0.9,
-        }
-    },
-    {
-        id = "MPBODY_BUILD_FEMALE_2",
         build = CHARACTER_BODY_BUILD.SKINNY,
         expressions = {
             [PED_EXPRESSION.NECK_WIDTH]       = -0.7,
@@ -374,6 +351,29 @@ CreatorConfig.FemaleBodyBuilds = {
             [PED_EXPRESSION.UPPER_ARMS]       = -0.7,
             [PED_EXPRESSION.FOREARMS]         = -0.7,
             [PED_EXPRESSION.UPPER_LEGS]       = -0.8,
+            [PED_EXPRESSION.LOWER_LEGS]       = -0.9,
+        }
+    },
+    {
+        id = "MPBODY_BUILD_FEMALE_2",
+        build = CHARACTER_BODY_BUILD.SKINNY_MUSCULAR,
+        expressions = {
+            [PED_EXPRESSION.NECK_WIDTH]       = 0.3,
+            [PED_EXPRESSION.NECK_DEPTH]       = 0.3,
+            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.5,
+            [PED_EXPRESSION.SHOULDERS_DEPTH]  = -0.5,
+            [PED_EXPRESSION.SHOULDERS_WIDTH]  = 0.4,
+            [PED_EXPRESSION.TRAPS]            = 0.8,
+            [PED_EXPRESSION.LATS]             = 0.5,
+            [PED_EXPRESSION.CHEST_WIDTH]      = -0.3,
+            [PED_EXPRESSION.CHEST_DEPTH]      = -0.6,
+            [PED_EXPRESSION.CHEST_SAG]     = 0.8,
+            [PED_EXPRESSION.BELLY_WIDTH]      = -0.7,
+            [PED_EXPRESSION.BELLY_DEPTH]      = -0.7,
+            [PED_EXPRESSION.GLUTES]           = -0.5,
+            [PED_EXPRESSION.UPPER_ARMS]       = -0.2,
+            [PED_EXPRESSION.FOREARMS]         = -0.4,
+            [PED_EXPRESSION.UPPER_LEGS]       = -0.2,
             [PED_EXPRESSION.LOWER_LEGS]       = -0.9,
         }
     },
@@ -402,29 +402,6 @@ CreatorConfig.FemaleBodyBuilds = {
     },
     {
         id = "MPBODY_BUILD_FEMALE_4",
-        build = CHARACTER_BODY_BUILD.HEAVY_MUSCULAR,
-        expressions = {
-            [PED_EXPRESSION.NECK_WIDTH]       = 0.8,
-            [PED_EXPRESSION.NECK_DEPTH]       = 0.7,
-            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.8,
-            [PED_EXPRESSION.SHOULDERS_DEPTH]  = 0.8,
-            [PED_EXPRESSION.SHOULDERS_WIDTH]  = 0.9,
-            [PED_EXPRESSION.TRAPS]            = 0.9,
-            [PED_EXPRESSION.LATS]             = 0.9,
-            [PED_EXPRESSION.CHEST_WIDTH]      = 0.8,
-            [PED_EXPRESSION.CHEST_DEPTH]      = 0.8,
-            [PED_EXPRESSION.CHEST_SAG]     = 0.8,
-            [PED_EXPRESSION.BELLY_WIDTH]      = 0.7,
-            [PED_EXPRESSION.BELLY_DEPTH]      = 0.7,
-            [PED_EXPRESSION.GLUTES]           = 0.6,
-            [PED_EXPRESSION.UPPER_ARMS]       = 0.8,
-            [PED_EXPRESSION.FOREARMS]         = 0.8,
-            [PED_EXPRESSION.UPPER_LEGS]       = 0.8,
-            [PED_EXPRESSION.LOWER_LEGS]       = 0.8,
-        }
-    },
-    {
-        id = "MPBODY_BUILD_FEMALE_5",
         build = CHARACTER_BODY_BUILD.HEAVY,
         expressions = {
             [PED_EXPRESSION.NECK_WIDTH]       = 0.7,
@@ -442,6 +419,29 @@ CreatorConfig.FemaleBodyBuilds = {
             [PED_EXPRESSION.GLUTES]           = 0.8,
             [PED_EXPRESSION.UPPER_ARMS]       = 0.7,
             [PED_EXPRESSION.FOREARMS]         = 0.6,
+            [PED_EXPRESSION.UPPER_LEGS]       = 0.8,
+            [PED_EXPRESSION.LOWER_LEGS]       = 0.8,
+        }
+    },
+    {
+        id = "MPBODY_BUILD_FEMALE_5",
+        build = CHARACTER_BODY_BUILD.HEAVY_MUSCULAR,
+        expressions = {
+            [PED_EXPRESSION.NECK_WIDTH]       = 0.8,
+            [PED_EXPRESSION.NECK_DEPTH]       = 0.7,
+            [PED_EXPRESSION.SHOULDERS_HEIGHT] = 0.8,
+            [PED_EXPRESSION.SHOULDERS_DEPTH]  = 0.8,
+            [PED_EXPRESSION.SHOULDERS_WIDTH]  = 0.9,
+            [PED_EXPRESSION.TRAPS]            = 0.9,
+            [PED_EXPRESSION.LATS]             = 0.9,
+            [PED_EXPRESSION.CHEST_WIDTH]      = 0.8,
+            [PED_EXPRESSION.CHEST_DEPTH]      = 0.8,
+            [PED_EXPRESSION.CHEST_SAG]     = 0.8,
+            [PED_EXPRESSION.BELLY_WIDTH]      = 0.7,
+            [PED_EXPRESSION.BELLY_DEPTH]      = 0.7,
+            [PED_EXPRESSION.GLUTES]           = 0.6,
+            [PED_EXPRESSION.UPPER_ARMS]       = 0.8,
+            [PED_EXPRESSION.FOREARMS]         = 0.8,
             [PED_EXPRESSION.UPPER_LEGS]       = 0.8,
             [PED_EXPRESSION.LOWER_LEGS]       = 0.8,
         }
