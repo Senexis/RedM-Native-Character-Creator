@@ -871,14 +871,24 @@ function Character:ApplyOverlayBlend(layer, value, apply)
 
     local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
     local blend = CharacterOverlay:GetLayerBlend(layer, overlay.id + 1)
-    CharacterOverlay:SetLayerBlend(layer, blend, apply)
-
-    if OVERLAY_LAYER:GetSupportsTint(layer) then
-        self:ApplyOverlayColor(layer, nil, apply)
-    end
 
     if blend == "BLEND_NONE" then
         self.layers[layer].alpha = 1.0
+    end
+
+    self:ApplyOverlayAlpha(layer, nil)
+
+    CharacterOverlay:SetLayerBlend(layer, blend)
+
+    if OVERLAY_LAYER:GetSupportsTint(layer) then
+        self:ApplyOverlayColor(layer, nil)
+    end
+
+    if apply then
+        CharacterOverlay:RequestUpdate()
+    end
+
+    if blend == "BLEND_NONE" then
         SignalBus:emit("overlay_removed", layer)
     else
         SignalBus:emit("overlay_applied", layer)
@@ -935,12 +945,6 @@ end
 function Character:ApplyOverlays(apply)
     for _, layer in ipairs(OVERLAY_LAYER:Values()) do
         self:ApplyOverlayBlend(layer)
-
-        if OVERLAY_LAYER:GetSupportsTint(layer) then
-            self:ApplyOverlayColor(layer)
-        end
-
-        self:ApplyOverlayAlpha(layer)
     end
 
     if apply then
@@ -1166,6 +1170,26 @@ end
 function Character:RandomizeOverlays(apply)
     local percentToSkipOverlay = CreatorConfig.RandomizePercentToSkipOverlay or 30
 
+    for _, layer in ipairs(OVERLAY_LAYER:Values()) do
+        if not OVERLAY_LAYER:GetRandomized(layer) then
+            goto continue
+        end
+
+        local upperAlpha = 1.0
+        if OVERLAY_LAYER:GetSupportsTint(layer) then
+            upperAlpha = 0.5
+        end
+
+        local alpha = GetRandomFloatInRange(0.0, upperAlpha)
+        if layer == OVERLAY_LAYER.EYEBROWS or layer == OVERLAY_LAYER.FACIAL_HAIR then
+            alpha = 1.0
+        end
+
+        self:ApplyOverlayAlpha(layer, alpha, false)
+
+        ::continue::
+    end
+
     -- We start at 1 since we want to always reserve the AGEING overlay
     local count = 1
 
@@ -1204,26 +1228,6 @@ function Character:RandomizeOverlays(apply)
 
         local index = GetRandomIntInRange(0, #colors)
         self:ApplyOverlayColor(layer, index, false)
-
-        ::continue::
-    end
-
-    for _, layer in ipairs(OVERLAY_LAYER:Values()) do
-        if not OVERLAY_LAYER:GetRandomized(layer) then
-            goto continue
-        end
-
-        local upperAlpha = 1.0
-        if OVERLAY_LAYER:GetSupportsTint(layer) then
-            upperAlpha = 0.5
-        end
-
-        local alpha = GetRandomFloatInRange(0.0, upperAlpha)
-        if layer == OVERLAY_LAYER.EYEBROWS or layer == OVERLAY_LAYER.FACIAL_HAIR then
-            alpha = 1.0
-        end
-
-        self:ApplyOverlayAlpha(layer, alpha, false)
 
         ::continue::
     end
@@ -1281,13 +1285,12 @@ function Character:RandomizeOverlayPresets(apply)
             end
         end
 
+        self:ApplyOverlayAlpha(layer, alpha)
         self:ApplyOverlayBlend(layer, blendIndex)
 
         if OVERLAY_LAYER:GetSupportsTint(layer) then
             self:ApplyOverlayColor(layer, colorIndex)
         end
-
-        self:ApplyOverlayAlpha(layer, alpha)
     end
 
     self:ApplyOverlays(apply)
