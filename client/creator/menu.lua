@@ -256,7 +256,7 @@ function CreatorMenu:GetMenu()
                 Id = "SETTING_LIGHTING",
                 Tab = "TAB_SETTINGS",
                 Type = "STEPPER",
-                Label = "Lighting",
+                Label = "Lighting Preset",
                 Data = {
                     ItemDescription = "Change the lighting preset used.",
                     StepperOptions = self:GetTimecycleLabels(),
@@ -280,7 +280,7 @@ function CreatorMenu:GetMenu()
                 Type = "STEPPER",
                 Label = "Time of Day",
                 Data = {
-                    ItemDescription = "Change the time of day. Note: Depending on the lighting preset, certain times of day may cause visual issues.",
+                    ItemDescription = "Change the time of day. Depending on the lighting preset, certain times of day may cause visual issues.",
                     StepperOptions = self:GetTimeOfDayLabels(),
                     StepperValue = self.settingTime or 1,
                     StepperVisible = true,
@@ -379,8 +379,9 @@ function CreatorMenu:GetMenu()
                 Tab = "TAB_SETTINGS",
                 Type = "STEPPER",
                 Label = "Heritage Limits",
+                Footer = "~COLOR_YELLOW~This may cause the character to change.",
                 Data = {
-                    ItemDescription = "Toggles whether heritage Fine Tune limits are ignored. Note: This may cause the character to change.",
+                    ItemDescription = "Toggles whether heritage Fine Tune limits are ignored.",
                     StepperOptions = {
                         "Enabled",
                         "Disabled",
@@ -404,8 +405,9 @@ function CreatorMenu:GetMenu()
                 Tab = "TAB_SETTINGS",
                 Type = "STEPPER",
                 Label = "Overlay Limits",
+                Footer = "~COLOR_YELLOW~This may cause the character to change.",
                 Data = {
-                    ItemDescription = "Toggles whether overlay opacity limits are ignored. Note: This may cause the character to change.",
+                    ItemDescription = "Toggles whether overlay opacity limits are ignored.",
                     StepperOptions = {
                         "Enabled",
                         "Disabled",

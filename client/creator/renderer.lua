@@ -31,7 +31,6 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING", "Advanced Options")
 
     AddTextEntry("NATIVE_CREATOR_ERROR_NAME_DISABLED", "~e~Go back to change your name.")
-    AddTextEntry("NATIVE_CREATOR_ERROR_OVERLAY_LIMIT", "~e~Overlay limit reached.")
 
     AddTextEntry("NATIVE_CREATOR_HAIR_COLOR_TOOLTIP", "Change your character's hair and eyebrows color.")
     AddTextEntry("NATIVE_CREATOR_HEIGHT_TOOLTIP", "Adjust the height of your character.")
@@ -42,8 +41,6 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_TORSO_TOOLTIP", "Change your character's torso.")
     AddTextEntry("NATIVE_CREATOR_FACE_TOOLTIP", "Change your character's face.")
     AddTextEntry("NATIVE_CREATOR_NECK_TOOLTIP", "Change your character's neck.")
-    AddTextEntry("NATIVE_CREATOR_HEAD_HAIR_TOOLTIP", "Only visible when your character is bald.")
-    AddTextEntry("NATIVE_CREATOR_AGEING_TOOLTIP", "Tweaks the aging layer used on your character.")
 
     AddTextEntry("NATIVE_CREATOR_SHOULDERS_00", "Neutral")
     AddTextEntry("NATIVE_CREATOR_LIMBS_00", "Neutral")
@@ -273,12 +270,8 @@ function CreatorRenderer:UpdateItemFooter(itemId)
 
     CreatorRenderer:UpdateDetailImage(uiData.Image)
 
-    if UI_ITEM_ID:GetOverlayLayer(itemId) then
-        if databinding.Enabled and CreatorDatabinding:ReadBool(databinding.Enabled) ~= true then
-            CreatorRenderer:UpdateFooterLabel("NATIVE_CREATOR_ERROR_OVERLAY_LIMIT")
-        else
-            CreatorRenderer:UpdateOverlayFooterLabel(uiData.Footer)
-        end
+    if UI_ITEM_ID:GetOverlayLayer(itemId) or UI_ITEM_ID:GetOverlayColor(itemId) then
+        CreatorRenderer:UpdateOverlayFooterLabel(uiData.Footer)
     else
         CreatorRenderer:UpdateFooterLabel(uiData.Footer)
     end
