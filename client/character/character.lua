@@ -579,10 +579,10 @@ function Character:ApplySkintone(value, apply)
     end
 
     self:ApplyHead(apply)
-    self:ApplyBodyBuild()
+    self:ApplyBodyItems()
 end
 
-function Character:ApplyBodyBuild(value)
+function Character:ApplyBodyItems(value)
     if value ~= nil then
         self.bodyType = value
     end
@@ -597,16 +597,22 @@ function Character:ApplyBodyBuild(value)
     self:ApplyShopItem(shopItems.upper)
     self:ApplyShopItem(shopItems.lower)
 
-    local outfit = CHARACTER_BODY_BUILD:GetOutfit(bodyBuild.build)
+    self:RequestUpdate()
+end
 
-    self:ApplyMetaPedOutfit(outfit)
+function Character:ApplyBodyExpressions(value)
+    if value ~= nil then
+        self.bodyType = value
+    end
+
+    local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
+    local normalized = self.bodyType % #bodyBuilds
+    local bodyBuild = bodyBuilds[normalized + 1]
 
     for expressionKey, expressionValue in pairs(bodyBuild.expressions) do
         local uiValue = self:ExpressionGameToUiValue(expressionKey, expressionValue)
         self:ApplyExpressionValue(expressionKey, uiValue, false)
     end
-
-    self:RequestUpdate()
 end
 
 function Character:ApplyEyeColor(value)
@@ -1059,7 +1065,11 @@ end
 
 function Character:RandomizeBodyBuild()
     local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
-    self:ApplyBodyBuild(GetRandomIntInRange(0, #bodyBuilds))
+    local index = GetRandomIntInRange(0, #bodyBuilds)
+
+    self:ApplyBodyItems(index)
+    self:ApplyBodyExpressions(index)
+
     SignalBus:emit("body_randomized", self.bodyType)
 end
 
@@ -1337,7 +1347,7 @@ function Character:StripClothingFromPed(level)
         end
     end
 
-    self:ApplyBodyBuild()
+    self:ApplyBodyItems()
     self:RequestUpdate()
 end
 
@@ -1426,7 +1436,8 @@ SignalBus:on("adjustable_changed", function(itemId, value)
     elseif action == CHARACTER_ACTION.APPLY_AGE_ALPHA then
         Character:ApplyAgeAlpha(value, true)
     elseif action == CHARACTER_ACTION.APPLY_BODY_BUILD then
-        Character:ApplyBodyBuild(value)
+        Character:ApplyBodyItems(value)
+        Character:ApplyBodyExpressions(value)
     elseif action == CHARACTER_ACTION.APPLY_EYE_COLOR then
         Character:ApplyEyeColor(value)
     elseif action == CHARACTER_ACTION.APPLY_TEETH then
