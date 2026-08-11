@@ -47,7 +47,7 @@ function CharacterOverlay:Maintain()
                 break
             end
 
-            local alpha = layer:GetAlpha(Character.skintone + 1)
+            local alpha = layer:GetAlpha(Character.skintone + 1, Character.ignoreOverlayLimits)
             layer.index = AddTextureLayer(self.drawable, layer.albedo, layer.normal, layer.material, layer.blendType, alpha, layer.sheetGridIndex)
 
             if layer.index <= -1 then

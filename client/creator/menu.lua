@@ -392,9 +392,34 @@ function CreatorMenu:GetMenu()
                     Adjust = {
                         Action = function(event)
                             local value = event.Data.StepperValue or 1
-                            Character.ignoreLimits = value == 2
+                            Character.ignoreHeritageLimits = value == 2
                             Character:ApplyAll()
                             self.settingHeritageLimits = value
+                        end,
+                    },
+                },
+            },
+            {
+                Id = "SETTING_OVERLAY_LIMITS",
+                Tab = "TAB_SETTINGS",
+                Type = "STEPPER",
+                Label = "Overlay Limits",
+                Data = {
+                    ItemDescription = "Toggles whether overlay Fine Tune limits are ignored. Note: This may cause the character to change.",
+                    StepperOptions = {
+                        "Enabled",
+                        "Disabled",
+                    },
+                    StepperValue = self.settingOverlayLimits or 1,
+                    StepperVisible = true,
+                },
+                Prompts = {
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or 1
+                            Character.ignoreOverlayLimits = value == 2
+                            Character:ApplyAll()
+                            self.settingOverlayLimits = value
                         end,
                     },
                 },

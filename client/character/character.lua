@@ -26,7 +26,8 @@ local defaults = {
     beard = 0,
     beardColor = 0,
 
-    ignoreLimits = false,
+    ignoreHeritageLimits = false,
+    ignoreOverlayLimits = false,
 
     presets = {
         [PED_EXPRESSION_ZONE.EYES]      = 0,
@@ -441,7 +442,7 @@ function Character:GetExpressionGameBounds(expressionId)
     local min, max = -1.0, 1.0
 
     -- Fill the limites from the heritage if applicable and desired
-    if not self.ignoreLimits then
+    if not self.ignoreHeritageLimits then
         local data = CreatorPresets:GetFineTuningData()
         local tuning = data[expressionId]
         if tuning then

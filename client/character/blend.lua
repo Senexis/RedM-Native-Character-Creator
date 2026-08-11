@@ -94,7 +94,9 @@ function CharacterBlend:Update(newData)
     end
 end
 
-function CharacterBlend:GetAlpha(skintone)
+function CharacterBlend:GetAlpha(skintone, skipLimits)
+    if skipLimits then return self.alpha end
+
     local skintoneAlpha = self.skintoneAlphas[skintone] or 1.0
 
     -- Ensure the skintone alpha is always valid
