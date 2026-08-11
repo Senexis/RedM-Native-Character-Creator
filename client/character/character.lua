@@ -997,7 +997,7 @@ function Character:Vocalize()
     Citizen.InvokeNative(0x8E04FEDD28D42462, self.ped, struct:Buffer())
 end
 
-function Character:ApplyHeritage(value, apply)
+function Character:ApplyHeritage(value)
     if value ~= nil then
         self.heritage = value
     end
@@ -1005,7 +1005,6 @@ function Character:ApplyHeritage(value, apply)
     CreatorPresets:SetHeritage(self.heritage)
 
     self:ApplyHead(false)
-    self:ApplyAgeBlend(apply)
     self:ApplyAllExpressions()
 end
 
@@ -1047,6 +1046,7 @@ end
 function Character:RandomizeHeritage()
     local heritages = CreatorPresets:GetHeritages()
     self:ApplyHeritage(GetRandomIntInRange(0, #heritages))
+    self:ApplyAgeBlend(true)
     SignalBus:emit("heritage_randomized", self.heritage)
 end
 
@@ -1430,7 +1430,8 @@ SignalBus:on("adjustable_changed", function(itemId, value)
     end
 
     if action == CHARACTER_ACTION.APPLY_HERITAGE then
-        Character:ApplyHeritage(value, true)
+        Character:ApplyHeritage(value)
+        Character:ApplyAgeBlend(true)
     elseif action == CHARACTER_ACTION.APPLY_SKINTONE then
         Character:ApplySkintone(value, true)
     elseif action == CHARACTER_ACTION.APPLY_AGE_ALPHA then

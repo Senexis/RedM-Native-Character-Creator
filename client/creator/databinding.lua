@@ -469,10 +469,11 @@ function CreatorDatabinding:FilloutUiData()
 
     -- Fill all the stepper options
     if Creator:IsDefaultMode() then
-        self:WriteHashArray(id.APPEARANCE__HERITAGE__ARRAY, CreatorRenderer:GetHeritageLabels())
-        self:WriteHashArray(id.APPEARANCE__BODY_BUILD__ARRAY, CreatorRenderer:GetBodyBuildLabels())
-        self:WriteHashArray(id.APPEARANCE__EYEBROWS__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.EYEBROWS))
-        self:WriteHashArray(id.APPEARANCE__TEETH__ARRAY, CreatorRenderer:GetTeethLabels())
+        self:WriteOrHideHashArray(id.APPEARANCE__HERITAGE__ARRAY, id.APPEARANCE__HERITAGE__VISIBLE, CreatorRenderer:GetHeritageLabels())
+        self:WriteOrHideHashArray(id.APPEARANCE__BODY_BUILD__ARRAY, id.APPEARANCE__BODY_BUILD__VISIBLE, CreatorRenderer:GetBodyBuildLabels())
+        self:WriteOrHideHashArray(id.APPEARANCE__EYEBROWS__ARRAY, id.APPEARANCE__EYEBROWS__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.EYEBROWS), "CHAR_CREATOR_LAYER_NONE")
+        self:WriteOrHideHashArray(id.APPEARANCE__TEETH__ARRAY, id.APPEARANCE__TEETH__VISIBLE, CreatorRenderer:GetTeethLabels())
+
         self:WriteHashArray(id.APPEARANCE__EYES_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.EYES))
         self:WriteHashArray(id.APPEARANCE__NOSE_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.NOSE))
         self:WriteHashArray(id.APPEARANCE__MOUTH_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.MOUTH))
@@ -480,31 +481,36 @@ function CreatorDatabinding:FilloutUiData()
         self:WriteHashArray(id.APPEARANCE__EARS_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.EARS))
         self:WriteHashArray(id.APPEARANCE__CHEEKS_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.CHEEKS))
 
-        self:WriteHashArray(id.LIFESTYLE__MOTTLING__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SKIN_MOTTLING))
-        self:WriteHashArray(id.LIFESTYLE__COMPLEXION__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.COMPLEXION))
-        self:WriteHashArray(id.LIFESTYLE__COMPLEXION_2__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.COMPLEXION_2))
-        self:WriteHashArray(id.LIFESTYLE__FRECKLES__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FRECKLES))
-        self:WriteHashArray(id.LIFESTYLE__MOLES__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.MOLES))
-        self:WriteHashArray(id.LIFESTYLE__SPOTS__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SPOTS))
-        self:WriteHashArray(id.LIFESTYLE__SCAR__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SCAR))
+        self:WriteOrHideHashArray(id.LIFESTYLE__MOTTLING__ARRAY, id.LIFESTYLE__MOTTLING__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SKIN_MOTTLING), "CHAR_CREATOR_LAYER_NONE")
+        self:WriteOrHideHashArray(id.LIFESTYLE__COMPLEXION__ARRAY, id.LIFESTYLE__COMPLEXION__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.COMPLEXION), "CHAR_CREATOR_LAYER_NONE")
+        self:WriteOrHideHashArray(id.LIFESTYLE__COMPLEXION_2__ARRAY, id.LIFESTYLE__COMPLEXION_2__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.COMPLEXION_2), "CHAR_CREATOR_LAYER_NONE")
+        self:WriteOrHideHashArray(id.LIFESTYLE__FRECKLES__ARRAY, id.LIFESTYLE__FRECKLES__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FRECKLES), "CHAR_CREATOR_LAYER_NONE")
+        self:WriteOrHideHashArray(id.LIFESTYLE__MOLES__ARRAY, id.LIFESTYLE__MOLES__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.MOLES), "CHAR_CREATOR_LAYER_NONE")
+        self:WriteOrHideHashArray(id.LIFESTYLE__SPOTS__ARRAY, id.LIFESTYLE__SPOTS__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SPOTS), "CHAR_CREATOR_LAYER_NONE")
+        self:WriteOrHideHashArray(id.LIFESTYLE__SCAR__ARRAY, id.LIFESTYLE__SCAR__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SCAR), "CHAR_CREATOR_LAYER_NONE")
         self:WriteHashArray(id.LIFESTYLE__EYE_REDNESS__ARRAY, {})
 
-        self:WriteHashArray(id.MAKEUP__FOUNDATION__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FOUNDATION))
-        self:WriteHashArray(id.MAKEUP__BLUSHER__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.BLUSHER))
-        self:WriteHashArray(id.MAKEUP__EYESHADOW__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.EYESHADOW))
-        self:WriteHashArray(id.MAKEUP__EYELINER__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.EYELINER))
-        self:WriteHashArray(id.MAKEUP__LIPSTICK__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.LIPSTICK))
+        local foundationHidden = self:WriteOrHideHashArray(id.MAKEUP__FOUNDATION__ARRAY, id.MAKEUP__FOUNDATION__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FOUNDATION), "CHAR_CREATOR_LAYER_NONE")
+        local blusherHidden    = self:WriteOrHideHashArray(id.MAKEUP__BLUSHER__ARRAY, id.MAKEUP__BLUSHER__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.BLUSHER), "CHAR_CREATOR_LAYER_NONE")
+        local eyeshadowHidden  = self:WriteOrHideHashArray(id.MAKEUP__EYESHADOW__ARRAY, id.MAKEUP__EYESHADOW__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.EYESHADOW), "CHAR_CREATOR_LAYER_NONE")
+        local eyelinerHidden   = self:WriteOrHideHashArray(id.MAKEUP__EYELINER__ARRAY, id.MAKEUP__EYELINER__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.EYELINER), "CHAR_CREATOR_LAYER_NONE")
+        local lipstickHidden   = self:WriteOrHideHashArray(id.MAKEUP__LIPSTICK__ARRAY, id.MAKEUP__LIPSTICK__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.LIPSTICK), "CHAR_CREATOR_LAYER_NONE")
+
+        if foundationHidden and blusherHidden and eyeshadowHidden and eyelinerHidden and lipstickHidden then
+            self:WriteBool(id.APPEARANCE__MAKEUP__VISIBLE, false)
+        end
 
         self:WriteHashArray(id.HAIR__HAIR_STYLE__ARRAY, CreatorRenderer:GetHairLabels())
         self:WriteHashArray(id.HAIR__BEARD_STYLE__ARRAY, CreatorRenderer:GetBeardLabels())
-        self:WriteHashArray(id.HAIR__BEARD_STUBBLE__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FACIAL_HAIR))
+        self:WriteOrHideHashArray(id.HAIR__BEARD_STUBBLE__ARRAY, id.HAIR__BEARD_STUBBLE__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FACIAL_HAIR), "CHAR_CREATOR_LAYER_NONE")
 
         self:WriteHashArray(id.WHISTLE__STYLE__ARRAY, CreatorRenderer:GetWhistleLabels())
     else
         self:WriteHashArray(id.APPEARANCE__HERITAGE__ARRAY, {})
-        self:WriteHashArray(id.APPEARANCE__BODY_BUILD__ARRAY, CreatorRenderer:GetHeightLabels())
-        self:WriteHashArray(id.APPEARANCE__EYEBROWS__ARRAY, CreatorRenderer:GetWeightLabels())
+        self:WriteOrHideHashArray(id.APPEARANCE__BODY_BUILD__ARRAY, id.APPEARANCE__BODY_BUILD__VISIBLE, CreatorRenderer:GetHeightLabels())
+        self:WriteOrHideHashArray(id.APPEARANCE__EYEBROWS__ARRAY, id.APPEARANCE__EYEBROWS__VISIBLE, CreatorRenderer:GetWeightLabels())
         self:WriteHashArray(id.APPEARANCE__TEETH__ARRAY, {})
+
         self:WriteHashArray(id.APPEARANCE__EYES_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.SHOULDERS))
         self:WriteHashArray(id.APPEARANCE__NOSE_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.LIMBS))
         self:WriteHashArray(id.APPEARANCE__MOUTH_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.MOUTH_2))
@@ -512,14 +518,18 @@ function CreatorDatabinding:FilloutUiData()
         self:WriteHashArray(id.APPEARANCE__EARS_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.FACE))
         self:WriteHashArray(id.APPEARANCE__CHEEKS_PRESET__ARRAY, CreatorRenderer:GetPresetLabels(PED_EXPRESSION_ZONE.NECK))
 
-        self:WriteHashArray(id.LIFESTYLE__MOTTLING__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.GRIME))
-        self:WriteHashArray(id.LIFESTYLE__COMPLEXION__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.AGEING))
-        self:WriteHashArray(id.LIFESTYLE__COMPLEXION_2__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.HEAD_HAIR))
-        self:WriteHashArray(id.LIFESTYLE__FRECKLES__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SCAR_2))
-        self:WriteHashArray(id.LIFESTYLE__MOLES__ARRAY, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FACIAL_HAIR))
+        local grimeHidden      = self:WriteOrHideHashArray(id.LIFESTYLE__MOTTLING__ARRAY, id.LIFESTYLE__MOTTLING__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.GRIME), "CHAR_CREATOR_LAYER_NONE")
+        local ageingHidden     = self:WriteOrHideHashArray(id.LIFESTYLE__COMPLEXION__ARRAY, id.LIFESTYLE__COMPLEXION__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.AGEING), "CHAR_CREATOR_LAYER_NONE")
+        local headHairHidden   = self:WriteOrHideHashArray(id.LIFESTYLE__COMPLEXION_2__ARRAY, id.LIFESTYLE__COMPLEXION_2__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.HEAD_HAIR), "CHAR_CREATOR_LAYER_NONE")
+        local scar2Hidden      = self:WriteOrHideHashArray(id.LIFESTYLE__FRECKLES__ARRAY, id.LIFESTYLE__FRECKLES__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.SCAR_2), "CHAR_CREATOR_LAYER_NONE")
+        local facialHairHidden = self:WriteOrHideHashArray(id.LIFESTYLE__MOLES__ARRAY, id.LIFESTYLE__MOLES__VISIBLE, CreatorRenderer:GetOverlayLabels(OVERLAY_LAYER.FACIAL_HAIR), "CHAR_CREATOR_LAYER_NONE")
         self:WriteHashArray(id.LIFESTYLE__SPOTS__ARRAY, {})
         self:WriteHashArray(id.LIFESTYLE__SCAR__ARRAY, {})
         self:WriteHashArray(id.LIFESTYLE__EYE_REDNESS__ARRAY, {})
+
+        if grimeHidden and ageingHidden and headHairHidden and scar2Hidden and facialHairHidden then
+            self:WriteBool(id.APPEARANCE__LIFESTYLE__VISIBLE, false)
+        end
 
         self:WriteHashArray(id.MAKEUP__FOUNDATION__ARRAY, {})
         self:WriteHashArray(id.MAKEUP__BLUSHER__ARRAY, {})
@@ -536,8 +546,6 @@ function CreatorDatabinding:FilloutUiData()
 
     -- Handle gender-specific UI elements
     if Creator:IsDefaultMode() then
-        self:WriteBool(id.APPEARANCE__MAKEUP__VISIBLE, Character:IsFemale())
-
         if Character:IsMale() then
             self:WriteBool(id.ROOT__BEARD__VISIBLE, true)
             self:WriteBool(id.HAIR__BEARD_STUBBLE__VISIBLE, true)
@@ -557,9 +565,6 @@ function CreatorDatabinding:FilloutUiData()
         -- Chest Sag and Glutes are not available for male characters
         self:WriteBool(id.JAW__JAW_DEPTH__VISIBLE, Character:IsFemale())
         self:WriteBool(id.JAW__CHIN_DEPTH__VISIBLE, Character:IsFemale())
-
-        -- Beard stubble is not available for female characters
-        self:WriteBool(id.LIFESTYLE__MOLES__VISIBLE, Character:IsMale())
     end
 
     CreatorDatabinding:ApplyFromCharacter()
@@ -727,6 +732,25 @@ function CreatorDatabinding:WriteHashArray(index, options)
     for _, option in ipairs(options) do
         Citizen.InvokeNative(0x7FC60C94C83C5CD7, binding, joaat(option), -1)
     end
+end
+
+function CreatorDatabinding:WriteOrHideHashArray(arrayIndex, visibleIndex, options, noneOption)
+    if not noneOption then noneOption = "" end
+
+    local arrayBinding = self.datastore[arrayIndex] or 0
+    if not self:IsValid(arrayBinding) then error("Invalid databinding entry", 2) end
+
+    local visibleBinding = self.datastore[visibleIndex] or 0
+    if not self:IsValid(visibleBinding) then error("Invalid databinding entry", 2) end
+
+    local hidden = false
+    if #options == 0 or (#options == 1 and options[1] == noneOption) then
+        self:WriteBool(visibleIndex, false)
+        hidden = true
+    end
+
+    self:WriteHashArray(arrayIndex, options)
+    return hidden
 end
 
 function CreatorDatabinding:WriteColorSwatches(options)

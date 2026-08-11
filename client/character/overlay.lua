@@ -132,14 +132,14 @@ function CharacterOverlay:UpdateBaseLayer(shopItem, apply)
 end
 
 function CharacterOverlay:GetLayerBlends(layer)
-    if layer == OVERLAY_LAYER.ROOT then return { [1] = "BLEND_NONE" } end
+    if layer == OVERLAY_LAYER.ROOT then return { "BLEND_NONE" } end
 
     local overlay = CreatorConfig.Overlays[layer]
     if not overlay then
         error(string.format("Invalid layer: %s", layer))
     end
 
-    local blends = { [1] = "BLEND_NONE" }
+    local blends = { "BLEND_NONE" }
     for index, data in pairs(overlay) do
         if not data.blend then
             error(string.format("Item %s in layer %s is missing a blend value", index, OVERLAY_LAYER:ToString(layer)))
@@ -185,7 +185,9 @@ function CharacterOverlay:GetLayerColors(layer, blend)
             error(string.format("No colors found for blend %s in layer %s", blend, OVERLAY_LAYER:ToString(layer)))
         end
 
-        colors[data.blend] = data.colors
+        if not data.gender or data.gender == Character:GetGenderShort() then
+            colors[data.blend] = data.colors
+        end
     end
 
     if blend == nil then

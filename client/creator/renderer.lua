@@ -722,7 +722,7 @@ function CreatorRenderer:GetOverlayLabels(layer)
         error(string.format("Invalid layer: %s", layer))
     end
 
-    local labels = { [1] = "CHAR_CREATOR_LAYER_NONE" }
+    local labels = { "CHAR_CREATOR_LAYER_NONE" }
     for index, data in pairs(overlay) do
         if not data.id then
             error(string.format("Item %s in layer %s is missing an ID", index, layer))
@@ -755,8 +755,6 @@ function CreatorRenderer:GetOverlayLabel(layer, index)
 end
 
 function CreatorRenderer:GetOverlaySwatches(layer)
-    if Character:IsMale() then return {} end
-
     local layerColors = CharacterOverlay:GetLayerColors(layer)
 
     local swatches = {}

@@ -108,7 +108,7 @@ OVERLAY_LAYER:AddAttribute("Priority", {
 
 OVERLAY_LAYER:AddAttribute("SkintoneAlphas", {
     [OVERLAY_LAYERS.SKIN_MOTTLING] = { 0.85, 0.85, 0.85, 0.95, 1.0, 1.0 },
-    [OVERLAY_LAYERS.FRECKLES]      = { 0.75, 0.75, 0.75, 0.9, 1.0, 1.0 },
+    [OVERLAY_LAYERS.FRECKLES]      = { 0.9, 0.9, 0.9, 0.9, 1.0, 1.0 },
     [OVERLAY_LAYERS.FOUNDATION]    = { 0.75, 0.65, 0.75, 0.5, 0.4, 0.4 },
 })
 
