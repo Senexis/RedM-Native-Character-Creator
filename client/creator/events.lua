@@ -1,6 +1,7 @@
 CreatorEvents = {
     currentPage = 0,
     currentFocusedItem = 0,
+    zoomMode = ZOOM_MODE.HOLD,
     isZooming = false,
     currentGridXValue = 0.0,
     currentGridYValue = 0.0,
@@ -18,12 +19,19 @@ end
 
 function CreatorEvents:Maintain()
     -- Zooming isn't handled through events anymore
-    if self.isZooming == false and IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
-        self.isZooming = true
-        SignalBus:emit("zoom_updated", true)
-    elseif self.isZooming == true and not IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
-        self.isZooming = false
-        SignalBus:emit("zoom_updated", false)
+    if self.zoomMode == ZOOM_MODE.TOGGLE then
+        if IsControlJustPressed(2, "INPUT_INSPECT_ZOOM") then
+            self.isZooming = not self.isZooming
+            SignalBus:emit("zoom_updated", self.isZooming)
+        end
+    else
+        if self.isZooming == false and IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+            self.isZooming = true
+            SignalBus:emit("zoom_updated", true)
+        elseif self.isZooming == true and not IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+            self.isZooming = false
+            SignalBus:emit("zoom_updated", false)
+        end
     end
 
     -- Poll the X grid of the currently focused item if we should
@@ -252,6 +260,11 @@ function CreatorEvents:OnIndexChangeRequested(parameter)
 
     CreatorRenderer:UpdateItemFooter(itemId)
 end
+
+SignalBus:on("zoom_mode_changed", function(mode)
+    if not mode then return end
+    CreatorEvents.zoomMode = mode
+end)
 
 SignalBus:on("camera_updated", function(data)
     if not data then return end

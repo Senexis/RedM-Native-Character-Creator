@@ -5,7 +5,6 @@
 ---@field GetIdFromName fun(self, name: string): number|nil
 ---@field GetDatabinding fun(self, id: number): table|nil
 ---@field GetPriority fun(self, id: number): number|nil
----@field GetSkintoneAlphas fun(self, id: number): table|nil
 ---@field GetSupportsTint fun(self, id: number): boolean
 ---@field GetSupportsHair fun(self, id: number): boolean
 ---@field GetSupportsPresets fun(self, id: number): boolean
@@ -104,12 +103,6 @@ OVERLAY_LAYER:AddAttribute("Priority", {
     [OVERLAY_LAYERS.FACIAL_HAIR]   = 150,
     [OVERLAY_LAYERS.GRIME]         = 160,
     [OVERLAY_LAYERS.HEAD_HAIR]     = 180,
-})
-
-OVERLAY_LAYER:AddAttribute("SkintoneAlphas", {
-    [OVERLAY_LAYERS.SKIN_MOTTLING] = { 0.85, 0.85, 0.85, 0.95, 1.0, 1.0 },
-    [OVERLAY_LAYERS.FRECKLES]      = { 0.9, 0.9, 0.9, 0.9, 1.0, 1.0 },
-    [OVERLAY_LAYERS.FOUNDATION]    = { 0.75, 0.65, 0.75, 0.5, 0.4, 0.4 },
 })
 
 OVERLAY_LAYER:AddAttribute("SupportsTint", {

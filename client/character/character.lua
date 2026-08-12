@@ -1333,9 +1333,7 @@ function Character:RandomizeVoice(preview)
     if preview then self:Vocalize() end
 end
 
--- Remove clothing components from a ped based on the requested clothing setting.
--- TOPLESS strips upper-body components; NUDE strips all body components.
-function Character:StripClothingFromPed(level)
+function Character:ApplyClothingLevel(level)
     for _, tag in ipairs(COMPONENT_TAG:Values()) do
         local hiddenTags = COMPONENT_TAG:GetHiddenTags(tag)
         if hiddenTags then
@@ -1355,8 +1353,7 @@ function Character:StripClothingFromPed(level)
     self:RequestUpdate()
 end
 
--- Restore the ped's clothing to the state it was in before any clothing level change.
-function Character:RestoreClothingToPed()
+function Character:ApplyDefaultClothing()
     if Intro:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
         if IsPedModel(Intro.playerPedId, `MP_MALE`) == 1 then
             ClonePedToTarget(Intro.playerPedId, Intro.presetPeds[EDITOR_CONFIG.MALE])

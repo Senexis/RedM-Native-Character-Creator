@@ -1536,10 +1536,10 @@ function Intro:SetClothingLevel(level)
 
     -- Always restore to the original state first to get a clean baseline,
     -- then strip the appropriate layers for the chosen level.
-    Character:RestoreClothingToPed()
+    Character:ApplyDefaultClothing()
 
     if level ~= CLOTHING_SETTING.DEFAULT then
-        Character:StripClothingFromPed(level)
+        Character:ApplyClothingLevel(level)
     end
 end
 

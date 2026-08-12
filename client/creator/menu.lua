@@ -253,6 +253,30 @@ function CreatorMenu:GetMenu()
                 end,
             },
             {
+                Id = "SETTING_ZOOM",
+                Tab = "TAB_SETTINGS",
+                Type = "STEPPER",
+                Label = "Zoom",
+                Data = {
+                    ItemDescription = "Toggle whether the camera zoom controls are held or toggled.",
+                    StepperOptions = {
+                        [ZOOM_MODE.HOLD]   = "Hold",
+                        [ZOOM_MODE.TOGGLE] = "Toggle"
+                    },
+                    StepperValue = self.settingZoom or ZOOM_MODE.HOLD,
+                    StepperVisible = true,
+                },
+                Prompts = {
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or ZOOM_MODE.HOLD
+                            SignalBus:emit("zoom_mode_changed", value)
+                            self.settingZoom = value
+                        end,
+                    },
+                },
+            },
+            {
                 Id = "SETTING_LIGHTING",
                 Tab = "TAB_SETTINGS",
                 Type = "STEPPER",

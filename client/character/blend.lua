@@ -2,7 +2,6 @@
 ---@field id string
 ---@field layer number
 ---@field priority number
----@field skintoneAlphas number[]
 ---@field isTint boolean
 ---@field isHair boolean
 ---@field index number
@@ -29,7 +28,6 @@ local defaults = {
     layer = -1,
 
     priority = -1,
-    skintoneAlphas = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 },
     isTint = false,
     isHair = false,
     index = -1,
@@ -88,20 +86,17 @@ function CharacterBlend:Update(newData)
     -- Ensure that OVERLAY_LAYER fields are updated properly if the layer is changed
     if newData.layer ~= nil then
         self.priority = OVERLAY_LAYER:GetPriority(self.layer) or defaults.priority
-        self.skintoneAlphas = OVERLAY_LAYER:GetSkintoneAlphas(self.layer) or defaults.skintoneAlphas
         self.isTint = OVERLAY_LAYER:GetSupportsTint(self.layer) or defaults.isTint
         self.isHair = OVERLAY_LAYER:GetSupportsHair(self.layer) or defaults.isHair
     end
 end
 
-function CharacterBlend:GetAlpha(skintone, skipLimits)
+function CharacterBlend:GetAlpha(skipLimits)
     if skipLimits then return self.alpha end
 
-    local skintoneAlpha = self.skintoneAlphas[skintone] or 1.0
+    local result = self.texAlpha * self.alpha
+    if result < 0.0001 then result = 0.0001 end
+    if result > 1.0 then result = 1.0 end
 
-    -- Ensure the skintone alpha is always valid
-    if skintoneAlpha < 0.0 then skintoneAlpha = 0.0 end
-    if skintoneAlpha > 1.0 then skintoneAlpha = 1.0 end
-
-    return self.texAlpha * self.alpha * skintoneAlpha
+    return result
 end
