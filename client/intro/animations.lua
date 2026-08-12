@@ -38,11 +38,6 @@ function IntroAnimations:MaintainFidgets(preset, ped)
         (IntroConfig.FidgetCooldownMax or 60) + 0.1
     )
 
-    if Intro:IsFlagSet(INTRO_FLAG.SUPPRESS_FIDGETS) or IsControlPressed(2, `INPUT_INSPECT_ZOOM`) == 1 then
-        self.nextFidget[preset] = GetGameTimer() + (delay * 1000)
-        return
-    end
-
     if not self.lastFidget[preset] then
         self.lastFidget[preset] = -1
     end
@@ -52,6 +47,18 @@ function IntroAnimations:MaintainFidgets(preset, ped)
     end
 
     if GetGameTimer() < self.nextFidget[preset] then
+        return
+    end
+
+    if not EDITOR_VIEW:GetSupportsFidgets(Intro.currentEditViewId) then
+        self.nextFidget[preset] = GetGameTimer() + (delay * 1000)
+        Utils:Debug("CHARACTER_EDITOR_MAINTAIN_FIDGETS - CCMN - preset: ", EDITOR_CONFIG:ToString(preset), " - fidget skipped due to edit view: ", EDITOR_VIEW:ToString(Intro.currentEditViewId))
+        return
+    end
+
+    if Intro:IsFlagSet(INTRO_FLAG.SUPPRESS_FIDGETS) then
+        self.nextFidget[preset] = GetGameTimer() + (delay * 1000)
+        Utils:Debug("CHARACTER_EDITOR_MAINTAIN_FIDGETS - CCMN - preset: ", EDITOR_CONFIG:ToString(preset), " - fidget skipped due to suppress flag or zoom input")
         return
     end
 
@@ -132,7 +139,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
 
     local inputLeft = IsControlPressed(2, `INPUT_GAME_MENU_TAB_LEFT`)
     local inputRight = IsControlPressed(2, `INPUT_GAME_MENU_TAB_RIGHT`)
-    local inputZoom = IsControlPressed(2, `INPUT_INSPECT_ZOOM`)
+    local isZoomed = EDITOR_VIEW:GetIsZoom(Intro.currentEditViewId)
 
     if IsUiappRunningByHash("character_creator") ~= 1 then
         inputLeft = false
@@ -158,7 +165,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
         SetEntityHeading(ped, current)
     end
 
-    if suppressAnimation or inputZoom then
+    if suppressAnimation or isZoomed then
         if not self:IsFlagSet(INTRO_ANIMATION_FLAG.ZOOM_MOOD) then
             SetFacialIdleAnimOverride(ped, "mood_normal_zoom", "face_human@gen_male@base")
             self:SetFlag(INTRO_ANIMATION_FLAG.ZOOM_MOOD)

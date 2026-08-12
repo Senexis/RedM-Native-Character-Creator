@@ -104,7 +104,7 @@ function CreatorRenderer:SetTextDefault()
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Whistle")
     AddTextEntry("CHAR_CREATOR_WHISTLE_STYLE", "Style")
-    AddTextEntry("CHAR_CREATOR_WHISTLE_PROMPT", "Whistle")
+    AddTextEntry("CHAR_CREATOR_WHISTLE_PROMPT", "Preview")
 
     AddTextEntry("CHAR_CREATOR_BODY_PAGE_BUILD_OPTION", "Body Build")
     AddTextEntry("CHAR_CREATOR_EYEBROWS", "Eyebrows")

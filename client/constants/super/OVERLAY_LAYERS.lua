@@ -147,7 +147,6 @@ OVERLAY_LAYER:AddModeAttribute("Randomized", {
         [OVERLAY_LAYERS.EYEBROWS]      = true,
         [OVERLAY_LAYERS.FACIAL_HAIR]   = true,
         [OVERLAY_LAYERS.GRIME]         = true,
-        [OVERLAY_LAYERS.AGEING]        = true,
         [OVERLAY_LAYERS.HEAD_HAIR]     = true,
         [OVERLAY_LAYERS.SCAR_2]        = true,
     }

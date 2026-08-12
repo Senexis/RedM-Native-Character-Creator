@@ -449,6 +449,28 @@ function CreatorMenu:GetMenu()
                         end,
                     },
                 },
+            },
+            {
+                Id = "SETTING_EXPORT",
+                Tab = "TAB_SETTINGS",
+                Type = "TEXT",
+                Label = "Export Character",
+                Disabled = not rerolling and not hasName,
+                Data = {
+                    DisabledFooter = "~e~Set a name first.",
+                    ItemDescription = "Export your character's appearance data to your clipboard.",
+                },
+                Prompts = {
+                    Select = {
+                        Action = function()
+                            local data = Character:Export()
+                            SendNUIMessage({
+                                type = "copy",
+                                text = json.encode(data, { indent = true })
+                            })
+                        end,
+                    },
+                },
             }
         },
     }

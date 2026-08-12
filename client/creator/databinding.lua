@@ -694,7 +694,8 @@ end
 function CreatorDatabinding:ReadFloat(index)
     local binding = self.datastore[index] or 0
     if not self:IsValid(binding) then error("Invalid databinding entry", 2) end
-    return Citizen.InvokeNative(0x5FE444EB67C70AD4, binding, Citizen.ResultAsFloat())
+    local value = Citizen.InvokeNative(0x5FE444EB67C70AD4, binding, Citizen.ResultAsFloat())
+    return math.floor(value * 10000 + 0.5) / 10000
 end
 
 function CreatorDatabinding:WriteHash(index, value)

@@ -136,7 +136,7 @@ function IntroXml:GetFloat(queryId, parameter1, parameter2)
     local result, response = Citizen.InvokeNative(0x7F034FC3E891B57A, Citizen.PointerValueFloat(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
 
     if result ~= 1 then return 0.0 end
-    return response
+    return math.floor(response * 10000 + 0.5) / 10000
 end
 
 function IntroXml:GetHash(queryId, parameter1, parameter2)

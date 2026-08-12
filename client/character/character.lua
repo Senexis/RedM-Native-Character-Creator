@@ -483,6 +483,10 @@ end
 
 function Character:ApplyExpressionValue(expressionId, uiValue, update)
     if uiValue then
+        if uiValue < 0.0 then uiValue = 0.0 end
+        if uiValue > 1.0 then uiValue = 1.0 end
+        uiValue = math.floor(uiValue * 10000 + 0.5) / 10000
+
         self.expressions[expressionId] = uiValue
     end
 
@@ -562,16 +566,12 @@ function Character:ApplyAgeAlpha(value, apply)
     local minAge = CreatorConfig.MinAge or 18
     local maxAge = CreatorConfig.MaxAge or 60
 
-    local opacityMin, opacityMax = 0.001, 100
-    local opacityResult = math.max(
-        opacityMin,
-        math.min(
-            opacityMax,
-            (self.age - minAge) / (maxAge - minAge)
-        )
-    )
+    local alpha = (self.age - minAge) / (maxAge - minAge)
+    alpha = math.floor(alpha * 10000 + 0.5) / 10000
+    if alpha < 0.0001 then alpha = 0.0001 end
+    if alpha > 1.0 then alpha = 1.0 end
 
-    self:ApplyOverlayAlpha(OVERLAY_LAYER.AGEING, opacityResult, apply)
+    self:ApplyOverlayAlpha(OVERLAY_LAYER.AGEING, alpha, apply)
 end
 
 function Character:ApplySkintone(value, apply)
@@ -897,6 +897,8 @@ function Character:ApplyOverlayAlpha(layer, value, apply)
 
     local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
     if value ~= nil then
+        if value < 0.0001 then value = 0.0001 end
+        if value > 1.0 then value = 1.0 end
         overlay.alpha = value
         self.layers[layer] = overlay
     end
@@ -1034,6 +1036,9 @@ function Character:RandomizeAll()
         self:RandomizeWeight()
     end
 
+    self:RandomizeWhistle(false)
+    self:RandomizeVoice(false)
+
     CharacterOverlay:RequestUpdate()
 
     SignalBus:emit("randomized")
@@ -1123,9 +1128,11 @@ function Character:RandomizeBeardColor()
 end
 
 function Character:RandomizeWeariness()
-    self.weariness = GetRandomFloatInRange(0.0, 1.0)
-    self:ApplyWeariness(self.weariness)
-    SignalBus:emit("weariness_randomized", self.weariness)
+    local weariness = GetRandomFloatInRange(0.0, 1.0)
+    weariness = math.floor(weariness * 10000 + 0.5) / 10000
+
+    self:ApplyWeariness(weariness)
+    SignalBus:emit("weariness_randomized", weariness)
 end
 
 function Character:RandomizePresets()
@@ -1152,7 +1159,10 @@ end
 
 function Character:RandomizeExpression(expression)
     local min, max = self:GetExpressionGameBounds(expression)
+
     local gameValue = GetRandomFloatInRange(min, max)
+    gameValue = math.floor(gameValue * 10000 + 0.5) / 10000
+
     local uiValue = self:ExpressionGameToUiValue(expression, gameValue)
 
     self:ApplyExpressionValue(expression, uiValue, false)
@@ -1167,12 +1177,9 @@ function Character:RandomizeOverlays(apply)
             goto continue
         end
 
-        local upperAlpha = 1.0
-        if OVERLAY_LAYER:GetSupportsTint(layer) then
-            upperAlpha = 0.5
-        end
+        local alpha = GetRandomFloatInRange(0.0, 1.0)
+        alpha = math.floor(alpha * 10000 + 0.5) / 10000
 
-        local alpha = GetRandomFloatInRange(0.0, upperAlpha)
         if layer == OVERLAY_LAYER.EYEBROWS or layer == OVERLAY_LAYER.FACIAL_HAIR then
             alpha = 1.0
         end
@@ -1289,7 +1296,7 @@ function Character:RandomizeOverlayPresets(apply)
     SignalBus:emit("overlay_presets_randomized")
 end
 
-function Character:RandomizeWhistle(whistle)
+function Character:RandomizeWhistle(preview)
     self.whistleStyle = GetRandomIntInRange(0, 5)
     self:ApplyWhistleStyle()
 
@@ -1301,7 +1308,7 @@ function Character:RandomizeWhistle(whistle)
 
     SignalBus:emit("whistle_randomized", self.whistleStyle, self.whistlePitch, self.whistleClarity)
 
-    if whistle then self:Whistle() end
+    if preview then self:Whistle() end
 end
 
 function Character:RandomizeHeight()

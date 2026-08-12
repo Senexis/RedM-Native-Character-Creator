@@ -215,12 +215,7 @@ end
 
 function CharacterOverlay:SetLayerAlpha(layer, alpha, apply)
     local existing = self.layers[layer] or CharacterBlends:Get(layer, "BLEND_NONE")
-
-    if not alpha then alpha = existing.alpha end
-    if alpha < 0.0001 then alpha = 0.0001 end
-    if alpha > 1.0 then alpha = 1.0 end
-
-    existing.alpha = alpha
+    existing.alpha = alpha or existing.alpha
 
     self.layers[layer] = existing
 

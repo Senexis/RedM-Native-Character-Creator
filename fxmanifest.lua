@@ -9,6 +9,12 @@ version "1.0.0"
 repository "https://github.com/Senexis/RedM-Native-Character-Creator"
 license "GNU GPL v3"
 
+ui_page 'html/index.html'
+
+files {
+    'html/index.html'
+}
+
 client_scripts {
     "@native-shop/client/api.lua",
 

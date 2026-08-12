@@ -1,6 +1,8 @@
 ---@class EDITOR_VIEWS : EnumRegistry
 ---@field GetHash fun(self, id: number): integer|nil
 ---@field GetIdFromHash fun(self, hash: integer): number|nil
+---@field GetSupportsFidgets fun(self, id: number): boolean|nil
+---@field GetIsZoom fun(self, id: number): boolean|nil
 ---@field GetNameFromId fun(self, id: number): string|nil
 ---@field GetIdFromName fun(self, name: string): number|nil
 ---@field ToString fun(self, id: number): string
@@ -23,4 +25,16 @@ EDITOR_VIEW:AddAttribute("Hash", {
     [EDITOR_VIEWS.FACE]            = `FRONT_FACE`,
     [EDITOR_VIEWS.FACE_CLOSE]      = `FRONT_FACE_CLOSE`,
     [EDITOR_VIEWS.EYES]            = `FRONT_EYES`,
+})
+
+EDITOR_VIEW:AddAttribute("SupportsFidgets", {
+    [EDITOR_VIEWS.INVALID]         = true,
+    [EDITOR_VIEWS.FULL_BODY]       = true,
+    [EDITOR_VIEWS.FULL_BODY_CLOSE] = true,
+})
+
+EDITOR_VIEW:AddAttribute("IsZoom", {
+    [EDITOR_VIEWS.FULL_BODY_CLOSE] = true,
+    [EDITOR_VIEWS.FACE_CLOSE]      = true,
+    [EDITOR_VIEWS.EYES]            = true,
 })
