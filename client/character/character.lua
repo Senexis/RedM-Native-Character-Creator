@@ -660,8 +660,8 @@ function Character:ApplyHairColor(value, apply)
     end
 
     self:ApplyHair()
-    self:ApplyOverlayBlend(OVERLAY_LAYER.EYEBROWS)
-    self:ApplyOverlayBlend(OVERLAY_LAYER.HEAD_HAIR)
+    self:ApplyOverlayBlend(OVERLAY_LAYER.EYEBROWS, nil, false)
+    self:ApplyOverlayBlend(OVERLAY_LAYER.HEAD_HAIR, nil, false)
 
     if apply then
         CharacterOverlay:RequestUpdate()
@@ -762,7 +762,7 @@ function Character:ApplyBeardColor(value, apply)
     end
 
     self:ApplyBeard()
-    self:ApplyOverlayBlend(OVERLAY_LAYER.FACIAL_HAIR)
+    self:ApplyOverlayBlend(OVERLAY_LAYER.FACIAL_HAIR, nil, false)
 
     if apply then
         CharacterOverlay:RequestUpdate()
@@ -866,23 +866,19 @@ end
 function Character:ApplyOverlayBlend(layer, value, apply)
     if layer == OVERLAY_LAYER.ROOT then return end
 
+    local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
     if value ~= nil then
-        self.layers[layer].id = value
+        overlay.id = value
+        self.layers[layer] = overlay
     end
 
-    local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
     local blend = CharacterOverlay:GetLayerBlend(layer, overlay.id + 1)
 
-    if blend == "BLEND_NONE" then
-        self.layers[layer].alpha = 1.0
-    end
-
-    self:ApplyOverlayAlpha(layer, nil)
-
-    CharacterOverlay:SetLayerBlend(layer, blend)
+    CharacterOverlay:SetLayerBlend(layer, blend, false)
+    self:ApplyOverlayAlpha(layer, nil, false)
 
     if OVERLAY_LAYER:GetSupportsTint(layer) then
-        self:ApplyOverlayColor(layer, nil)
+        self:ApplyOverlayColor(layer, nil, false)
     end
 
     if apply then
@@ -899,16 +895,11 @@ end
 function Character:ApplyOverlayAlpha(layer, value, apply)
     if layer == OVERLAY_LAYER.ROOT then return end
 
-    if value ~= nil then
-        self.layers[layer].alpha = value
-    end
-
     local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
-    local blend = CharacterOverlay:GetLayerBlend(layer, overlay.id + 1)
-
-    if blend == "BLEND_NONE" then overlay.alpha = 1.0 end
-    if overlay.alpha < 0.0 then overlay.alpha = 0.0 end
-    if overlay.alpha > 1.0 then overlay.alpha = 1.0 end
+    if value ~= nil then
+        overlay.alpha = value
+        self.layers[layer] = overlay
+    end
 
     CharacterOverlay:SetLayerAlpha(layer, overlay.alpha, apply)
 end
@@ -945,7 +936,7 @@ end
 
 function Character:ApplyOverlays(apply)
     for _, layer in ipairs(OVERLAY_LAYER:Values()) do
-        self:ApplyOverlayBlend(layer)
+        self:ApplyOverlayBlend(layer, nil, false)
     end
 
     if apply then
@@ -1286,11 +1277,11 @@ function Character:RandomizeOverlayPresets(apply)
             end
         end
 
-        self:ApplyOverlayAlpha(layer, alpha)
-        self:ApplyOverlayBlend(layer, blendIndex)
+        self:ApplyOverlayAlpha(layer, alpha, false)
+        self:ApplyOverlayBlend(layer, blendIndex, false)
 
         if OVERLAY_LAYER:GetSupportsTint(layer) then
-            self:ApplyOverlayColor(layer, colorIndex)
+            self:ApplyOverlayColor(layer, colorIndex, false)
         end
     end
 

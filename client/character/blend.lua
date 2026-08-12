@@ -94,9 +94,9 @@ end
 function CharacterBlend:GetAlpha(skipLimits)
     if skipLimits then return self.alpha end
 
-    local result = self.texAlpha * self.alpha
-    if result < 0.0001 then result = 0.0001 end
-    if result > 1.0 then result = 1.0 end
+    local alpha = self.texAlpha * self.alpha
+    if alpha < 0.0001 then alpha = 0.0001 end
+    if alpha > 1.0 then alpha = 1.0 end
 
-    return result
+    return alpha
 end

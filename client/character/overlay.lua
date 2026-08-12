@@ -4,7 +4,6 @@ CharacterOverlay = {
     normal = 0,
     material = 0,
     layers = {},
-    layerAlphas = {},
     flags = 0,
 }
 
@@ -33,7 +32,9 @@ function CharacterOverlay:Maintain()
 
         local sorted = {}
         for _, layer in pairs(self.layers) do
-            sorted[#sorted + 1] = layer
+            if layer.id ~= "BLEND_NONE" then
+                sorted[#sorted + 1] = layer
+            end
         end
 
         table.sort(sorted, function(a, b)
@@ -202,26 +203,26 @@ function CharacterOverlay:GetLayerColors(layer, blend)
 end
 
 function CharacterOverlay:SetLayerBlend(layer, blend, apply)
-    if blend == "BLEND_NONE" then
-        self.layers[layer] = nil
-    else
-        local data = CharacterBlends:Get(layer, blend)
-        data.alpha = self.layerAlphas[layer] or (self.layers[layer] and self.layers[layer].alpha or 1.0)
+    local existing = self.layers[layer] or CharacterBlends:Get(layer, "BLEND_NONE")
 
-        self.layers[layer] = data
-    end
+    local updated = CharacterBlends:Get(layer, blend)
+    updated.alpha = existing.alpha
+
+    self.layers[layer] = updated
 
     if apply then self:RequestUpdate() end
 end
 
 function CharacterOverlay:SetLayerAlpha(layer, alpha, apply)
-    if not self.layers[layer] then return end
+    local existing = self.layers[layer] or CharacterBlends:Get(layer, "BLEND_NONE")
 
-    local data = self.layers[layer]
-    data.alpha = alpha
-    self.layerAlphas[layer] = alpha
+    if not alpha then alpha = existing.alpha end
+    if alpha < 0.0001 then alpha = 0.0001 end
+    if alpha > 1.0 then alpha = 1.0 end
 
-    self.layers[layer] = data
+    existing.alpha = alpha
+
+    self.layers[layer] = existing
 
     if apply then self:RequestUpdate() end
 end
@@ -229,7 +230,7 @@ end
 function CharacterOverlay:GetUsedLayers()
     local used = {}
     for _, layer in pairs(self.layers) do
-        if layer and layer.layer > -1 then
+        if layer and layer.index > -1 then
             used[#used + 1] = layer.layer
         end
     end
