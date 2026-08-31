@@ -987,22 +987,22 @@ function Intro:MaintainCustomizePed()
 
     if IsUiappRunningByHash("character_creator") == 1 and IsUiappTransitioningByHash("character_creator") ~= 1 then
         self:RegisterEditorPrompts(true)
+
+        if IsControlJustPressed(2, `INPUT_GAME_MENU_TAB_LEFT_SECONDARY`) then
+            self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+            self:DestroyPrompts()
+            Creator:QuickSettings()
+        elseif IsControlJustPressed(2, `INPUT_GAME_MENU_LS`) then
+            self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+            self:DestroyPrompts()
+            Creator:QuickSwitch()
+        elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
+            UiPromptRestartModes(self.prompts.reset)
+            self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+            self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
+        end
     else
         self:DestroyPrompts()
-    end
-
-    if IsControlJustPressed(2, `INPUT_GAME_MENU_TAB_LEFT_SECONDARY`) then
-        self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
-        self:DestroyPrompts()
-        Creator:QuickSettings()
-    elseif IsControlJustPressed(2, `INPUT_GAME_MENU_LS`) then
-        self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
-        self:DestroyPrompts()
-        Creator:QuickSwitch()
-    elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
-        UiPromptRestartModes(self.prompts.reset)
-        self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
-        self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
     end
 
     if self.editorResult == INTRO_EDITOR_STATUS.RUNNING then
