@@ -102,6 +102,8 @@ function IntroAnimations:MaintainAnimations(preset, ped)
 end
 
 function IntroAnimations:InitializeMoveNetwork(preset, ped)
+    self.bodySize = self:GetBodySize()
+
     local gender = preset == EDITOR_CONFIG.MALE and "male" or "female"
     local clipset = string.format("clipset@mp_character_creator@%s", gender)
 
@@ -386,8 +388,8 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
 end
 
 function IntroAnimations:HandleBodySizeTransition(ped)
-    local current = self.bodySize
-    local expected = 1.0 -- TODO
+    local current = self.bodySize or 0.5
+    local expected = self:GetBodySize()
 
     if math.abs(current - expected) >= 0.025 then
         if current < expected then
@@ -479,6 +481,11 @@ function IntroAnimations:GetHeadingState(ped)
     end
 
     return 0.5
+end
+
+function IntroAnimations:GetBodySize()
+    local bodyBuild = Character:GetBodyBuild()
+    return CHARACTER_BODY_BUILD:GetMoveNetSignal(bodyBuild) or 0.5
 end
 
 SignalBus:on("show_teeth", function(value)

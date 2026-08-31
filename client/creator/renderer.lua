@@ -22,7 +22,7 @@ function CreatorRenderer:UpdateText()
 end
 
 function CreatorRenderer:CreateNewText()
-    AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Go back to the previous menu. Use ~INPUT_GAME_MENU_LS~ to quickly switch between Basic and Advanced options.")
+    AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Go back to the previous menu.")
 
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_DEFAULT_TOOLTIP", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize Basic options.")
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_ADVANCED_TOOLTIP", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize Basic and select Advanced options.")

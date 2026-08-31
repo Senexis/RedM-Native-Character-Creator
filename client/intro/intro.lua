@@ -1,6 +1,6 @@
-local TIMEOUT_INIT = 1000 * 30
-local TIMEOUT_LOAD = 1000 * 30
-local TIMEOUT_GENERIC = 1000 * 5
+local TIMEOUT_INIT = 1000 * 60
+local TIMEOUT_LOAD = 1000 * 60
+local TIMEOUT_GENERIC = 1000 * 30
 
 local INTRO_IPLS <const> = {
     `MP001_MP_LOBBY_CHARMILO`,
@@ -8,72 +8,75 @@ local INTRO_IPLS <const> = {
     `MP001_MP_LOBBY_CHARMILO_VEG`,
 }
 
-local defaults = {
-    flags = INTRO_FLAG.CLEAR,
-    state = INTRO_STATE.WAITING_TO_START,
-    stateChangeTime = 0,
+local function GetDefaultData()
+    return {
+        flags = INTRO_FLAG.CLEAR,
+        state = INTRO_STATE.WAITING_TO_START,
+        stateChangeTime = 0,
 
-    toEditState = INTRO_TO_EDIT_STATE.INIT,
-    backStartState = INTRO_BACK_START_STATE.INIT,
-    toPhotoState = INTRO_TO_PHOTO_STATE.INIT,
-    backEditState = INTRO_BACK_EDIT_STATE.INIT,
-    mugshotState = INTRO_MUGSHOT_STATE.PROMPT,
-    subStateChangeTime = 0,
+        toEditState = INTRO_TO_EDIT_STATE.INIT,
+        backStartState = INTRO_BACK_START_STATE.INIT,
+        toPhotoState = INTRO_TO_PHOTO_STATE.INIT,
+        backEditState = INTRO_BACK_EDIT_STATE.INIT,
+        mugshotState = INTRO_MUGSHOT_STATE.PROMPT,
+        subStateChangeTime = 0,
 
-    editorLastTime = 0,
-    editorResult = INTRO_EDITOR_STATUS.STOPPED,
+        editorLastTime = 0,
+        editorResult = INTRO_EDITOR_STATUS.STOPPED,
 
-    playerPedId = 0,
-    playerId = 0,
-    playerIndex = 0,
-    playerExitPosition = vector3(0, 0, 0),
-    playerExitHeading = 0.0,
+        playerPedId = 0,
+        playerId = 0,
+        playerIndex = 0,
+        playerExitPosition = vector3(0, 0, 0),
+        playerExitHeading = 0.0,
 
-    config = {},
-    guardPed = 0,
-    sheriffPed = 0,
-    presetPeds = {},
-    presetData = {},
+        config = {},
+        guardPed = 0,
+        sheriffPed = 0,
+        presetPeds = {},
+        presetData = {},
 
-    selectedPreset = 0,
+        selectedPreset = 0,
 
-    initCamera = 0,
-    presetCameras = {},
-    editCamera = 0,
-    editCameraInterp = 0,
-    currentEditViewId = EDITOR_VIEW.INVALID,
-    currentEditViewData = {},
-    currentEditorCameraData = {},
-    portraitCamera = 0,
+        initCamera = 0,
+        presetCameras = {},
+        editCamera = 0,
+        editCameraInterp = 0,
+        currentEditViewId = EDITOR_VIEW.INVALID,
+        currentEditViewData = {},
+        currentEditorCameraData = {},
+        portraitCamera = 0,
 
-    dialogParticipants = {},
-    nextCustomizeTime = 0,
-    nextCustomizeLine = 0,
+        dialogParticipants = {},
+        nextCustomizeTime = 0,
+        nextCustomizeLine = 0,
 
-    alertHandle = 0,
-    prompts = {},
-    objectiveShown = false,
+        alertHandle = 0,
+        prompts = {},
+        objectiveShown = false,
 
-    animScene = 0,
-    lightrig = 0,
+        animScene = 0,
+        lightrig = 0,
 
-    mugshotTimer = 3,
-    mugshotShowUi = true,
-    photoPostfx = 0,
+        mugshotTimer = 3,
+        mugshotShowUi = true,
+        photoPostfx = 0,
 
-    clothingLevel = CLOTHING_SETTING.DEFAULT,
-    savedOutfitItems = {},
-}
+        clothingLevel = CLOTHING_SETTING.DEFAULT,
+        savedOutfitItems = {},
+    }
+end
 
+local defaults = GetDefaultData()
 Intro = setmetatable({}, { __index = defaults })
 
 function Intro:Reset()
-    for k in pairs(self) do
-        if type(self[k]) == "function" then
-            goto continue
+    defaults = GetDefaultData()
+
+    for k, v in pairs(defaults) do
+        if type(v) ~= "function" then
+            self[k] = v
         end
-        self[k] = nil
-        ::continue::
     end
 end
 
@@ -505,7 +508,7 @@ function Intro:MaintainApplyRandomization()
         Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - initializing male character preset")
 
         Character:Reset()
-        Character.ped = malePed
+        Character:SetPed(malePed)
         Character:RandomizeAll()
 
         self.presetData[EDITOR_CONFIG.MALE] = Character:Export()
@@ -529,7 +532,7 @@ function Intro:MaintainApplyRandomization()
         Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - initializing female character preset")
 
         Character:Reset()
-        Character.ped = femalePed
+        Character:SetPed(femalePed)
         Character:RandomizeAll()
 
         self.presetData[EDITOR_CONFIG.FEMALE] = Character:Export()
@@ -674,6 +677,14 @@ function Intro:MaintainSelectGender()
         return
     end
 
+    if self:IsFlagSet(INTRO_FLAG.RESET_CHARACTER) then
+        if not self:ResetCharacter() then
+            return
+        end
+
+        self:ClearFlag(INTRO_FLAG.RESET_CHARACTER)
+    end
+
     if not self:IsFlagSet(INTRO_FLAG.IDLE_DIALOG_PLAYED) and GetGameTimer() - self.stateChangeTime > 1000 * 30 then
         self:CreateConversation("CHAR_IDLE")
         self:SetFlag(INTRO_FLAG.IDLE_DIALOG_PLAYED)
@@ -722,9 +733,17 @@ function Intro:MaintainSelectGender()
     elseif self.selectedPreset == EDITOR_CONFIG.MALE then
         EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, true)
         EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, true)
+
+        if self:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED) then
+            EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, true)
+        end
     elseif self.selectedPreset == EDITOR_CONFIG.FEMALE then
         EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, true)
         EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, true)
+
+        if self:IsFlagSet(INTRO_FLAG.FEMALE_PED_RANDOMIZED) then
+            EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, true)
+        end
     end
 
     self:RegisterCharacterPrompts(true)
@@ -735,6 +754,10 @@ function Intro:MaintainSelectGender()
     elseif IsControlJustPressed(0, `INPUT_GAME_MENU_RIGHT`) then
         self:PlaySound("gender_right", "RDRO_Character_Creator_Sounds")
         self:SetActivePedPreset(EDITOR_CONFIG.FEMALE, false)
+    elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
+        UiPromptRestartModes(self.prompts.reset)
+        self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+        self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
     elseif IsControlJustPressed(0, `INPUT_GAME_MENU_ACCEPT`) then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:DestroyPrompts()
@@ -917,6 +940,14 @@ function Intro:MaintainCustomizePed()
         end
     end
 
+    if self:IsFlagSet(INTRO_FLAG.RESET_CHARACTER) then
+        if not self:ResetCharacter() then
+            return
+        end
+
+        self:ClearFlag(INTRO_FLAG.RESET_CHARACTER)
+    end
+
     if not self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
         self:CustomizeConversationUpdate()
     end
@@ -960,10 +991,18 @@ function Intro:MaintainCustomizePed()
         self:DestroyPrompts()
     end
 
-    if IsControlJustPressed(2, `INPUT_GAME_MENU_LS`) then
+    if IsControlJustPressed(2, `INPUT_GAME_MENU_TAB_LEFT_SECONDARY`) then
+        self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+        self:DestroyPrompts()
+        Creator:QuickSettings()
+    elseif IsControlJustPressed(2, `INPUT_GAME_MENU_LS`) then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:DestroyPrompts()
         Creator:QuickSwitch()
+    elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
+        UiPromptRestartModes(self.prompts.reset)
+        self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+        self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
     end
 
     if self.editorResult == INTRO_EDITOR_STATUS.RUNNING then
@@ -972,9 +1011,10 @@ function Intro:MaintainCustomizePed()
         self.presetData[self.selectedPreset] = Character:Export()
         CancelOnscreenKeyboard()
         if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
-            Utils:Debug("MAINTAIN_CUSTOMIZE - REROLL - player selected to cancel, going back to gender selection")
+            Utils:Debug("MAINTAIN_CUSTOMIZE - REROLL - player selected to cancel, going back to freeroam")
             self:SetState(INTRO_STATE.CANCEL_BACK_TO_FREEROAM)
         else
+            Utils:Debug("MAINTAIN_CUSTOMIZE - REROLL - player selected to cancel, going back to gender selection")
             ResetAnimScene(self.animScene, "")
             self:SetState(INTRO_STATE.TRANSITION_BACK_TO_INTRO)
         end
@@ -1524,7 +1564,7 @@ function Intro:SetupEditor()
         Character:Import(self.presetData[self.selectedPreset] or {})
     end
 
-    Character.ped = self.presetPeds[self.selectedPreset] or 0
+    Character:SetPed(self.presetPeds[self.selectedPreset])
     Creator:Start()
 end
 
@@ -1885,8 +1925,8 @@ function Intro:SetLockonDisabled(ped)
     end
 
     SetPedConfigFlag(ped, 130, true) -- PCF_DisableTalkTo
-    SetPedConfigFlag(ped, 315, true) -- PCF_0xD38AEF95
     SetPedConfigFlag(ped, 301, true) -- PCF_DisableInteractionLockonOnTargetPed
+    SetPedConfigFlag(ped, 315, true) -- PCF_0xD38AEF95
 end
 
 function Intro:CreatePedPreset(config)
@@ -1934,6 +1974,57 @@ function Intro:CreatePedPreset(config)
 
     self.presetPeds[config] = ped
 
+    return true
+end
+
+function Intro:ResetCharacter()
+    if not self.selectedPreset then
+        Utils:Debug("RESET_CHARACTER - no selected preset")
+        return true
+    end
+
+    Utils:Debug("RESET_CHARACTER - resetting character for preset: ", EDITOR_CONFIG:ToString(self.selectedPreset))
+    local ped = self.presetPeds[self.selectedPreset]
+
+    if IsPedReadyToRender(ped) ~= 1 then
+        Utils:Debug("RESET_CHARACTER - ped is not ready to render")
+        return false
+    end
+
+    if Character:IsFlagSet(CHARACTER_FLAG.DIRTY) then
+        Utils:Debug("RESET_CHARACTER - waiting for character to be ready")
+        return false
+    end
+
+    if not CreatorPresets:Init(self.selectedPreset) then
+        Utils:Debug("RESET_CHARACTER - failed to initialize character presets")
+        return false
+    end
+
+    local name = Character.name or ""
+
+    Utils:Debug("RESET_CHARACTER - resetting character")
+    Character:Reset()
+    Character.name = name
+    Character:SetPed(ped)
+    Character:ApplyAll()
+
+    self.presetData[self.selectedPreset] = Character:Export()
+
+    if self.state == INTRO_STATE.CUSTOMIZE then
+        CreatorDatabinding:ApplyFromCharacter()
+    end
+
+    if self.selectedPreset == EDITOR_CONFIG.MALE then
+        self:ClearFlag(INTRO_FLAG.MALE_PED_RANDOMIZED)
+    else
+        self:ClearFlag(INTRO_FLAG.FEMALE_PED_RANDOMIZED)
+    end
+
+    Character:ClearModified()
+    Character:ClearRandomized()
+
+    Utils:Debug("RESET_CHARACTER - character reset")
     return true
 end
 
@@ -2205,7 +2296,21 @@ function Intro:CustomizeConversationUpdate()
 end
 
 function Intro:RegisterCharacterPrompts(toggle)
+    local enableReset = false
+    if self.selectedPreset == EDITOR_CONFIG.MALE then
+        enableReset = self:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED)
+    else
+        enableReset = self:IsFlagSet(INTRO_FLAG.FEMALE_PED_RANDOMIZED)
+    end
+
     self:RegisterPrompts({
+        reset = {
+            controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
+            text = "Start Fresh",
+            visible = enableReset,
+            enabled = enableReset and toggle,
+            hold = "MEDIUM_TIMED_EVENT",
+        },
         confirm = {
             controls = { "INPUT_GAME_MENU_ACCEPT" },
             text = "Confirm",
@@ -2228,14 +2333,35 @@ function Intro:RegisterCharacterPrompts(toggle)
 end
 
 function Intro:RegisterEditorPrompts(toggle)
-    local text = Creator:IsAdvancedMode() and "Basic Options" or "Advanced Options"
+    local switchText = Creator:IsAdvancedMode() and "Basic Options" or "Advanced Options"
+    local canReset = not self:IsFlagSet(INTRO_FLAG.RESET_CHARACTER) and self:IsFlagSet(INTRO_FLAG.CHARACTER_RESET_PROMPT)
+    local enableReset = Character:IsModified() or Character:IsRandomized()
+
+    if self.selectedPreset == EDITOR_CONFIG.MALE and self:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED) then
+        enableReset = true
+    elseif self.selectedPreset == EDITOR_CONFIG.FEMALE and self:IsFlagSet(INTRO_FLAG.FEMALE_PED_RANDOMIZED) then
+        enableReset = true
+    end
 
     self:RegisterPrompts({
-        quickSwitch = {
-            controls = { "INPUT_GAME_MENU_LS" },
-            text = text,
+        settings = {
+            controls = { "INPUT_GAME_MENU_TAB_LEFT_SECONDARY" },
+            text = "Settings",
             visible = true,
             enabled = toggle,
+        },
+        switch = {
+            controls = { "INPUT_GAME_MENU_LS" },
+            text = switchText,
+            visible = true,
+            enabled = toggle,
+        },
+        reset = {
+            controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
+            text = "Start Fresh",
+            visible = canReset and enableReset,
+            enabled = canReset and enableReset and toggle,
+            hold = "SHORT_TIMED_EVENT",
         },
     })
 end
@@ -2298,7 +2424,12 @@ function Intro:RegisterPrompts(prompts)
                 UiPromptSetControlAction(handle, control)
             end
 
-            UiPromptSetStandardMode(handle, true)
+            if prompt.hold then
+                UiPromptSetStandardizedHoldMode(handle, prompt.hold)
+            else
+                UiPromptSetStandardMode(handle, true)
+            end
+
             UiPromptSetAttribute(handle, 18, true)
             UiPromptSetAttribute(handle, 17, true)
             UiPromptSetAttribute(handle, 14, true)
@@ -2472,6 +2603,14 @@ SignalBus:on("camera_updated", function(data)
     end
 
     Intro:MoveEditCamera(viewId)
+end)
+
+SignalBus:on("allow_character_reset", function(allowed)
+    if allowed then
+        Intro:SetFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
+    else
+        Intro:ClearFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
+    end
 end)
 
 SignalBus:on("timecycle_changed", function(name)

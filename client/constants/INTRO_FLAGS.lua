@@ -29,6 +29,8 @@ local INTRO_FLAGS = {
     SUPPRESS_FIDGETS             = 1 << 26,
     SUPPRESS_ANIMATION           = 1 << 27,
     SUPPRESS_ROTATION            = 1 << 28,
+    RESET_CHARACTER              = 1 << 29,
+    CHARACTER_RESET_PROMPT       = 1 << 30,
 }
 
 ---@type INTRO_FLAGS | EnumRegistry

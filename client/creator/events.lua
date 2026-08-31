@@ -157,6 +157,12 @@ function CreatorEvents:OnItemFocused(parameter)
     else
         SignalBus:emit("show_eyes", false)
     end
+
+    if itemId == UI_ITEM_ID.APPEARANCE__RANDOMIZE then
+        SignalBus:emit("allow_character_reset", true)
+    else
+        SignalBus:emit("allow_character_reset", false)
+    end
 end
 
 function CreatorEvents:OnDataAdjustableChanged(parameter, index)
@@ -219,10 +225,8 @@ function CreatorEvents:OnItemSelected(parameter)
         end
 
         CharacterOverlay:RequestUpdate()
-    elseif actionId == UI_ACTION_ID.CONFIRM_EDIT then
-        Creator:CloseEditor(true)
-    elseif actionId == UI_ACTION_ID.CANCEL_EDIT then
-        Creator:CloseEditor(true)
+    elseif actionId == UI_ACTION_ID.CONFIRM_EDIT or actionId == UI_ACTION_ID.CANCEL_EDIT then
+        Creator:CloseEditor()
     elseif actionId == UI_ACTION_ID.ROTATE then
         -- Handled in the state loop, no need to emit anything
     else

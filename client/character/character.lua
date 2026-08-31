@@ -1,153 +1,166 @@
-local defaults = {
-    -- Private
-    flags = 0,
-    ped = 0,
+local function GetDefaultData()
+    return {
+        -- Private
+        _flags = 0,
+        _ped = 0,
 
-    -- Exported
-    name = "",
-    age = CreatorConfig.MinAge or 18,
-    height = CreatorConfig.DefaultHeight or 2,
-    weight = CreatorConfig.DefaultWeight or 10,
-    weariness = CreatorConfig.MinWeariness or 0.0,
-    voice = 0,
+        -- Exported
+        name = "",
+        age = CreatorConfig.MinAge or 18,
+        height = CreatorConfig.DefaultHeight or 2,
+        weight = CreatorConfig.DefaultWeight or 10,
+        weariness = CreatorConfig.MinWeariness or 0.0,
+        voice = 0,
 
-    whistleStyle = 0,
-    whistlePitch = 50,
-    whistleClarity = 50,
+        whistleStyle = 0,
+        whistlePitch = 50,
+        whistleClarity = 50,
 
-    heritage = 0,
-    skintone = 0,
-    bodyType = 0,
-    eyeColor = 0,
-    teeth = 0,
+        heritage = 0,
+        skintone = 0,
+        bodyType = 0,
+        eyeColor = 0,
+        teeth = 0,
 
-    hair = 0,
-    hairColor = 0,
-    beard = 0,
-    beardColor = 0,
+        hair = 0,
+        hairColor = 0,
+        beard = 0,
+        beardColor = 0,
 
-    ignoreHeritageLimits = false,
-    ignoreOverlayLimits = false,
+        ignoreHeritageLimits = false,
+        ignoreOverlayLimits = false,
 
-    presets = {
-        [PED_EXPRESSION_ZONE.EYES]      = 0,
-        [PED_EXPRESSION_ZONE.NOSE]      = 0,
-        [PED_EXPRESSION_ZONE.MOUTH]     = 0,
-        [PED_EXPRESSION_ZONE.JAW]       = 0,
-        [PED_EXPRESSION_ZONE.EARS]      = 0,
-        [PED_EXPRESSION_ZONE.CHEEKS]    = 0,
+        presets = {
+            [PED_EXPRESSION_ZONE.EYES]      = 0,
+            [PED_EXPRESSION_ZONE.NOSE]      = 0,
+            [PED_EXPRESSION_ZONE.MOUTH]     = 0,
+            [PED_EXPRESSION_ZONE.JAW]       = 0,
+            [PED_EXPRESSION_ZONE.EARS]      = 0,
+            [PED_EXPRESSION_ZONE.CHEEKS]    = 0,
 
-        -- Advanced
-        [PED_EXPRESSION_ZONE.SHOULDERS] = 0,
-        [PED_EXPRESSION_ZONE.LIMBS]     = 0,
-        [PED_EXPRESSION_ZONE.MOUTH_2]   = 0,
-        [PED_EXPRESSION_ZONE.TORSO]     = 0,
-        [PED_EXPRESSION_ZONE.FACE]      = 0,
-        [PED_EXPRESSION_ZONE.NECK]      = 0,
-    },
+            -- Advanced
+            [PED_EXPRESSION_ZONE.SHOULDERS] = 0,
+            [PED_EXPRESSION_ZONE.LIMBS]     = 0,
+            [PED_EXPRESSION_ZONE.MOUTH_2]   = 0,
+            [PED_EXPRESSION_ZONE.TORSO]     = 0,
+            [PED_EXPRESSION_ZONE.FACE]      = 0,
+            [PED_EXPRESSION_ZONE.NECK]      = 0,
+        },
 
-    expressions = {
-        [PED_EXPRESSION.BROW_WIDTH]          = 0.5,
-        [PED_EXPRESSION.BROW_HEIGHT]         = 0.5,
-        [PED_EXPRESSION.BROW_DEPTH]          = 0.5,
-        [PED_EXPRESSION.EYE_WIDTH]           = 0.5,
-        [PED_EXPRESSION.EYE_HEIGHT]          = 0.5,
-        [PED_EXPRESSION.EYE_ANGLE]           = 0.5,
-        [PED_EXPRESSION.EYE_DEPTH]           = 0.5,
-        [PED_EXPRESSION.EYE_H_POS]           = 0.5,
-        [PED_EXPRESSION.EYE_V_POS]           = 0.5,
-        [PED_EXPRESSION.NOSE_WIDTH]          = 0.5,
-        [PED_EXPRESSION.NOSE_HEIGHT]         = 0.5,
-        [PED_EXPRESSION.NOSE_BREAK]          = 0.5,
-        [PED_EXPRESSION.NOSE_LENGTH]         = 0.5,
-        [PED_EXPRESSION.NOSTRIL_WIDTH]       = 0.5,
-        [PED_EXPRESSION.NOSE_TILT]           = 0.5,
-        [PED_EXPRESSION.MOUTH_WIDTH]         = 0.5,
-        [PED_EXPRESSION.MOUTH_DEPTH]         = 0.5,
-        [PED_EXPRESSION.MOUTH_V_POS]         = 0.5,
-        [PED_EXPRESSION.UPPER_LIP_WIDTH]     = 0.5,
-        [PED_EXPRESSION.UPPER_LIP_THICKNESS] = 0.5,
-        [PED_EXPRESSION.LOWER_LIP_WIDTH]     = 0.5,
-        [PED_EXPRESSION.LOWER_LIP_THICKNESS] = 0.5,
-        [PED_EXPRESSION.UPPER_LIPDEPTH]      = 0.5,
-        [PED_EXPRESSION.LOWER_LIP_DEPTH]     = 0.5,
-        [PED_EXPRESSION.JAW_WIDTH]           = 0.5,
-        [PED_EXPRESSION.JAW_HEIGHT]          = 0.5,
-        [PED_EXPRESSION.JAW_DEPTH]           = 0.5,
-        [PED_EXPRESSION.CHIN_WIDTH]          = 0.5,
-        [PED_EXPRESSION.CHIN_TILT]           = 0.5,
-        [PED_EXPRESSION.CHIN_DEPTH]          = 0.5,
-        [PED_EXPRESSION.EAR_ROTATION]        = 0.5,
-        [PED_EXPRESSION.EAR_LENGTH]          = 0.5,
-        [PED_EXPRESSION.EAR_SIZE]            = 0.5,
-        [PED_EXPRESSION.EAR_LOBE]            = 0.5,
-        [PED_EXPRESSION.CHEEKS_WIDTH]        = 0.5,
-        [PED_EXPRESSION.CHEEKS_HEIGHT]       = 0.5,
-        [PED_EXPRESSION.CHEEKS_DEPTH]        = 0.5,
+        expressions = {
+            [PED_EXPRESSION.BROW_WIDTH]          = 0.5,
+            [PED_EXPRESSION.BROW_HEIGHT]         = 0.5,
+            [PED_EXPRESSION.BROW_DEPTH]          = 0.5,
+            [PED_EXPRESSION.EYE_WIDTH]           = 0.5,
+            [PED_EXPRESSION.EYE_HEIGHT]          = 0.5,
+            [PED_EXPRESSION.EYE_ANGLE]           = 0.5,
+            [PED_EXPRESSION.EYE_DEPTH]           = 0.5,
+            [PED_EXPRESSION.EYE_H_POS]           = 0.5,
+            [PED_EXPRESSION.EYE_V_POS]           = 0.5,
+            [PED_EXPRESSION.NOSE_WIDTH]          = 0.5,
+            [PED_EXPRESSION.NOSE_HEIGHT]         = 0.5,
+            [PED_EXPRESSION.NOSE_BREAK]          = 0.5,
+            [PED_EXPRESSION.NOSE_LENGTH]         = 0.5,
+            [PED_EXPRESSION.NOSTRIL_WIDTH]       = 0.5,
+            [PED_EXPRESSION.NOSE_TILT]           = 0.5,
+            [PED_EXPRESSION.MOUTH_WIDTH]         = 0.5,
+            [PED_EXPRESSION.MOUTH_DEPTH]         = 0.5,
+            [PED_EXPRESSION.MOUTH_V_POS]         = 0.5,
+            [PED_EXPRESSION.UPPER_LIP_WIDTH]     = 0.5,
+            [PED_EXPRESSION.UPPER_LIP_THICKNESS] = 0.5,
+            [PED_EXPRESSION.LOWER_LIP_WIDTH]     = 0.5,
+            [PED_EXPRESSION.LOWER_LIP_THICKNESS] = 0.5,
+            [PED_EXPRESSION.UPPER_LIPDEPTH]      = 0.5,
+            [PED_EXPRESSION.LOWER_LIP_DEPTH]     = 0.5,
+            [PED_EXPRESSION.JAW_WIDTH]           = 0.5,
+            [PED_EXPRESSION.JAW_HEIGHT]          = 0.5,
+            [PED_EXPRESSION.JAW_DEPTH]           = 0.5,
+            [PED_EXPRESSION.CHIN_WIDTH]          = 0.5,
+            [PED_EXPRESSION.CHIN_TILT]           = 0.5,
+            [PED_EXPRESSION.CHIN_DEPTH]          = 0.5,
+            [PED_EXPRESSION.EAR_ROTATION]        = 0.5,
+            [PED_EXPRESSION.EAR_LENGTH]          = 0.5,
+            [PED_EXPRESSION.EAR_SIZE]            = 0.5,
+            [PED_EXPRESSION.EAR_LOBE]            = 0.5,
+            [PED_EXPRESSION.CHEEKS_WIDTH]        = 0.5,
+            [PED_EXPRESSION.CHEEKS_HEIGHT]       = 0.5,
+            [PED_EXPRESSION.CHEEKS_DEPTH]        = 0.5,
 
-        -- Advanced
-        [PED_EXPRESSION.SHOULDERS_WIDTH]     = 0.5,
-        [PED_EXPRESSION.SHOULDERS_DEPTH]     = 0.5,
-        [PED_EXPRESSION.SHOULDERS_HEIGHT]    = 0.5,
-        [PED_EXPRESSION.CHEST_WIDTH]         = 0.5,
-        [PED_EXPRESSION.CHEST_DEPTH]         = 0.5,
-        [PED_EXPRESSION.BELLY_WIDTH]         = 0.5,
-        [PED_EXPRESSION.BELLY_DEPTH]         = 0.5,
-        [PED_EXPRESSION.LATS]                = 0.5,
-        [PED_EXPRESSION.TRAPS]               = 0.5,
-        [PED_EXPRESSION.UPPER_ARMS]          = 0.5,
-        [PED_EXPRESSION.FOREARMS]            = 0.5,
-        [PED_EXPRESSION.UPPER_LEGS]          = 0.5,
-        [PED_EXPRESSION.LOWER_LEGS]          = 0.5,
-        [PED_EXPRESSION.NECK_WIDTH]          = 0.5,
-        [PED_EXPRESSION.NECK_DEPTH]          = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_L_WIDTH]    = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_R_WIDTH]    = 0.5,
-        [PED_EXPRESSION.MOUTH_H_POS]         = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_L_DEPTH]    = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_R_DEPTH]    = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_L_HEIGHT]   = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_R_HEIGHT]   = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_L_LIP_DIST] = 0.5,
-        [PED_EXPRESSION.MOUTHCRN_R_LIP_DIST] = 0.5,
-        [PED_EXPRESSION.FACE_WIDTH]          = 0.5,
-        [PED_EXPRESSION.CHEEKS_FULLNESS]     = 0.5,
-        [PED_EXPRESSION.GLUTES]              = 0.5,
-        [PED_EXPRESSION.EYELID_L_POS]        = 0.5,
-        [PED_EXPRESSION.EYELID_R_POS]        = 0.5,
-        [PED_EXPRESSION.CHEST_SAG]           = 0.5,
-    },
+            -- Advanced
+            [PED_EXPRESSION.SHOULDERS_WIDTH]     = 0.5,
+            [PED_EXPRESSION.SHOULDERS_DEPTH]     = 0.5,
+            [PED_EXPRESSION.SHOULDERS_HEIGHT]    = 0.5,
+            [PED_EXPRESSION.CHEST_WIDTH]         = 0.5,
+            [PED_EXPRESSION.CHEST_DEPTH]         = 0.5,
+            [PED_EXPRESSION.BELLY_WIDTH]         = 0.5,
+            [PED_EXPRESSION.BELLY_DEPTH]         = 0.5,
+            [PED_EXPRESSION.LATS]                = 0.5,
+            [PED_EXPRESSION.TRAPS]               = 0.5,
+            [PED_EXPRESSION.UPPER_ARMS]          = 0.5,
+            [PED_EXPRESSION.FOREARMS]            = 0.5,
+            [PED_EXPRESSION.UPPER_LEGS]          = 0.5,
+            [PED_EXPRESSION.LOWER_LEGS]          = 0.5,
+            [PED_EXPRESSION.NECK_WIDTH]          = 0.5,
+            [PED_EXPRESSION.NECK_DEPTH]          = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_L_WIDTH]    = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_R_WIDTH]    = 0.5,
+            [PED_EXPRESSION.MOUTH_H_POS]         = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_L_DEPTH]    = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_R_DEPTH]    = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_L_HEIGHT]   = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_R_HEIGHT]   = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_L_LIP_DIST] = 0.5,
+            [PED_EXPRESSION.MOUTHCRN_R_LIP_DIST] = 0.5,
+            [PED_EXPRESSION.FACE_WIDTH]          = 0.5,
+            [PED_EXPRESSION.CHEEKS_FULLNESS]     = 0.5,
+            [PED_EXPRESSION.GLUTES]              = 0.5,
+            [PED_EXPRESSION.EYELID_L_POS]        = 0.5,
+            [PED_EXPRESSION.EYELID_R_POS]        = 0.5,
+            [PED_EXPRESSION.CHEST_SAG]           = 0.5,
+        },
 
-    layers = {
-        [OVERLAY_LAYER.SKIN_MOTTLING] = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.AGEING]        = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.COMPLEXION]    = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.COMPLEXION_2]  = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.FRECKLES]      = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.MOLES]         = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.SPOTS]         = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.SCAR]          = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.FOUNDATION]    = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.BLUSHER]       = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.EYELINER]      = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.EYESHADOW]     = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.LIPSTICK]      = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.EYEBROWS]      = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.FACIAL_HAIR]   = { id = 0, alpha = 1.0 },
+        layers = {
+            [OVERLAY_LAYER.SKIN_MOTTLING] = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.AGEING]        = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.COMPLEXION]    = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.COMPLEXION_2]  = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.FRECKLES]      = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.MOLES]         = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.SPOTS]         = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.SCAR]          = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.FOUNDATION]    = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.BLUSHER]       = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.EYELINER]      = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.EYESHADOW]     = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.LIPSTICK]      = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.EYEBROWS]      = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.FACIAL_HAIR]   = { id = 0, alpha = 1.0 },
 
-        -- Advanced
-        [OVERLAY_LAYER.GRIME]         = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.HEAD_HAIR]     = { id = 0, alpha = 1.0 },
-        [OVERLAY_LAYER.SCAR_2]        = { id = 0, alpha = 1.0 },
-    },
+            -- Advanced
+            [OVERLAY_LAYER.GRIME]         = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.HEAD_HAIR]     = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.SCAR_2]        = { id = 0, alpha = 1.0 },
+        },
 
-    layerColors = {
-        [OVERLAY_LAYER.EYESHADOW] = 0,
-        [OVERLAY_LAYER.LIPSTICK]  = 0,
+        layerColors = {
+            [OVERLAY_LAYER.EYESHADOW] = 0,
+            [OVERLAY_LAYER.LIPSTICK]  = 0,
+        }
     }
-}
+end
 
+local defaults = GetDefaultData()
 Character = setmetatable({}, { __index = defaults })
+
+function Character:Reset()
+    defaults = GetDefaultData()
+
+    for k, v in pairs(defaults) do
+        if type(v) ~= "function" then
+            self[k] = v
+        end
+    end
+end
 
 function Character:Import(data)
     for k, v in pairs(data) do
@@ -163,32 +176,63 @@ end
 
 function Character:Export()
     local data = Utils:CopyData(defaults)
-
     local copy = Utils:CopyData(self, data)
-    copy.flags = nil
-    copy.ped = nil
+
+    for k, _ in pairs(copy) do
+        if k:sub(1, 1) == "_" then
+            copy[k] = nil
+        end
+    end
 
     return copy
 end
 
-function Character:Reset()
-    for k, v in pairs(self) do
-        if type(v) ~= "function" then
-            self[k] = nil
-        end
-    end
-end
-
 function Character:IsFlagSet(flag)
-    return (self.flags & flag) ~= 0
+    return (self._flags & flag) ~= 0
 end
 
 function Character:SetFlag(flag)
-    self.flags = self.flags | flag
+    self._flags = self._flags | flag
 end
 
 function Character:ClearFlag(flag)
-    self.flags = self.flags & ~flag
+    self._flags = self._flags & ~flag
+end
+
+function Character:SetPed(ped)
+    self._ped = ped or 0
+end
+
+function Character:GetPed()
+    return self._ped or 0
+end
+
+function Character:SetModified()
+    if self:IsFlagSet(CHARACTER_FLAG.MODIFIED) then return end
+    self:SetFlag(CHARACTER_FLAG.MODIFIED)
+    self:ClearFlag(CHARACTER_FLAG.RANDOMIZED)
+end
+
+function Character:IsModified()
+    return self:IsFlagSet(CHARACTER_FLAG.MODIFIED)
+end
+
+function Character:ClearModified()
+    self:ClearFlag(CHARACTER_FLAG.MODIFIED)
+end
+
+function Character:SetRandomized()
+    if self:IsFlagSet(CHARACTER_FLAG.RANDOMIZED) then return end
+    self:SetFlag(CHARACTER_FLAG.RANDOMIZED)
+    self:ClearFlag(CHARACTER_FLAG.MODIFIED)
+end
+
+function Character:IsRandomized()
+    return self:IsFlagSet(CHARACTER_FLAG.RANDOMIZED)
+end
+
+function Character:ClearRandomized()
+    self:ClearFlag(CHARACTER_FLAG.RANDOMIZED)
 end
 
 function Character:Maintain()
@@ -196,7 +240,8 @@ function Character:Maintain()
         return
     end
 
-    if self.ped == 0 or IsPedReadyToRender(self.ped) ~= 1 then
+    local ped = self:GetPed()
+    if ped == 0 or IsPedReadyToRender(ped) ~= 1 then
         return
     end
 
@@ -219,9 +264,10 @@ function Character:Maintain()
     end
 
     if self:IsFlagSet(CHARACTER_FLAG.UPDATE_PED) then
+        RefreshMetaPedShopItems(ped, 1)
         -- PED::_SET_ACTIVE_META_PED_COMPONENTS_UPDATED
-        Citizen.InvokeNative(0xAAB86462966168CE, self.ped, true)
-        UpdatePedVariation(self.ped, false, true, true, true, false)
+        Citizen.InvokeNative(0xAAB86462966168CE, ped, true)
+        UpdatePedVariation(ped, false, true, true, true, false)
 
         self:ClearFlag(CHARACTER_FLAG.UPDATE_PED)
     end
@@ -230,37 +276,43 @@ function Character:Maintain()
 end
 
 function Character:Exists()
-    if self.ped == 0 then return false end
-    return DoesEntityExist(self.ped) == 1
+    local ped = self:GetPed()
+    if ped == 0 then return false end
+    return DoesEntityExist(ped) == 1
 end
 
 function Character:IsPlayer()
     if not self:Exists() then return false end
-    return IsPedAPlayer(self.ped) == 1
+    local ped = self:GetPed()
+    return IsPedAPlayer(ped) == 1
 end
 
 function Character:IsOtherPlayer()
     if not self:IsPlayer() then return false end
-    return self.ped ~= PlayerPedId()
+    local ped = self:GetPed()
+    return ped ~= PlayerPedId()
 end
 
 function Character:IsHuman()
     if not self:Exists() then return false end
-    return IsPedHuman(self.ped) == 1
+    local ped = self:GetPed()
+    return IsPedHuman(ped) == 1
 end
 
 function Character:IsMale()
     if not self:Exists() then return false end
     if not self:IsHuman() then return false end
 
-    local model = GetEntityModel(self.ped)
+    local ped = self:GetPed()
+
+    local model = GetEntityModel(ped)
     if model == `MP_MALE` then
         return true
     elseif model == `MP_FEMALE` then
         return false
     end
 
-    return IsPedMale(self.ped)
+    return IsPedMale(ped)
 end
 
 function Character:IsFemale()
@@ -320,13 +372,15 @@ function Character:GetBeardColorString()
 end
 
 function Character:ApplyShopItem(item)
-    ApplyShopItemToPed(self.ped, item, false, true, true)
+    local ped = self:GetPed()
+    ApplyShopItemToPed(ped, item, false, true, true)
 
     self:RequestUpdate()
 end
 
 function Character:ApplyMetaPedOutfit(outfit)
-    EquipMetaPedOutfit(self.ped, outfit)
+    local ped = self:GetPed()
+    EquipMetaPedOutfit(ped, outfit)
 
     self:RequestUpdate()
 end
@@ -337,7 +391,8 @@ function Character:IsPedUsingTag(tag)
         error(string.format("No hash found for tag: %s", COMPONENT_TAG:ToString(tag)), 2)
     end
 
-    return Citizen.InvokeNative(0xFB4891BD7578CDC1, self.ped, hash) == 1
+    local ped = self:GetPed()
+    return Citizen.InvokeNative(0xFB4891BD7578CDC1, ped, hash) == 1
 end
 
 function Character:RemoveTagFromPed(tag)
@@ -346,7 +401,8 @@ function Character:RemoveTagFromPed(tag)
         error(string.format("No hash found for tag: %s", COMPONENT_TAG:ToString(tag)), 2)
     end
 
-    RemoveTagFromMetaPed(self.ped, hash, 0)
+    local ped = self:GetPed()
+    RemoveTagFromMetaPed(ped, hash, 0)
 
     self:RequestUpdate()
 end
@@ -383,6 +439,7 @@ end
 function Character:ApplyHeight(value, apply)
     if value ~= nil then
         self.height = value
+        self:SetModified()
     end
 
     local heights = CreatorConfig.Heights
@@ -390,7 +447,8 @@ function Character:ApplyHeight(value, apply)
     local height = heights[normalized + 1]
 
     if apply then
-        SetPedScale(self.ped, height.value)
+        local ped = self:GetPed()
+        SetPedScale(ped, height.value)
     else
         self:SetFlag(CHARACTER_FLAG.UPDATE_HEIGHT)
         self:SetFlag(CHARACTER_FLAG.DIRTY)
@@ -400,6 +458,7 @@ end
 function Character:ApplyWeight(value)
     if value ~= nil then
         self.weight = value
+        self:SetModified()
     end
 
     local weights = CreatorConfig.Weights
@@ -412,6 +471,7 @@ end
 function Character:ApplyVoice(value)
     if value ~= nil then
         self.voice = value
+        self:SetModified()
     end
 
     local voices = CreatorConfig.Voices
@@ -421,7 +481,8 @@ function Character:ApplyVoice(value)
     local gender = self:GetGenderFull()
     local item = string.format("VOFX_PLAYER_%s%02d", gender, voice.value)
 
-    SetVofxPedVoice(self.ped, item)
+    local ped = self:GetPed()
+    SetVofxPedVoice(ped, item)
 
     self:RequestUpdate()
 end
@@ -429,13 +490,15 @@ end
 function Character:ApplyWeariness(value)
     if value ~= nil then
         self.weariness = value
+        self:SetModified()
     end
 
     local min = CreatorConfig.MinWeariness or 0.0
     local max = CreatorConfig.MaxWeariness or 0.5
     local result = min + (self.weariness * (max - min))
 
-    SetMetaPedWeariness(self.ped, result)
+    local ped = self:GetPed()
+    SetMetaPedWeariness(ped, result)
 end
 
 function Character:GetExpressionGameBounds(expressionId)
@@ -488,6 +551,7 @@ function Character:ApplyExpressionValue(expressionId, uiValue, update)
         uiValue = math.floor(uiValue * 10000 + 0.5) / 10000
 
         self.expressions[expressionId] = uiValue
+        self:SetModified()
     end
 
     local currentUiValue = self.expressions[expressionId] or 0.5
@@ -532,8 +596,10 @@ function Character:ApplyExpressionZonePreset(zone)
 end
 
 function Character:SetExpression(expressionId, gameValue, update)
+    local ped = self:GetPed()
+
     -- _SET_CHAR_EXPRESSION
-    Citizen.InvokeNative(0x5653AB26C82938CF, self.ped, expressionId, gameValue)
+    Citizen.InvokeNative(0x5653AB26C82938CF, ped, expressionId, gameValue)
 
     if update then
         self:RequestUpdate()
@@ -561,6 +627,7 @@ end
 function Character:ApplyAgeAlpha(value, apply)
     if value ~= nil then
         self.age = value
+        self:SetModified()
     end
 
     local minAge = CreatorConfig.MinAge or 18
@@ -577,22 +644,29 @@ end
 function Character:ApplySkintone(value, apply)
     if value ~= nil then
         self.skintone = value
+        self:SetModified()
     end
 
     self:ApplyHead(apply)
     self:ApplyBodyItems()
 end
 
-function Character:ApplyBodyItems(value)
-    if value ~= nil then
-        self.bodyType = value
-    end
-
+function Character:GetBodyBuild()
     local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
     local normalized = self.bodyType % #bodyBuilds
     local bodyBuild = bodyBuilds[normalized + 1]
 
-    local presetBodyBuild = CreatorPresets:GetBodyBuild(bodyBuild.build)
+    return bodyBuild.build or CHARACTER_BODY_BUILD.NEUTRAL
+end
+
+function Character:ApplyBodyItems(value)
+    if value ~= nil then
+        self.bodyType = value
+        self:SetModified()
+    end
+
+    local bodyBuild = Character:GetBodyBuild()
+    local presetBodyBuild = CreatorPresets:GetBodyBuild(bodyBuild)
     local shopItems = CreatorPresets:GetBodyShopItems(self.skintone, presetBodyBuild)
 
     self:ApplyShopItem(shopItems.upper)
@@ -604,6 +678,7 @@ end
 function Character:ApplyBodyExpressions(value)
     if value ~= nil then
         self.bodyType = value
+        self:SetModified()
     end
 
     local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
@@ -619,6 +694,7 @@ end
 function Character:ApplyEyeColor(value)
     if value ~= nil then
         self.eyeColor = value
+        self:SetModified()
     end
 
     local colors = CreatorConfig.Eyes
@@ -634,6 +710,7 @@ end
 function Character:ApplyTeeth(value)
     if value ~= nil then
         self.teeth = value
+        self:SetModified()
     end
 
     local teeth = CreatorConfig.Teeth
@@ -649,6 +726,7 @@ end
 function Character:ApplyHairStyle(value)
     if value ~= nil then
         self.hair = value
+        self:SetModified()
     end
 
     self:ApplyHair()
@@ -657,6 +735,7 @@ end
 function Character:ApplyHairColor(value, apply)
     if value ~= nil then
         self.hairColor = value
+        self:SetModified()
     end
 
     self:ApplyHair()
@@ -739,7 +818,9 @@ function Character:ApplyCustomHair(hair, color)
     local palette = hair.palette or fallbacks.palette or 0
 
     self:RemoveHair(true)
-    SetMetaPedTag(self.ped, drawable, albedo, normal, material, palette, tint0, tint1, tint2)
+
+    local ped = self:GetPed()
+    SetMetaPedTag(ped, drawable, albedo, normal, material, palette, tint0, tint1, tint2)
 
     self:RequestUpdate()
 end
@@ -749,6 +830,7 @@ function Character:ApplyBeardStyle(value)
 
     if value ~= nil then
         self.beard = value
+        self:SetModified()
     end
 
     self:ApplyBeard()
@@ -759,6 +841,7 @@ function Character:ApplyBeardColor(value, apply)
 
     if value ~= nil then
         self.beardColor = value
+        self:SetModified()
     end
 
     self:ApplyBeard()
@@ -846,7 +929,9 @@ function Character:ApplyCustomBeard(beard, color)
     local palette = beard.palette or fallbacks.palette or 0
 
     self:RemoveBeard(true)
-    SetMetaPedTag(self.ped, drawable, albedo, normal, material, palette, tint0, tint1, tint2)
+
+    local ped = self:GetPed()
+    SetMetaPedTag(ped, drawable, albedo, normal, material, palette, tint0, tint1, tint2)
 
     self:RequestUpdate()
 end
@@ -869,7 +954,9 @@ function Character:ApplyOverlayBlend(layer, value, apply)
     local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
     if value ~= nil then
         overlay.id = value
+
         self.layers[layer] = overlay
+        self:SetModified()
     end
 
     local blend = CharacterOverlay:GetLayerBlend(layer, overlay.id + 1)
@@ -900,7 +987,9 @@ function Character:ApplyOverlayAlpha(layer, value, apply)
         if value < 0.0001 then value = 0.0001 end
         if value > 1.0 then value = 1.0 end
         overlay.alpha = value
+
         self.layers[layer] = overlay
+        self:SetModified()
     end
 
     CharacterOverlay:SetLayerAlpha(layer, overlay.alpha, apply)
@@ -915,6 +1004,7 @@ function Character:ApplyOverlayColor(layer, value, apply)
 
     if value ~= nil then
         self.layerColors[layer] = value
+        self:SetModified()
     end
 
     local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
@@ -949,33 +1039,41 @@ end
 function Character:ApplyWhistleStyle(value)
     if value ~= nil then
         self.whistleStyle = value
+        self:SetModified()
     end
 
-    SetWhistleConfigForPed(self.ped, "Ped.WhistleShape", self.whistleStyle)
+    local ped = self:GetPed()
+    SetWhistleConfigForPed(ped, "Ped.WhistleShape", self.whistleStyle)
 end
 
 function Character:ApplyWhistlePitch(value)
     if value ~= nil then
         self.whistlePitch = value
+        self:SetModified()
     end
 
-    SetWhistleConfigForPed(self.ped, "Ped.WhistlePitch", self.whistlePitch * 0.01)
+    local ped = self:GetPed()
+    SetWhistleConfigForPed(ped, "Ped.WhistlePitch", self.whistlePitch * 0.01)
 end
 
 function Character:ApplyWhistleClarity(value)
     if value ~= nil then
         self.whistleClarity = value
+        self:SetModified()
     end
 
-    SetWhistleConfigForPed(self.ped, "Ped.WhistleClarity", self.whistleClarity * 0.01)
+    local ped = self:GetPed()
+    SetWhistleConfigForPed(ped, "Ped.WhistleClarity", self.whistleClarity * 0.01)
 end
 
 function Character:Whistle()
-    TaskWhistleAnim(self.ped, `WhistleHorseLong`, `unspecified`)
+    local ped = self:GetPed()
+    TaskWhistleAnim(ped, `WhistleHorseLong`, `unspecified`)
 end
 
 function Character:Vocalize()
-    if IsAnySpeechPlaying(self.ped) == 1 then
+    local ped = self:GetPed()
+    if IsAnySpeechPlaying(ped) == 1 then
         return
     end
 
@@ -992,12 +1090,13 @@ function Character:Vocalize()
     struct:SetInt32(6 * 8, 1)
 
     -- AUDIO::PLAY_PED_AMBIENT_SPEECH_NATIVE
-    Citizen.InvokeNative(0x8E04FEDD28D42462, self.ped, struct:Buffer())
+    Citizen.InvokeNative(0x8E04FEDD28D42462, ped, struct:Buffer())
 end
 
 function Character:ApplyHeritage(value)
     if value ~= nil then
         self.heritage = value
+        self:SetModified()
     end
 
     CreatorPresets:SetHeritage(self.heritage)
@@ -1009,6 +1108,7 @@ end
 function Character:ApplyPreset(zone, value)
     if value ~= nil then
         self.presets[zone] = value
+        self:SetModified()
     end
 
     self:ApplyExpressionZonePreset(zone)
@@ -1041,6 +1141,7 @@ function Character:RandomizeAll()
 
     CharacterOverlay:RequestUpdate()
 
+    self:SetRandomized()
     SignalBus:emit("randomized")
 end
 
@@ -1297,14 +1398,9 @@ function Character:RandomizeOverlayPresets(apply)
 end
 
 function Character:RandomizeWhistle(preview)
-    self.whistleStyle = GetRandomIntInRange(0, 5)
-    self:ApplyWhistleStyle()
-
-    self.whistlePitch = GetRandomIntInRange(0, 100)
-    self:ApplyWhistlePitch()
-
-    self.whistleClarity = GetRandomIntInRange(0, 100)
-    self:ApplyWhistleClarity()
+    self:ApplyWhistleStyle(GetRandomIntInRange(0, 5))
+    self:ApplyWhistlePitch(GetRandomIntInRange(0, 100))
+    self:ApplyWhistleClarity(GetRandomIntInRange(0, 100))
 
     SignalBus:emit("whistle_randomized", self.whistleStyle, self.whistlePitch, self.whistleClarity)
 
@@ -1332,6 +1428,8 @@ function Character:RandomizeVoice(preview)
 end
 
 function Character:ApplyClothingLevel(level)
+    local ped = self:GetPed()
+
     for _, tag in ipairs(COMPONENT_TAG:Values()) do
         local hiddenTags = COMPONENT_TAG:GetHiddenTags(tag)
         if hiddenTags then
@@ -1339,7 +1437,7 @@ function Character:ApplyClothingLevel(level)
                 if setting == level then
                     local hash = COMPONENT_TAG:GetHash(tag)
                     if hash then
-                        RemoveTagFromMetaPed(self.ped, hash, 0)
+                        RemoveTagFromMetaPed(ped, hash, 0)
                     end
                     break
                 end
@@ -1359,18 +1457,20 @@ function Character:ApplyDefaultClothing()
             ClonePedToTarget(Intro.playerPedId, Intro.presetPeds[EDITOR_CONFIG.FEMALE])
         end
     else
+        local ped = self:GetPed()
+
         -- For the intro case the exact outfit items applied during MaintainApplyClothes
         -- were saved in savedOutfitItems, so we strip all clothing and re-apply them.
         for _, tag in ipairs(COMPONENT_TAG:Values()) do
             if COMPONENT_TAG:GetHiddenTags(tag) then
                 local hash = COMPONENT_TAG:GetHash(tag)
-                if hash then RemoveTagFromMetaPed(self.ped, hash, 0) end
+                if hash then RemoveTagFromMetaPed(ped, hash, 0) end
             end
         end
 
         local items = Intro.savedOutfitItems[Intro.selectedPreset] or {}
         for _, item in ipairs(items) do
-            ApplyShopItemToPed(self.ped, item, false, true, false)
+            ApplyShopItemToPed(ped, item, false, true, false)
         end
     end
 

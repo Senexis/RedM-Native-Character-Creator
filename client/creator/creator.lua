@@ -1,22 +1,25 @@
-local defaults = {
-    config = 0,
-    flags = EDITOR_FLAG.CLEAR,
-    state = EDITOR_STATE.INIT,
-    stateChangeTime = 0,
-    headRequests = {},
-    bodyRequests = {},
-    mode = CREATOR_MODE.DEFAULT,
-}
+local function GetDefaultData()
+    return {
+        config = 0,
+        flags = EDITOR_FLAG.CLEAR,
+        state = EDITOR_STATE.INIT,
+        stateChangeTime = 0,
+        headRequests = {},
+        bodyRequests = {},
+        mode = CREATOR_MODE.DEFAULT,
+    }
+end
 
+local defaults = GetDefaultData()
 Creator = setmetatable({}, { __index = defaults })
 
 function Creator:Reset()
-    for k in pairs(self) do
-        if type(self[k]) == "function" then
-            goto continue
+    defaults = GetDefaultData()
+
+    for k, v in pairs(defaults) do
+        if type(v) ~= "function" then
+            self[k] = v
         end
-        self[k] = nil
-        ::continue::
     end
 end
 
@@ -66,13 +69,13 @@ function Creator:OpenEditor(mode)
     self:SetFlag(EDITOR_FLAG.EDITOR_ACTIVE)
 end
 
-function Creator:CloseEditor(confirmed)
+function Creator:CloseEditor()
     if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
         return
     end
 
-    if confirmed and CreatorMenu then
-        CreatorMenu:SetConfirmed(self:GetMode(), true)
+    if CreatorMenu then
+        CreatorMenu:Confirm()
     end
 
     self:ClearFlag(EDITOR_FLAG.EDITOR_ACTIVE)
@@ -84,6 +87,14 @@ function Creator:QuickSwitch()
     end
 
     Creator:SetFlag(EDITOR_FLAG.QUICK_SWITCH)
+end
+
+function Creator:QuickSettings()
+    if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
+        return
+    end
+
+    Creator:SetFlag(EDITOR_FLAG.QUICK_SETTINGS)
 end
 
 function Creator:Rename()
@@ -126,6 +137,8 @@ function Creator:Maintain()
         self:UpdateStateTransitionToEditor()
     elseif self.state == EDITOR_STATE.QUICK_SWITCH then
         self:UpdateStateQuickSwitch()
+    elseif self.state == EDITOR_STATE.QUICK_SETTINGS then
+        self:UpdateStateQuickSettings()
     elseif self.state == EDITOR_STATE.TEARDOWN then
         self:UpdateStateTeardown()
     else
@@ -241,7 +254,8 @@ function Creator:UpdateStateInMenu()
         end
 
         local rerolling = self:IsFlagSet(EDITOR_FLAG.REROLLING)
-        CreatorMenu:Open(rerolling)
+        local toSettings = self:IsFlagSet(EDITOR_FLAG.QUICK_SETTINGS)
+        CreatorMenu:Open(rerolling, toSettings)
 
         if IsUiappActiveByHash(`shop_menu`) ~= 1 then
             return
@@ -249,6 +263,7 @@ function Creator:UpdateStateInMenu()
 
         self:ClearFlag(EDITOR_FLAG.EDITOR_RUNNING)
         self:SetFlag(EDITOR_FLAG.MENU_RUNNING)
+        self:ClearFlag(EDITOR_FLAG.QUICK_SETTINGS)
     end
 end
 
@@ -266,6 +281,11 @@ function Creator:UpdateStateInEditor()
 
     if self:IsFlagSet(EDITOR_FLAG.QUICK_SWITCH) then
         self:SetState(EDITOR_STATE.QUICK_SWITCH)
+        return
+    end
+
+    if self:IsFlagSet(EDITOR_FLAG.QUICK_SETTINGS) then
+        self:SetState(EDITOR_STATE.QUICK_SETTINGS)
         return
     end
 
@@ -383,6 +403,28 @@ function Creator:UpdateStateQuickSwitch()
     self:SetState(EDITOR_STATE.TRANSITION_TO_EDITOR)
 end
 
+function Creator:UpdateStateQuickSettings()
+    if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
+        return
+    end
+
+    DisableAllControlActions(0)
+
+    if IsUiappRunningByHash(`character_creator`) == 1 then
+        CloseUiappByHash(`character_creator`)
+    end
+
+    if CanLaunchUiappByHash(`shop_menu`) ~= 1 then
+        return
+    end
+
+    self:ClearFlag(EDITOR_FLAG.MENU_RUNNING)
+    self:ClearFlag(EDITOR_FLAG.EDITOR_ACTIVE)
+    self:ClearFlag(EDITOR_FLAG.EDITOR_RUNNING)
+
+    self:SetState(EDITOR_STATE.IN_MENU)
+end
+
 function Creator:PreloadAnimations()
     for _, dict in ipairs({ "face_human@gen_male@base", "mp_character_creator@male@fidgets", "mp_character_creator@female@fidgets" }) do
         RequestAnimDict(dict)
@@ -407,7 +449,8 @@ function Creator:PreloadAnimations()
 end
 
 function Creator:InitHeadRequests()
-    local pedType = GetMetaPedType(Character.ped)
+    local ped = Character:GetPed()
+    local pedType = GetMetaPedType(ped)
     local heritages = CreatorPresets:GetHeritages()
 
     for _, heritage in ipairs(heritages) do
@@ -452,7 +495,8 @@ function Creator:ReleaseHeads()
 end
 
 function Creator:InitBodyRequests()
-    local pedType = GetMetaPedType(Character.ped)
+    local ped = Character:GetPed()
+    local pedType = GetMetaPedType(ped)
     local skintones = CreatorPresets:GetSkintones()
     local bodyBuilds = CreatorPresets:GetBodyBuilds()
 

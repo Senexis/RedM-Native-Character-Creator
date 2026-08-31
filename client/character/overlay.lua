@@ -69,7 +69,8 @@ function CharacterOverlay:Maintain()
         return false
     end
 
-    ApplyTextureOnPed(Character.ped, `heads`, self.drawable)
+    local ped = Character:GetPed()
+    ApplyTextureOnPed(ped, `heads`, self.drawable)
     UpdatePedTexture(self.drawable)
 
     Character:ClearFlag(CHARACTER_FLAG.OVERLAY_DIRTY)

@@ -14,7 +14,8 @@ local EDITOR_STATES = {
     TRANSITION_TO_MENU    = 8,
     TRANSITION_TO_EDITOR  = 9,
     QUICK_SWITCH          = 10,
-    TEARDOWN              = 11,
+    QUICK_SETTINGS        = 11,
+    TEARDOWN              = 12,
 }
 
 ---@type EDITOR_STATES | EnumRegistry

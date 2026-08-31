@@ -23,39 +23,36 @@
 CharacterBlend = {}
 CharacterBlend.__index = CharacterBlend
 
-local defaults = {
-    id = "BLEND_NONE",
-    layer = -1,
+local function GetDefaultData()
+    return {
+        id = "BLEND_NONE",
+        layer = -1,
 
-    priority = -1,
-    isTint = false,
-    isHair = false,
-    index = -1,
+        priority = -1,
+        isTint = false,
+        isHair = false,
+        index = -1,
 
-    albedo = 0,
-    normal = 0,
-    material = 0,
-    sheetGridIndex = 0,
-    modTexture = 0,
-    modChannel = 0,
-    palette = 0,
-    tint0 = 0,
-    tint1 = 0,
-    tint2 = 0,
-    texAlpha = 1.0,
-    modAlpha = 1.0,
-    roughness = 0.0,
-    blendType = 0,
-    alpha = 1.0,
-}
+        albedo = 0,
+        normal = 0,
+        material = 0,
+        sheetGridIndex = 0,
+        modTexture = 0,
+        modChannel = 0,
+        palette = 0,
+        tint0 = 0,
+        tint1 = 0,
+        tint2 = 0,
+        texAlpha = 1.0,
+        modAlpha = 1.0,
+        roughness = 0.0,
+        blendType = 0,
+        alpha = 1.0,
+    }
+end
 
 function CharacterBlend:New(data)
-    local instance = {}
-
-    for k, v in pairs(defaults) do
-        instance[k] = v
-    end
-
+    local instance = GetDefaultData()
     setmetatable(instance, self)
 
     if data then
@@ -70,8 +67,9 @@ function CharacterBlend:Update(newData)
         return
     end
 
+    local defaults = GetDefaultData()
     for k, v in pairs(newData) do
-        if self[k] ~= nil then
+        if defaults[k] ~= nil then
             self[k] = v
         end
     end

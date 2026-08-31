@@ -1,9 +1,12 @@
-local defaults = {
-    stateXmlFile = 0,
-    loadedXmlFile = 0,
-    xmlRequestState = nil,
-}
+local function GetDefaultData()
+    return {
+        stateXmlFile = 0,
+        loadedXmlFile = 0,
+        xmlRequestState = nil,
+    }
+end
 
+local defaults = GetDefaultData()
 CreatorXml = setmetatable({}, { __index = defaults })
 
 function CreatorXml:Reset()
@@ -11,12 +14,12 @@ function CreatorXml:Reset()
         ParseddataUnloadFile(self.stateXmlFile)
     end
 
-    for k in pairs(self) do
-        if type(self[k]) == "function" then
-            goto continue
+    defaults = GetDefaultData()
+
+    for k, v in pairs(defaults) do
+        if type(v) ~= "function" then
+            self[k] = v
         end
-        self[k] = nil
-        ::continue::
     end
 end
 
