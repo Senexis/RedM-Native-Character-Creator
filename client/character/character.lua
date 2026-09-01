@@ -265,8 +265,7 @@ function Character:Maintain()
 
     if self:IsFlagSet(CHARACTER_FLAG.UPDATE_PED) then
         RefreshMetaPedShopItems(ped, 1)
-        -- PED::_SET_ACTIVE_META_PED_COMPONENTS_UPDATED
-        Citizen.InvokeNative(0xAAB86462966168CE, ped, true)
+        Citizen.InvokeNative(Natives.SetActiveMetaPedComponentsUpdated, ped, true)
         UpdatePedVariation(ped, false, true, true, true, false)
 
         self:ClearFlag(CHARACTER_FLAG.UPDATE_PED)
@@ -392,7 +391,7 @@ function Character:IsPedUsingTag(tag)
     end
 
     local ped = self:GetPed()
-    return Citizen.InvokeNative(0xFB4891BD7578CDC1, ped, hash) == 1
+    return Citizen.InvokeNative(Natives.IsMetaPedUsingComponentCategory, ped, hash) == 1
 end
 
 function Character:RemoveTagFromPed(tag)
@@ -446,6 +445,10 @@ function Character:ApplyHeight(value, apply)
     local normalized = self.height % #heights
     local height = heights[normalized + 1]
 
+    if self.height ~= normalized then
+        self.height = normalized
+    end
+
     if apply then
         local ped = self:GetPed()
         SetPedScale(ped, height.value)
@@ -465,6 +468,10 @@ function Character:ApplyWeight(value)
     local normalized = self.weight % #weights
     local weight = weights[normalized + 1]
 
+    if self.weight ~= normalized then
+        self.weight = normalized
+    end
+
     self:ApplyMetaPedOutfit(weight.value)
 end
 
@@ -477,6 +484,10 @@ function Character:ApplyVoice(value)
     local voices = CreatorConfig.Voices
     local normalized = self.voice % #voices
     local voice = voices[normalized + 1]
+
+    if self.voice ~= normalized then
+        self.voice = normalized
+    end
 
     local gender = self:GetGenderFull()
     local item = string.format("VOFX_PLAYER_%s%02d", gender, voice.value)
@@ -598,8 +609,7 @@ end
 function Character:SetExpression(expressionId, gameValue, update)
     local ped = self:GetPed()
 
-    -- _SET_CHAR_EXPRESSION
-    Citizen.InvokeNative(0x5653AB26C82938CF, ped, expressionId, gameValue)
+    Citizen.InvokeNative(Natives.SetCharExpression, ped, expressionId, gameValue)
 
     if update then
         self:RequestUpdate()
@@ -656,6 +666,10 @@ function Character:GetBodyBuild()
     local normalized = self.bodyType % #bodyBuilds
     local bodyBuild = bodyBuilds[normalized + 1]
 
+    if self.bodyType ~= normalized then
+        self.bodyType = normalized
+    end
+
     return bodyBuild.build or CHARACTER_BODY_BUILD.NEUTRAL
 end
 
@@ -665,7 +679,7 @@ function Character:ApplyBodyItems(value)
         self:SetModified()
     end
 
-    local bodyBuild = Character:GetBodyBuild()
+    local bodyBuild = self:GetBodyBuild()
     local presetBodyBuild = CreatorPresets:GetBodyBuild(bodyBuild)
     local shopItems = CreatorPresets:GetBodyShopItems(self.skintone, presetBodyBuild)
 
@@ -685,6 +699,10 @@ function Character:ApplyBodyExpressions(value)
     local normalized = self.bodyType % #bodyBuilds
     local bodyBuild = bodyBuilds[normalized + 1]
 
+    if self.bodyType ~= normalized then
+        self.bodyType = normalized
+    end
+
     for expressionKey, expressionValue in pairs(bodyBuild.expressions) do
         local uiValue = self:ExpressionGameToUiValue(expressionKey, expressionValue)
         self:ApplyExpressionValue(expressionKey, uiValue, false)
@@ -701,6 +719,10 @@ function Character:ApplyEyeColor(value)
     local normalized = self.eyeColor % #colors
     local color = colors[normalized + 1]
 
+    if self.eyeColor ~= normalized then
+        self.eyeColor = normalized
+    end
+
     local gender = self:GetGenderShort()
     local eyes = string.format("CLOTHING_ITEM_%s_EYES_001_TINT_%03d", gender, color)
 
@@ -716,6 +738,10 @@ function Character:ApplyTeeth(value)
     local teeth = CreatorConfig.Teeth
     local normalized = self.teeth % #teeth
     local teethItem = teeth[normalized + 1]
+
+    if self.teeth ~= normalized then
+        self.teeth = normalized
+    end
 
     local gender = self:GetGenderShort()
     local key = string.format("CLOTHING_ITEM_%s_TEETH_%03d", gender, teethItem)
@@ -763,6 +789,10 @@ function Character:ApplyHair()
     local normalizedColor = self.hairColor % #colors
     local color = colors[normalizedColor + 1]
 
+    if self.hairColor ~= normalizedColor then
+        self.hairColor = normalizedColor
+    end
+
     local gender = self:GetGenderShort()
 
     local hairs = self:IsMale() and CreatorConfig.MaleHairs or CreatorConfig.FemaleHairs
@@ -770,6 +800,10 @@ function Character:ApplyHair()
 
     local normalizedHair = self.hair % (#hairs + #custom)
     local hair = { id = "NONE", custom = false }
+
+    if self.hair ~= normalizedHair then
+        self.hair = normalizedHair
+    end
 
     if normalizedHair < #hairs then
         local id = hairs[normalizedHair + 1]
@@ -876,11 +910,19 @@ function Character:ApplyBeard()
     local normalizedColor = self.beardColor % #colors
     local color = colors[normalizedColor + 1]
 
+    if self.beardColor ~= normalizedColor then
+        self.beardColor = normalizedColor
+    end
+
     local beards = CreatorConfig.MaleBeards
     local custom = CreatorConfig.CustomMaleBeards
 
     local normalizedBeard = self.beard % (#beards + #custom)
     local beard = { id = "NONE", custom = false }
+
+    if self.beard ~= normalizedBeard then
+        self.beard = normalizedBeard
+    end
 
     if normalizedBeard < #beards then
         local id = beards[normalizedBeard + 1]
@@ -1019,6 +1061,10 @@ function Character:ApplyOverlayColor(layer, value, apply)
     local normalized = self.layerColors[layer] % #colors
     local color = colors[normalized + 1]
 
+    if self.layerColors[layer] ~= normalized then
+        self.layerColors[layer] = normalized
+    end
+
     if not color then
         error(string.format("No color found for layer %d and blend %s with index %d", layer, blend, normalized), 2)
     end
@@ -1089,8 +1135,7 @@ function Character:Vocalize()
     struct:SetInt32(5 * 8, 1)
     struct:SetInt32(6 * 8, 1)
 
-    -- AUDIO::PLAY_PED_AMBIENT_SPEECH_NATIVE
-    Citizen.InvokeNative(0x8E04FEDD28D42462, ped, struct:Buffer())
+    Citizen.InvokeNative(Natives.PlayPedAmbientSpeechNative, ped, struct:Buffer())
 end
 
 function Character:ApplyHeritage(value)

@@ -18,6 +18,7 @@ files {
 client_scripts {
     "@native-shop/client/api.lua",
 
+    "client/natives.lua",
     "client/utils.lua",
     "client/signals.lua",
     "client/dataview.lua",

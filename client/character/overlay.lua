@@ -105,7 +105,7 @@ function CharacterOverlay:UpdateBaseLayer(shopItem, apply)
     _tint0,
     _tint1,
     _tint2 = Citizen.InvokeNative(
-        0x63342C50EC115CE8,        -- PED::_GET_SHOP_ITEM_BASE_LAYERS(
+        Natives.GetShopItemBaseLayers,
         shopItem,                  --   shopItem,
         0,                         --   p1,
         0,                         --   ped,

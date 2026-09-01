@@ -70,7 +70,7 @@ CreateThread(function()
                 msg:SetInt32(16, 0)
                 msg:SetInt32(24, 0)
 
-                if Citizen.InvokeNative(0x90237103F27F7937, channel, msg:Buffer()) ~= 0 then -- EVENTS_UI_PEEK_MESSAGE
+                if Citizen.InvokeNative(Natives.EventsUiPeekMessage, channel, msg:Buffer()) ~= 0 then
                     local event = msg:GetInt32(0)
                     local msgId = msg:GetInt32(8)
                     local parameter = msg:GetInt32(16)

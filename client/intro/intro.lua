@@ -1330,7 +1330,7 @@ function Intro:MaintainMugshot()
                 self:CreateConversation("CHAR_BACKCUST")
             end
 
-            Citizen.InvokeNative(0x38D9D50F2085E9B3, self.photoPostfx)
+            Citizen.InvokeNative(Natives.GraphicsReleasePostfx, self.photoPostfx)
 
             self:SetState(INTRO_STATE.TRANSITION_BACK_TO_CUSTOMIZE)
             self:SetState(INTRO_MUGSHOT_STATE.PROMPT, "MUGSHOT")
@@ -1412,7 +1412,7 @@ function Intro:MaintainMugshot()
 
         CloseUiappByHash(`character_creator`)
 
-        Citizen.InvokeNative(0x38D9D50F2085E9B3, self.photoPostfx)
+        Citizen.InvokeNative(Natives.GraphicsReleasePostfx, self.photoPostfx)
         TogglePausedRenderphases(true)
 
         self:SetState(INTRO_STATE.EXIT)
@@ -2263,7 +2263,7 @@ function Intro:CreateConversation(conversation, singleLine, singleLineIndex, pre
     end
 
     if singleLine then
-        Citizen.InvokeNative(0x40CA665AB9D8D505, conversation, singleLineIndex)
+        Citizen.InvokeNative(Natives.AudioPlaySingleConversationLine, conversation, singleLineIndex)
     end
 
     Utils:Debug("NET_CHAR_CREATOR_CREATE_CONVERSATION- Playing convo: ", conversation)

@@ -75,7 +75,7 @@ function CreatorEvents:Maintain()
     while EventsUiIsPending(`ui_character_creator_events`) do
         local data = DataView.ArrayBuffer(8 * 4)
 
-        if Citizen.InvokeNative(0x90237103F27F7937, `ui_character_creator_events`, data:Buffer()) ~= 0 then -- EVENTS_UI_PEEK_MESSAGE
+        if Citizen.InvokeNative(Natives.EventsUiPeekMessage, `ui_character_creator_events`, data:Buffer()) ~= 0 then
             local event = data:GetInt32(0)
             local index = data:GetInt32(8)
             local parameter = data:GetInt32(16)

@@ -77,8 +77,7 @@ function IntroXml:GetNode(queryId, parameter1, parameter2)
     self.xmlRequestState:SetInt32(3 * 8, parameter1 or 0)
     self.xmlRequestState:SetInt32(4 * 8, parameter2 or 0)
 
-    -- DATAFILE::PARSEDDATA_RQ_FILLOUT_NODE
-    local result, node = Citizen.InvokeNative(0x83C3ED532B6E5D07, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
+    local result, node = Citizen.InvokeNative(Natives.ParseddataRqFilloutNode, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
     if result ~= 1 then return false end
 
     self.xmlRequestState:SetInt32(1 * 8, node)
@@ -93,8 +92,7 @@ function IntroXml:GetCount(queryId, parameter1, parameter2)
     self.xmlRequestState:SetInt32(3 * 8, parameter1 or 0)
     self.xmlRequestState:SetInt32(4 * 8, parameter2 or 0)
 
-    -- DATAFILE::_PARSEDDATA_RQ_GET_NUM_NODES
-    return Citizen.InvokeNative(0xDF01B1F7A886B42D, self.xmlRequestState:Buffer(), Citizen.ResultAsInteger())
+    return Citizen.InvokeNative(Natives.ParseddataRqGetNumNodes, self.xmlRequestState:Buffer(), Citizen.ResultAsInteger())
 end
 
 function IntroXml:GetBool(queryId, parameter1, parameter2)
@@ -105,8 +103,7 @@ function IntroXml:GetBool(queryId, parameter1, parameter2)
     self.xmlRequestState:SetInt32(3 * 8, parameter1 or 0)
     self.xmlRequestState:SetInt32(4 * 8, parameter2 or 0)
 
-    -- DATAFILE::_PARSEDDATA_RQ_FILLOUT_BOOL
-    local result, response = Citizen.InvokeNative(0x0D9138F3F8261DF7, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
+    local result, response = Citizen.InvokeNative(Natives.ParseddataRqFilloutBool, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
 
     if result ~= 1 then return false end
     return response == 1
@@ -120,8 +117,7 @@ function IntroXml:GetInt(queryId, parameter1, parameter2)
     self.xmlRequestState:SetInt32(3 * 8, parameter1 or 0)
     self.xmlRequestState:SetInt32(4 * 8, parameter2 or 0)
 
-    -- DATAFILE::_PARSEDDATA_RQ_FILLOUT_INT
-    local result, response = Citizen.InvokeNative(0xEF44ACC657352A35, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
+    local result, response = Citizen.InvokeNative(Natives.ParseddataRqFilloutInt, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
 
     if result ~= 1 then return 0 end
     return response
@@ -135,8 +131,7 @@ function IntroXml:GetFloat(queryId, parameter1, parameter2)
     self.xmlRequestState:SetInt32(3 * 8, parameter1 or 0)
     self.xmlRequestState:SetInt32(4 * 8, parameter2 or 0)
 
-    -- DATAFILE::_PARSEDDATA_RQ_FILLOUT_FLOAT
-    local result, response = Citizen.InvokeNative(0x7F034FC3E891B57A, Citizen.PointerValueFloat(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
+    local result, response = Citizen.InvokeNative(Natives.ParseddataRqFilloutFloat, Citizen.PointerValueFloat(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
 
     if result ~= 1 then return 0.0 end
     return math.floor(response * 10000 + 0.5) / 10000
@@ -150,8 +145,7 @@ function IntroXml:GetHash(queryId, parameter1, parameter2)
     self.xmlRequestState:SetInt32(3 * 8, parameter1 or 0)
     self.xmlRequestState:SetInt32(4 * 8, parameter2 or 0)
 
-    -- DATAFILE::PARSEDDATA_RQ_FILLOUT_HASH
-    local result, response = Citizen.InvokeNative(0xFBFF3FF2F5E80C0B, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
+    local result, response = Citizen.InvokeNative(Natives.ParseddataRqFilloutHash, Citizen.PointerValueInt(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
 
     if result ~= 1 then return 0 end
     return response
@@ -165,8 +159,7 @@ function IntroXml:GetVector(queryId, parameter1, parameter2)
     self.xmlRequestState:SetInt32(3 * 8, parameter1 or 0)
     self.xmlRequestState:SetInt32(4 * 8, parameter2 or 0)
 
-    -- DATAFILE::_PARSEDDATA_RQ_FILLOUT_VECTOR
-    local result, response = Citizen.InvokeNative(0x06FBF89B12DA279C, Citizen.PointerValueVector(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
+    local result, response = Citizen.InvokeNative(Natives.ParseddataRqFilloutVector, Citizen.PointerValueVector(), self.xmlRequestState:Buffer(), Citizen.ReturnResultAnyway())
 
     if result ~= 1 then return vector3(0, 0, 0) end
     return response

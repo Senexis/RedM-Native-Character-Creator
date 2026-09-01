@@ -93,8 +93,7 @@ function CreatorMenu:GetTimecycleValue(value)
 end
 
 function CreatorMenu:GetTimeOfDayLabels()
-    -- MISC::_SHOULD_USE_24_HOUR_CLOCK
-    local shouldUse24 = Citizen.InvokeNative(0x0177CF20345F44DD) == 1
+    local shouldUse24 = Citizen.InvokeNative(Natives.ShouldUse24HourClock) == 1
 
     local labels = {}
     for _, hour in pairs(TIMES) do

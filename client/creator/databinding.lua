@@ -68,7 +68,7 @@ function CreatorDatabinding:Initialize()
     self.datastore[id.APPEARANCE__SKIN_TONE__VISIBLE] = DatabindingAddDataBool(self.datastore[id.APPEARANCE__SKIN_TONE], "visible", true)
     self.datastore[id.APPEARANCE__SKIN_TONE__ENABLED] = DatabindingAddDataBool(self.datastore[id.APPEARANCE__SKIN_TONE], "enabled", true)
     self.datastore[id.APPEARANCE__SKIN_TONE__VALUE] = DatabindingAddDataInt(self.datastore[id.APPEARANCE__SKIN_TONE], "value", 0)
-    self.datastore[id.APPEARANCE__SKIN_TONE__ARRAY] = Citizen.InvokeNative(0xD48993A61938C64D, self.datastore[id.APPEARANCE__SKIN_TONE], "options")
+    self.datastore[id.APPEARANCE__SKIN_TONE__ARRAY] = Citizen.InvokeNative(Natives.DatabindingAddStringArray, self.datastore[id.APPEARANCE__SKIN_TONE], "options")
     self.datastore[id.APPEARANCE__SKIN_TONE__TXD] = DatabindingAddDataString(self.datastore[id.APPEARANCE__SKIN_TONE], "texture_dictionary", "")
     self.datastore[id.APPEARANCE__SKIN_TONE__TEXTURE] = DatabindingAddDataString(self.datastore[id.APPEARANCE__SKIN_TONE], "texture", "")
     self.datastore[id.APPEARANCE__SKIN_TONE__COLOR] = DatabindingAddDataHash(self.datastore[id.APPEARANCE__SKIN_TONE], "color", `COLOR_WHITE`)
@@ -87,7 +87,7 @@ function CreatorDatabinding:Initialize()
     self.datastore[id.APPEARANCE__EYE_COLOR__VISIBLE] = DatabindingAddDataBool(self.datastore[id.APPEARANCE__EYE_COLOR], "visible", true)
     self.datastore[id.APPEARANCE__EYE_COLOR__ENABLED] = DatabindingAddDataBool(self.datastore[id.APPEARANCE__EYE_COLOR], "enabled", true)
     self.datastore[id.APPEARANCE__EYE_COLOR__VALUE] = DatabindingAddDataInt(self.datastore[id.APPEARANCE__EYE_COLOR], "value", 0)
-    self.datastore[id.APPEARANCE__EYE_COLOR__ARRAY] = Citizen.InvokeNative(0xD48993A61938C64D, self.datastore[id.APPEARANCE__EYE_COLOR], "options")
+    self.datastore[id.APPEARANCE__EYE_COLOR__ARRAY] = Citizen.InvokeNative(Natives.DatabindingAddStringArray, self.datastore[id.APPEARANCE__EYE_COLOR], "options")
     self.datastore[id.APPEARANCE__EYE_COLOR__TXD] = DatabindingAddDataString(self.datastore[id.APPEARANCE__EYE_COLOR], "texture_dictionary", "")
     self.datastore[id.APPEARANCE__EYE_COLOR__TEXTURE] = DatabindingAddDataString(self.datastore[id.APPEARANCE__EYE_COLOR], "texture", "")
     self.datastore[id.APPEARANCE__EYE_COLOR__COLOR] = DatabindingAddDataHash(self.datastore[id.APPEARANCE__EYE_COLOR], "color", `COLOR_WHITE`)
@@ -281,7 +281,7 @@ function CreatorDatabinding:Initialize()
     self.datastore[id.HAIR__HAIR_COLOR__VISIBLE] = DatabindingAddDataBool(self.datastore[id.HAIR__HAIR_COLOR], "visible", true)
     self.datastore[id.HAIR__HAIR_COLOR__ENABLED] = DatabindingAddDataBool(self.datastore[id.HAIR__HAIR_COLOR], "enabled", true)
     self.datastore[id.HAIR__HAIR_COLOR__VALUE] = DatabindingAddDataInt(self.datastore[id.HAIR__HAIR_COLOR], "value", 0)
-    self.datastore[id.HAIR__HAIR_COLOR__ARRAY] = Citizen.InvokeNative(0xD48993A61938C64D, self.datastore[id.HAIR__HAIR_COLOR], "options")
+    self.datastore[id.HAIR__HAIR_COLOR__ARRAY] = Citizen.InvokeNative(Natives.DatabindingAddStringArray, self.datastore[id.HAIR__HAIR_COLOR], "options")
     self.datastore[id.HAIR__HAIR_COLOR__TXD] = DatabindingAddDataString(self.datastore[id.HAIR__HAIR_COLOR], "texture_dictionary", "")
     self.datastore[id.HAIR__HAIR_COLOR__TEXTURE] = DatabindingAddDataString(self.datastore[id.HAIR__HAIR_COLOR], "texture", "")
     self.datastore[id.HAIR__HAIR_COLOR__COLOR] = DatabindingAddDataHash(self.datastore[id.HAIR__HAIR_COLOR], "color", `COLOR_WHITE`)
@@ -373,7 +373,7 @@ function CreatorDatabinding:Initialize()
     self.datastore[id.MAKEUP__EYESHADOW_COLOR__VISIBLE] = DatabindingAddDataBool(self.datastore[id.MAKEUP__EYESHADOW_COLOR], "visible", true)
     self.datastore[id.MAKEUP__EYESHADOW_COLOR__ENABLED] = DatabindingAddDataBool(self.datastore[id.MAKEUP__EYESHADOW_COLOR], "enabled", true)
     self.datastore[id.MAKEUP__EYESHADOW_COLOR__VALUE] = DatabindingAddDataInt(self.datastore[id.MAKEUP__EYESHADOW_COLOR], "value", 0)
-    self.datastore[id.MAKEUP__EYESHADOW_COLOR__ARRAY] = Citizen.InvokeNative(0xD48993A61938C64D, self.datastore[id.MAKEUP__EYESHADOW_COLOR], "options")
+    self.datastore[id.MAKEUP__EYESHADOW_COLOR__ARRAY] = Citizen.InvokeNative(Natives.DatabindingAddStringArray, self.datastore[id.MAKEUP__EYESHADOW_COLOR], "options")
     self.datastore[id.MAKEUP__EYESHADOW_COLOR__TXD] = DatabindingAddDataString(self.datastore[id.MAKEUP__EYESHADOW_COLOR], "texture_dictionary", "")
     self.datastore[id.MAKEUP__EYESHADOW_COLOR__TEXTURE] = DatabindingAddDataString(self.datastore[id.MAKEUP__EYESHADOW_COLOR], "texture", "")
     self.datastore[id.MAKEUP__EYESHADOW_COLOR__COLOR] = DatabindingAddDataHash(self.datastore[id.MAKEUP__EYESHADOW_COLOR], "color", `COLOR_WHITE`)
@@ -393,7 +393,7 @@ function CreatorDatabinding:Initialize()
     self.datastore[id.MAKEUP__LIPSTICK_COLOR__VISIBLE] = DatabindingAddDataBool(self.datastore[id.MAKEUP__LIPSTICK_COLOR], "visible", true)
     self.datastore[id.MAKEUP__LIPSTICK_COLOR__ENABLED] = DatabindingAddDataBool(self.datastore[id.MAKEUP__LIPSTICK_COLOR], "enabled", true)
     self.datastore[id.MAKEUP__LIPSTICK_COLOR__VALUE] = DatabindingAddDataInt(self.datastore[id.MAKEUP__LIPSTICK_COLOR], "value", 0)
-    self.datastore[id.MAKEUP__LIPSTICK_COLOR__ARRAY] = Citizen.InvokeNative(0xD48993A61938C64D, self.datastore[id.MAKEUP__LIPSTICK_COLOR], "options")
+    self.datastore[id.MAKEUP__LIPSTICK_COLOR__ARRAY] = Citizen.InvokeNative(Natives.DatabindingAddStringArray, self.datastore[id.MAKEUP__LIPSTICK_COLOR], "options")
     self.datastore[id.MAKEUP__LIPSTICK_COLOR__TXD] = DatabindingAddDataString(self.datastore[id.MAKEUP__LIPSTICK_COLOR], "texture_dictionary", "")
     self.datastore[id.MAKEUP__LIPSTICK_COLOR__TEXTURE] = DatabindingAddDataString(self.datastore[id.MAKEUP__LIPSTICK_COLOR], "texture", "")
     self.datastore[id.MAKEUP__LIPSTICK_COLOR__COLOR] = DatabindingAddDataHash(self.datastore[id.MAKEUP__LIPSTICK_COLOR], "color", `COLOR_WHITE`)
@@ -670,7 +670,7 @@ end
 function CreatorDatabinding:ReadBool(index)
     local binding = self.datastore[index] or 0
     if not self:IsValid(binding) then error("Invalid databinding entry", 2) end
-    return Citizen.InvokeNative(0x5EEFBD4B6D7CD6EB, binding, Citizen.ResultAsInteger()) == 1
+    return Citizen.InvokeNative(Natives.DatabindingReadDataBool, binding, Citizen.ResultAsInteger()) == 1
 end
 
 function CreatorDatabinding:WriteInt(index, value)
@@ -682,7 +682,7 @@ end
 function CreatorDatabinding:ReadInt(index)
     local binding = self.datastore[index] or 0
     if not self:IsValid(binding) then error("Invalid databinding entry", 2) end
-    return Citizen.InvokeNative(0x570784D782597512, binding, Citizen.ResultAsInteger())
+    return Citizen.InvokeNative(Natives.DatabindingReadInt, binding, Citizen.ResultAsInteger())
 end
 
 function CreatorDatabinding:WriteFloat(index, value)
@@ -694,7 +694,7 @@ end
 function CreatorDatabinding:ReadFloat(index)
     local binding = self.datastore[index] or 0
     if not self:IsValid(binding) then error("Invalid databinding entry", 2) end
-    local value = Citizen.InvokeNative(0x5FE444EB67C70AD4, binding, Citizen.ResultAsFloat())
+    local value = Citizen.InvokeNative(Natives.DatabindingReadFloat, binding, Citizen.ResultAsFloat())
     return math.floor(value * 10000 + 0.5) / 10000
 end
 
@@ -707,7 +707,7 @@ end
 function CreatorDatabinding:ReadHash(index)
     local binding = self.datastore[index] or 0
     if not self:IsValid(binding) then error("Invalid databinding entry", 2) end
-    return Citizen.InvokeNative(0x81D7183E7A8ECA72, binding, Citizen.ResultAsInteger())
+    return Citizen.InvokeNative(Natives.DatabindingReadHash, binding, Citizen.ResultAsInteger())
 end
 
 function CreatorDatabinding:WriteString(index, value)
@@ -719,7 +719,7 @@ end
 function CreatorDatabinding:ReadString(index)
     local binding = self.datastore[index] or 0
     if not self:IsValid(binding) then error("Invalid databinding entry", 2) end
-    return Citizen.InvokeNative(0x3D290B5FFA7C5151, binding, Citizen.ResultAsString())
+    return Citizen.InvokeNative(Natives.DatabindingReadDataString, binding, Citizen.ResultAsString())
 end
 
 function CreatorDatabinding:WriteHashArray(index, options)
@@ -727,11 +727,11 @@ function CreatorDatabinding:WriteHashArray(index, options)
     if not self:IsValid(binding) then error("Invalid databinding entry", 2) end
 
     -- Clears hash arrays
-    Citizen.InvokeNative(0x3BF0767CF33FCC88, binding)
+    Citizen.InvokeNative(Natives.DatabindingClearHashArray, binding)
 
     -- Create new hash array options
     for _, option in ipairs(options) do
-        Citizen.InvokeNative(0x7FC60C94C83C5CD7, binding, joaat(option), -1)
+        Citizen.InvokeNative(Natives.DatabindingAddHashToArray, binding, joaat(option), -1)
     end
 end
 
@@ -765,7 +765,7 @@ function CreatorDatabinding:WriteColorSwatches(options)
     if not self:IsValid(container) then error("Invalid databinding entry", 2) end
 
     -- Clears hash arrays
-    Citizen.InvokeNative(0x3BF0767CF33FCC88, array)
+    Citizen.InvokeNative(Natives.DatabindingClearHashArray, array)
 
     -- Destroy and recreate the items container
     DatabindingRemoveDataEntry(container)

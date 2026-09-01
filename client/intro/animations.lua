@@ -120,8 +120,7 @@ function IntroAnimations:InitializeMoveNetwork(preset, ped)
     struct:SetInt64(30 * 8, VarString(10, "LITERAL_STRING", "Idle_State"))
 
     if IsTaskMoveNetworkActive(ped) ~= 1 then
-        -- TASK::TASK_MOVE_NETWORK_ADVANCED_BY_NAME_WITH_INIT_PARAMS
-        Citizen.InvokeNative(0x7B6A04F98BBAFB2C, ped, "Character_Creator", struct:Buffer(), position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, 2, 0.3, 0, 0, 2, 0)
+        Citizen.InvokeNative(Natives.TaskMoveNetworkAdvancedByNameWithInitParams, ped, "Character_Creator", struct:Buffer(), position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, 2, 0.3, 0, 0, 2, 0)
     end
 
     SetTaskMoveNetworkSignalFloat(ped, "BODY_SIZE", self.bodySize or 0.5)
@@ -136,7 +135,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
     local gender = preset == EDITOR_CONFIG.MALE and "male" or "female"
     local clipset = string.format("clipset@mp_character_creator@%s", gender)
 
-    Citizen.InvokeNative(0x615DC4A82E90BB48, ped, joaat(clipset), 184808581)
+    Citizen.InvokeNative(Natives.TaskSetClipsetState, ped, joaat(clipset), 184808581)
     ForcePedMotionState(ped, "MotionState_DoNothing", false, 0, false)
 
     local inputLeft = IsControlPressed(2, `INPUT_GAME_MENU_TAB_LEFT`)
