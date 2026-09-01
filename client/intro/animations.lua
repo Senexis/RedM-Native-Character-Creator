@@ -488,10 +488,7 @@ function IntroAnimations:GetBodySize()
     return CHARACTER_BODY_BUILD:GetMoveNetSignal(bodyBuild) or 0.5
 end
 
-SignalBus:on("show_teeth", function(value)
-    IntroAnimations.showTeeth = value
-end)
-
-SignalBus:on("show_eyes", function(value)
-    IntroAnimations.showEyes = value
+SignalBus:on("item_focused", function(itemId)
+    IntroAnimations.showEyes = itemId == UI_ITEM_ID.APPEARANCE__EYE_COLOR or itemId == UI_ITEM_ID.LIFESTYLE__EYE_REDNESS
+    IntroAnimations.showTeeth = itemId == UI_ITEM_ID.APPEARANCE__TEETH
 end)

@@ -23,6 +23,7 @@ local EDITOR_FLAGS = {
     QUICK_SWITCH       = 1 << 16,
     QUICK_SETTINGS     = 1 << 17,
     BODIES_REQUESTED   = 1 << 18,
+    RESTORE            = 1 << 19,
 }
 
 ---@type EDITOR_FLAGS | EnumRegistry

@@ -99,7 +99,6 @@ local UI_ITEM_IDS = {
     ATTRIBUTES__HEALTH       = 67,
     ATTRIBUTES__STAMINA      = 68,
     ATTRIBUTES__DEADEYE      = 69,
-    END                      = 70,
 }
 
 ---@type UI_ITEM_IDS | EnumRegistry
@@ -176,7 +175,6 @@ UI_ITEM_ID:AddAttribute("Hash", {
     [UI_ITEM_IDS.ATTRIBUTES__HEALTH]       = `MPCC_UI_FOCUS_ITEM_ATTRIBUTE_HEALTH`,
     [UI_ITEM_IDS.ATTRIBUTES__STAMINA]      = `MPCC_UI_FOCUS_ITEM_ATTRIBUTE_STAMINA`,
     [UI_ITEM_IDS.ATTRIBUTES__DEADEYE]      = `MPCC_UI_FOCUS_ITEM_ATTRIBUTE_DEADEYE`,
-    [UI_ITEM_IDS.END]                      = 0,
 })
 
 UI_ITEM_ID:AddAttribute("Type", {

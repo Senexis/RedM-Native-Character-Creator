@@ -7,6 +7,7 @@ local function GetDefaultData()
         headRequests = {},
         bodyRequests = {},
         mode = CREATOR_MODE.DEFAULT,
+        restoreTarget = 0,
     }
 end
 
@@ -60,9 +61,14 @@ function Creator:Finish(confirmed)
     self:SetFlag(EDITOR_FLAG.END_REQUESTED)
 end
 
-function Creator:OpenEditor(mode)
+function Creator:OpenEditor(mode, restore)
     if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
         return
+    end
+
+    if restore then
+        self.restoreTarget = CreatorEvents.currentPage or 0
+        self:SetFlag(EDITOR_FLAG.RESTORE)
     end
 
     self:SetMode(mode)
@@ -314,6 +320,73 @@ function Creator:UpdateStateInEditor()
         self:ClearFlag(EDITOR_FLAG.MENU_RUNNING)
         self:SetFlag(EDITOR_FLAG.EDITOR_RUNNING)
     end
+
+    if self:IsFlagSet(EDITOR_FLAG.RESTORE) then
+        if not self.restoreTarget then
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+            return
+        end
+
+        if IsUiappActiveByHash(`character_creator`) ~= 1 then
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+            return
+        end
+
+        if IsUiappTransitioningByHash(`character_creator`) == 1 then
+            return
+        end
+
+        local currentActivity = GetUiappCurrentActivityByHash(`character_creator`)
+        if currentActivity == 0 or currentActivity == `character_creator` then
+            Utils:Debug("No activity detected, we are not running the creator")
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+            return
+        end
+
+        local currentPage = UI_PAGE_ID:GetIdFromActivity(currentActivity) or UI_PAGE_ID.INVALID
+        local targetPage = UI_PAGE_ID:GetIdFromHash(self.restoreTarget) or UI_PAGE_ID.INVALID
+
+        if currentPage == UI_PAGE_ID.INVALID or targetPage == UI_PAGE_ID.INVALID then
+            Utils:Debug("Invalid activity or restore target:", tostring(currentActivity), tostring(self.restoreTarget))
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+            return
+        end
+
+        if currentPage == targetPage then
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+            return
+        end
+
+        local transitions = UI_PAGE_ID:GetLink(targetPage)
+        if not transitions then
+            Utils:Debug("No link to page found for target page:", UI_PAGE_ID:ToString(targetPage))
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+            return
+        end
+
+        local transition = transitions[currentPage]
+        if not transition then
+            Utils:Debug("No transition found for current page:", UI_PAGE_ID:ToString(currentPage))
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+            return
+        end
+
+        local lastTransition = nil
+        for _, v in pairs(transitions) do
+            lastTransition = v
+        end
+
+        if lastTransition == transition then
+            Utils:Debug("Clearing restore flag before transitioning to", tostring(transition))
+            self:ClearFlag(EDITOR_FLAG.RESTORE)
+        else
+            Utils:Debug("Transitioning to", tostring(transition))
+        end
+
+        if RequestUiappTransitionByHash(`character_creator`, transition) ~= 1 then
+            Utils:Debug("Failed to transition into", tostring(transition))
+        end
+    end
 end
 
 function Creator:UpdateStateTransitionToMenu()
@@ -395,9 +468,9 @@ function Creator:UpdateStateQuickSwitch()
     self:ClearFlag(EDITOR_FLAG.EDITOR_RUNNING)
 
     if self:IsAdvancedMode() then
-        self:OpenEditor(CREATOR_MODE.DEFAULT)
+        self:OpenEditor(CREATOR_MODE.DEFAULT, true)
     else
-        self:OpenEditor(CREATOR_MODE.ADVANCED)
+        self:OpenEditor(CREATOR_MODE.ADVANCED, true)
     end
 
     self:SetState(EDITOR_STATE.TRANSITION_TO_EDITOR)

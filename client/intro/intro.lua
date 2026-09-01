@@ -2571,6 +2571,14 @@ Citizen.CreateThread(function()
     end
 end)
 
+SignalBus:on("item_focused", function(itemId)
+    if itemId == UI_ITEM_ID.APPEARANCE__RANDOMIZE then
+        Intro:SetFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
+    else
+        Intro:ClearFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
+    end
+end)
+
 SignalBus:on("zoom_updated", function(zoomed)
     if zoomed then
         Intro:SetFlag(INTRO_FLAG.EDITOR_ZOOMED)
@@ -2603,14 +2611,6 @@ SignalBus:on("camera_updated", function(data)
     end
 
     Intro:MoveEditCamera(viewId)
-end)
-
-SignalBus:on("allow_character_reset", function(allowed)
-    if allowed then
-        Intro:SetFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
-    else
-        Intro:ClearFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
-    end
 end)
 
 SignalBus:on("timecycle_changed", function(name)

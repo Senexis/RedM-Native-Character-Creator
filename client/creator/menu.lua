@@ -205,7 +205,7 @@ function CreatorMenu:GetMenu()
                     Select = {
                         Action = function()
                             self:Hide()
-                            Creator:OpenEditor(CREATOR_MODE.DEFAULT)
+                            Creator:OpenEditor(CREATOR_MODE.DEFAULT, false)
                         end,
                     },
                     Toggle = skipPrompt
@@ -226,7 +226,7 @@ function CreatorMenu:GetMenu()
                     Select = {
                         Action = function()
                             self:Hide()
-                            Creator:OpenEditor(CREATOR_MODE.ADVANCED)
+                            Creator:OpenEditor(CREATOR_MODE.ADVANCED, false)
                         end,
                     },
                     Toggle = skipPrompt
@@ -489,7 +489,7 @@ end)
 AddEventHandler("native_shop:closing", function(menu)
     if menu == SETTINGS_ID then
         local mode = Creator:GetMode()
-        Creator:OpenEditor(mode)
+        Creator:OpenEditor(mode, true)
     elseif menu == MENU_ID then
         Creator:Finish(false)
     end

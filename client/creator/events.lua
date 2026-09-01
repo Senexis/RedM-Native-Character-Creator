@@ -124,6 +124,11 @@ function CreatorEvents:OnItemFocused(parameter)
     local itemId = UI_ITEM_ID:GetIdFromHash(parameter)
     if not itemId or itemId == UI_ITEM_ID.INVALID then return end
 
+    if Creator:IsFlagSet(EDITOR_FLAG.RESTORE) then
+        Utils:Debug("Skipped focus hooks due to restore flag:", UI_ITEM_ID:ToString(itemId))
+        return
+    end
+
     local itemType = UI_ITEM_ID:GetType(itemId)
     if not itemType then return end
 
@@ -146,23 +151,7 @@ function CreatorEvents:OnItemFocused(parameter)
         SignalBus:emit("camera_updated", camera)
     end
 
-    if itemId == UI_ITEM_ID.APPEARANCE__TEETH then
-        SignalBus:emit("show_teeth", true)
-    else
-        SignalBus:emit("show_teeth", false)
-    end
-
-    if itemId == UI_ITEM_ID.APPEARANCE__EYE_COLOR or itemId == UI_ITEM_ID.LIFESTYLE__EYE_REDNESS then
-        SignalBus:emit("show_eyes", true)
-    else
-        SignalBus:emit("show_eyes", false)
-    end
-
-    if itemId == UI_ITEM_ID.APPEARANCE__RANDOMIZE then
-        SignalBus:emit("allow_character_reset", true)
-    else
-        SignalBus:emit("allow_character_reset", false)
-    end
+    SignalBus:emit("item_focused", itemId)
 end
 
 function CreatorEvents:OnDataAdjustableChanged(parameter, index)
@@ -232,13 +221,18 @@ function CreatorEvents:OnItemSelected(parameter)
     else
         SignalBus:emit("action_selected", actionId, itemId)
     end
+
+    SignalBus:emit("item_selected", itemId)
 end
 
 function CreatorEvents:OnNewPage(parameter)
-    CreatorDatabinding:UpdateBlockedOverlays()
-
     local pageId = UI_PAGE_ID:GetIdFromHash(parameter)
     if not pageId or pageId == UI_PAGE_ID.INVALID then return end
+
+    if Creator:IsFlagSet(EDITOR_FLAG.RESTORE) then
+        Utils:Debug("Skipped new page hooks due to restore flag:", UI_PAGE_ID:ToString(pageId))
+        return
+    end
 
     local uiData = UI_PAGE_ID:GetUi(pageId)
     if not uiData then return end
@@ -254,6 +248,8 @@ function CreatorEvents:OnNewPage(parameter)
 
     local camera = UI_PAGE_ID:GetCamera(pageId)
     self.pageCamera = camera or { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE }
+
+    SignalBus:emit("new_page", pageId)
 end
 
 function CreatorEvents:OnIndexChangeRequested(parameter)
@@ -263,6 +259,8 @@ function CreatorEvents:OnIndexChangeRequested(parameter)
     if not itemId or itemId == UI_ITEM_ID.INVALID then return end
 
     CreatorRenderer:UpdateItemFooter(itemId)
+
+    SignalBus:emit("index_change_requested", itemId)
 end
 
 SignalBus:on("zoom_mode_changed", function(mode)

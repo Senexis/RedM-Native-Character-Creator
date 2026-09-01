@@ -226,7 +226,7 @@ end
 function CharacterOverlay:GetUsedLayers()
     local used = {}
     for _, layer in pairs(self.layers) do
-        if layer and layer.index > -1 then
+        if layer and layer.id ~= "BLEND_NONE" then
             used[#used + 1] = layer.layer
         end
     end
