@@ -136,7 +136,7 @@ function CreatorEvents:OnItemFocused(parameter)
     if not uiData then return end
 
     CreatorRenderer:HideColorSwatch()
-    CreatorRenderer:HideGrid()
+    CreatorRenderer:HideGrid(itemId)
     CreatorRenderer:UpdateItemFooter(itemId)
 
     if itemType == UI_ITEM_TYPE.COLOR then
@@ -168,7 +168,7 @@ function CreatorEvents:OnDataAdjustableChanged(parameter, index)
         error(string.format("Invalid databinding for item %s", UI_ITEM_ID:ToString(itemId)))
     end
 
-    CreatorRenderer:HideGrid()
+    CreatorRenderer:HideGrid(itemId)
 
     if uiType == UI_ITEM_TYPE.COLOR then
         local value = CreatorDatabinding:ReadInt(databinding.Value) + index
@@ -274,6 +274,12 @@ SignalBus:on("camera_updated", function(data)
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__ZOOM_ENABLED, zoomEnabled)
 end)
 
+SignalBus:on("skintone_changed", function()
+    if not Creator:IsAdvancedMode() then return end
+    CreatorDatabinding:WriteOrHideHashArray(DATABINDING_ID.MAKEUP__BLUSHER__ARRAY, DATABINDING_ID.MAKEUP__BLUSHER__VISIBLE, CreatorRenderer:GetHeadAlbedoLabels(), "NATIVE_CREATOR_CUSTOM_HEAD_NONE")
+    CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__BLUSHER__VALUE, Character.headAlbedo)
+end)
+
 SignalBus:on("hair_applied", function()
     if Character:IsFemale() then
         CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__HAIR_MATCH__ENABLED, false)
@@ -355,6 +361,13 @@ end)
 
 SignalBus:on("age_randomized", function(age)
     CreatorDatabinding:WriteInt(DATABINDING_ID.APPEARANCE__AGE__VALUE, age)
+end)
+
+SignalBus:on("custom_head_randomized", function(drawable, albedo, normal, material)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__FOUNDATION__VALUE, drawable)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__BLUSHER__VALUE, albedo)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__EYESHADOW__VALUE, normal)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__EYELINER__VALUE, material)
 end)
 
 SignalBus:on("voice_randomized", function(style)

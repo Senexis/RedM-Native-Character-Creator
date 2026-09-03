@@ -31,6 +31,8 @@ local INTRO_FLAGS = {
     SUPPRESS_ROTATION            = 1 << 28,
     RESET_CHARACTER              = 1 << 29,
     CHARACTER_RESET_PROMPT       = 1 << 30,
+    BLOCK_QUICK_SWITCH           = 1 << 31,
+    HEAD_RANDOMIZE_PROMPT        = 1 << 32,
 }
 
 ---@type INTRO_FLAGS | EnumRegistry

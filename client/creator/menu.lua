@@ -137,7 +137,6 @@ function CreatorMenu:GetMenu()
 
     local defaultLabel = rerolling and "Edit Character" or "Create Character"
     local defaultDescription = rerolling and "Edit your character's appearance." or "Create a new character to play as."
-    local confirmDescription = rerolling and "Save your changes and exit." or "Confirm your character and enter the world."
     local exitLabel = rerolling and "Exit" or "Back"
 
     local skipPrompt = {
@@ -169,6 +168,7 @@ function CreatorMenu:GetMenu()
                 Id = "ACTION_NAME",
                 Type = "TEXT",
                 Label = "Name",
+                Footer = "Press ~INPUT_GAME_MENU_EXTRA_OPTION~ to randomize your name.",
                 Data = {
                     ItemDescription = "Set your character's name.",
                     Equipped = not rerolling and hasName,
@@ -194,6 +194,7 @@ function CreatorMenu:GetMenu()
                 Type = "TEXT",
                 Label = defaultLabel,
                 Disabled = not rerolling and not hasName,
+                Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
                 Data = {
                     DisabledFooter = "~e~Set a name first.",
                     ItemDescription = defaultDescription,
@@ -215,6 +216,7 @@ function CreatorMenu:GetMenu()
                 Type = "TEXT",
                 Label = "Advanced Mode",
                 Disabled = not rerolling and not hasName,
+                Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
                 Data = {
                     DisabledFooter = "~e~Set a name first.",
                     ItemDescription = "Optional. Tweak various character attributes.",
@@ -238,6 +240,7 @@ function CreatorMenu:GetMenu()
                 Label = "Settings",
                 Title = "SETTINGS",
                 Subtitle = "Creator Settings",
+                Footer = "Hold ~INPUT_GAME_MENU_TAB_LEFT_SECONDARY~ in the Creator to access settings.",
                 Data = {
                     ItemDescription = "Adjust various settings like camera zoom, lighting, animations, and more for the character creator.",
                     ItemInfo1 = nameDisplay,
@@ -463,7 +466,7 @@ function CreatorMenu:GetMenu()
                 Disabled = not rerolling and (not hasName or not hasCreated),
                 Data = {
                     DisabledFooter = "~e~Create a character first.",
-                    ItemDescription = confirmDescription,
+                    ItemDescription = "Take a picture of your character and confirm your appearance.",
                     ItemInfo1 = nameDisplay,
                 },
                 Action = function()

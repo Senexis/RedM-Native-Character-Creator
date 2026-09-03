@@ -93,42 +93,10 @@ function CharacterOverlay:UpdateTextureLayer(data)
     end
 end
 
-function CharacterOverlay:UpdateBaseLayer(shopItem, apply)
-    local pedType = Character:GetPedType()
-
-    local result,
-    _drawable,
-    albedo,
-    normal,
-    material,
-    _palette,
-    _tint0,
-    _tint1,
-    _tint2 = Citizen.InvokeNative(
-        Natives.GetShopItemBaseLayers,
-        shopItem,                  --   shopItem,
-        0,                         --   p1,
-        0,                         --   ped,
-        pedType,                   --   metapedType,
-        true,                      --   p4,
-        Citizen.PointerValueInt(), --   &drawable,
-        Citizen.PointerValueInt(), --   &albedo,
-        Citizen.PointerValueInt(), --   &normal,
-        Citizen.PointerValueInt(), --   &material,
-        Citizen.PointerValueInt(), --   &palette,
-        Citizen.PointerValueInt(), --   &tint0,
-        Citizen.PointerValueInt(), --   &tint1,
-        Citizen.PointerValueInt(), --   &tint2
-        Citizen.ResultAsInteger()  -- ): bool
-    )
-
-    if result ~= 1 then
-        error(string.format("Failed to find shop item asset for %s", shopItem), 2)
-    end
-
-    self.albedo = albedo
-    self.normal = normal
-    self.material = material
+function CharacterOverlay:SetBaseLayer(albedo, normal, material, apply)
+    self.albedo = albedo or self.albedo
+    self.normal = normal or self.normal
+    self.material = material or self.material
 
     if apply then self:RequestUpdate() end
 end

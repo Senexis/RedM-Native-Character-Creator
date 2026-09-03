@@ -24,8 +24,8 @@ end
 function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Go back to the previous menu.")
 
-    AddTextEntry("NATIVE_CREATOR_RANDOMIZE_DEFAULT_TOOLTIP", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize Basic options.")
-    AddTextEntry("NATIVE_CREATOR_RANDOMIZE_ADVANCED_TOOLTIP", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize Basic and select Advanced options.")
+    AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_DEFAULT", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Excludes advanced options.")
+    AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_ADVANCED", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Includes most advanced options.")
 
     AddTextEntry("NATIVE_CREATOR_ADVANCED_MENU_HEADING", "Advanced Menu")
     AddTextEntry("NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING", "Advanced Options")
@@ -38,9 +38,16 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_SHOULDERS_TOOLTIP", "Change your character's shoulders and back.")
     AddTextEntry("NATIVE_CREATOR_LIMBS_TOOLTIP", "Change your character's limbs.")
     AddTextEntry("NATIVE_CREATOR_MOUTH_2_TOOLTIP", "Change your character's mouth.")
+    AddTextEntry("NATIVE_CREATOR_MOUTH_2_TOOLTIP_NO_RANDOMIZATION", "Change your character's mouth.~n~This option does not randomize.")
     AddTextEntry("NATIVE_CREATOR_TORSO_TOOLTIP", "Change your character's torso.")
     AddTextEntry("NATIVE_CREATOR_FACE_TOOLTIP", "Change your character's face.")
+    AddTextEntry("NATIVE_CREATOR_FACE_TOOLTIP_NO_RANDOMIZATION", "Change your character's face.~n~This option does not randomize.")
     AddTextEntry("NATIVE_CREATOR_NECK_TOOLTIP", "Change your character's neck.")
+    AddTextEntry("NATIVE_CREATOR_HEAD_TOOLTIP", "Change your character's head.")
+    AddTextEntry("NATIVE_CREATOR_HEAD_ALBEDO_TOOLTIP", "Complexions may include eyebrows or makeup and may change when updating skin tone.")
+    AddTextEntry("NATIVE_CREATOR_HEAD_NORMAL_TOOLTIP", "Changing the shape may require adjustments to the chosen head's details.")
+    AddTextEntry("NATIVE_CREATOR_HEAD_MATERIAL_TOOLTIP", "Facial overlays may override or reduce the effect of the head's finish.")
+    AddTextEntry("NATIVE_CREATOR_HEAD_SKIN_TONE_TOOLTIP", "Changing your character's skin tone may make changes to the head's complexion.")
 
     AddTextEntry("NATIVE_CREATOR_SHOULDERS_00", "Neutral")
     AddTextEntry("NATIVE_CREATOR_LIMBS_00", "Neutral")
@@ -59,6 +66,42 @@ function CreatorRenderer:CreateNewText()
 
     for _, voice in ipairs(CreatorConfig.Voices) do
         if voice.label then AddTextEntry(voice.id, voice.label) end
+    end
+
+    for _, drawable in ipairs(CreatorConfig.CustomMaleHeadDrawables) do
+        if drawable.label then AddTextEntry(drawable.id, drawable.label) end
+    end
+
+    for _, drawable in ipairs(CreatorConfig.CustomFemaleHeadDrawables) do
+        if drawable.label then AddTextEntry(drawable.id, drawable.label) end
+    end
+
+    for _, skintone in ipairs(CreatorConfig.CustomMaleHeadAlbedos) do
+        for _, albedo in ipairs(skintone) do
+            if albedo.label then AddTextEntry(albedo.id, albedo.label) end
+        end
+    end
+
+    for _, skintone in ipairs(CreatorConfig.CustomFemaleHeadAlbedos) do
+        for _, albedo in ipairs(skintone) do
+            if albedo.label then AddTextEntry(albedo.id, albedo.label) end
+        end
+    end
+
+    for _, normal in ipairs(CreatorConfig.CustomMaleHeadNormals) do
+        if normal.label then AddTextEntry(normal.id, normal.label) end
+    end
+
+    for _, normal in ipairs(CreatorConfig.CustomFemaleHeadNormals) do
+        if normal.label then AddTextEntry(normal.id, normal.label) end
+    end
+
+    for _, material in ipairs(CreatorConfig.CustomMaleHeadMaterials) do
+        if material.label then AddTextEntry(material.id, material.label) end
+    end
+
+    for _, material in ipairs(CreatorConfig.CustomFemaleHeadMaterials) do
+        if material.label then AddTextEntry(material.id, material.label) end
     end
 
     for _, hair in ipairs(CreatorConfig.CustomMaleHairs) do
@@ -90,6 +133,7 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_FACE_HEADING", "FACE")
     AddTextEntry("NATIVE_CREATOR_NECK_HEADING", "NECK")
     AddTextEntry("NATIVE_CREATOR_LIFESTYLE_2_HEADING", "LIFESTYLE")
+    AddTextEntry("NATIVE_CREATOR_HEAD_HEADING", "HEAD")
 
     AddTextEntry("NATIVE_CREATOR_GRID_TEXT_EYELID_CLOSED", "Closed")
     AddTextEntry("NATIVE_CREATOR_GRID_TEXT_EYELID_OPEN", "Open")
@@ -97,6 +141,8 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_GRID_TEXT_VOLUME_FULL", "Full")
     AddTextEntry("NATIVE_CREATOR_GRID_TEXT_SAG_HIGH", "Perky")
     AddTextEntry("NATIVE_CREATOR_GRID_TEXT_SAG_LOW", "Sagging")
+
+    AddTextEntry("NATIVE_CREATOR_CUSTOM_HEAD_NONE", "Default")
 end
 
 function CreatorRenderer:SetTextDefault()
@@ -144,6 +190,14 @@ function CreatorRenderer:SetTextDefault()
     AddTextEntry("CHAR_CREATOR_COMPLEXION_2", "Complexion 2")
     AddTextEntry("CHAR_CREATOR_FRECKLES", "Freckles")
     AddTextEntry("CHAR_CREATOR_MOLES", "Moles")
+
+    AddTextEntry("CHAR_CREATOR_MAKEUP_LABEL", "Makeup")
+
+    AddTextEntry("CHAR_CREATOR_FOUNDATION", "Foundation")
+    AddTextEntry("CHAR_CREATOR_BLUSHER", "Blusher")
+    AddTextEntry("CHAR_CREATOR_EYESHADOW", "Eyeshadow")
+    AddTextEntry("CHAR_CREATOR_EYELINER", "Eyeliner")
+    AddTextEntry("CHAR_CREATOR_LIPSTICK_COLOR", "Lipstick Color")
 end
 
 function CreatorRenderer:SetTextAdvanced()
@@ -191,6 +245,14 @@ function CreatorRenderer:SetTextAdvanced()
     AddTextEntry("CHAR_CREATOR_COMPLEXION_2", "Hair Stubble")
     AddTextEntry("CHAR_CREATOR_FRECKLES", "Scar 2")
     AddTextEntry("CHAR_CREATOR_MOLES", "Facial Hair")
+
+    AddTextEntry("CHAR_CREATOR_MAKEUP_LABEL", "Head")
+
+    AddTextEntry("CHAR_CREATOR_FOUNDATION", "Shape")
+    AddTextEntry("CHAR_CREATOR_BLUSHER", "Complexion")
+    AddTextEntry("CHAR_CREATOR_EYESHADOW", "Details")
+    AddTextEntry("CHAR_CREATOR_EYELINER", "Finish")
+    AddTextEntry("CHAR_CREATOR_LIPSTICK_COLOR", "Skin Tone")
 end
 
 function CreatorRenderer:UpdateHeaderLabel(header)
@@ -327,11 +389,25 @@ function CreatorRenderer:ShowGrid(itemId)
     local databinding = UI_ITEM_ID:GetDatabinding(itemId)
     if not databinding then return end
 
+    local action = UI_ITEM_ID:GetAction(itemId)
+    if
+        action == CHARACTER_ACTION.APPLY_HEAD_DRAWABLE
+        or action == CHARACTER_ACTION.APPLY_HEAD_ALBEDO
+        or action == CHARACTER_ACTION.APPLY_HEAD_NORMAL
+        or action == CHARACTER_ACTION.APPLY_HEAD_MATERIAL
+    then
+        return
+    end
+
     local overlayLayer = UI_ITEM_ID:GetOverlayLayer(itemId)
     if overlayLayer and databinding.Value then
         local overlay = CreatorDatabinding:ReadInt(databinding.Value)
         local blend = CharacterOverlay:GetLayerBlend(overlayLayer, overlay + 1)
         if blend == "BLEND_NONE" then return end
+    end
+
+    if databinding.FineTunable then
+        CreatorDatabinding:WriteBool(databinding.FineTunable, true)
     end
 
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__X_VISIBLE, itemType == UI_ITEM_TYPE.GRID_X)
@@ -369,7 +445,14 @@ function CreatorRenderer:UpdateGrid(itemId)
     CreatorDatabinding:WriteFloat(DATABINDING_ID.ROOT__GRID__Y_VALUE, valueY or 0.0)
 end
 
-function CreatorRenderer:HideGrid()
+function CreatorRenderer:HideGrid(itemId)
+    local databinding = UI_ITEM_ID:GetDatabinding(itemId)
+    if not databinding then return end
+
+    if databinding.FineTunable then
+        CreatorDatabinding:WriteBool(databinding.FineTunable, false)
+    end
+
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__GRID__X_VISIBLE, false)
     CreatorRenderer.shouldPollGridX = false
 
@@ -489,7 +572,11 @@ function CreatorRenderer:GetSwatchTextures(itemId)
     elseif itemId == UI_ITEM_ID.MAKEUP__EYESHADOW_COLOR then
         entries = self.swatches.entries.EYESHADOW_COLOR or {}
     elseif itemId == UI_ITEM_ID.MAKEUP__LIPSTICK_COLOR then
-        entries = self.swatches.entries.LIPSTICK_COLOR or {}
+        if Creator:IsDefaultMode() then
+            entries = self.swatches.entries.LIPSTICK_COLOR or {}
+        else
+            entries = self.swatches.entries.SKIN_TONE or {}
+        end
     end
 
     local parentItemId = UI_ITEM_ID:GetIdFromSwatchItem(itemId)
@@ -685,6 +772,77 @@ end
 function CreatorRenderer:GetHeightLabels()
     local labels = {}
     for _, item in ipairs(CreatorConfig.Heights) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetHeadDrawableLabels()
+    local custom = {}
+
+    if Character:IsMale() then
+        custom = CreatorConfig.CustomMaleHeadDrawables
+    else
+        custom = CreatorConfig.CustomFemaleHeadDrawables
+    end
+
+    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
+    for _, item in ipairs(custom) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetHeadAlbedoLabels()
+    local skintone = Character:GetSkintone()
+    local custom = {}
+
+    if Character:IsMale() then
+        custom = CreatorConfig.CustomMaleHeadAlbedos
+    else
+        custom = CreatorConfig.CustomFemaleHeadAlbedos
+    end
+
+    local skintoneCustom = custom[skintone + 1]
+
+    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
+    for _, item in ipairs(skintoneCustom) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetHeadNormalLabels()
+    local custom = {}
+
+    if Character:IsMale() then
+        custom = CreatorConfig.CustomMaleHeadNormals
+    else
+        custom = CreatorConfig.CustomFemaleHeadNormals
+    end
+
+    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
+    for _, item in ipairs(custom) do
+        labels[#labels + 1] = item.id
+    end
+
+    return labels
+end
+
+function CreatorRenderer:GetHeadMaterialLabels()
+    local custom = {}
+
+    if Character:IsMale() then
+        custom = CreatorConfig.CustomMaleHeadMaterials
+    else
+        custom = CreatorConfig.CustomFemaleHeadMaterials
+    end
+
+    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
+    for _, item in ipairs(custom) do
         labels[#labels + 1] = item.id
     end
 

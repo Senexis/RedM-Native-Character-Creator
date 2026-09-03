@@ -988,14 +988,17 @@ function Intro:MaintainCustomizePed()
     if IsUiappRunningByHash("character_creator") == 1 and IsUiappTransitioningByHash("character_creator") ~= 1 then
         self:RegisterEditorPrompts(true)
 
-        if IsControlJustPressed(2, `INPUT_GAME_MENU_TAB_LEFT_SECONDARY`) then
+        if self.prompts.settings and UiPromptGetProgress(self.prompts.settings) == 1.0 then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSettings()
-        elseif IsControlJustPressed(2, `INPUT_GAME_MENU_LS`) then
+        elseif self.prompts.switch and UiPromptGetProgress(self.prompts.switch) == 1.0 then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSwitch()
+        elseif self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT) and IsControlJustPressed(2, `INPUT_GAME_MENU_EXTRA_OPTION`) then
+            self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+            Character:RandomizeCustomHead(true)
         elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
             UiPromptRestartModes(self.prompts.reset)
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
@@ -2334,6 +2337,8 @@ end
 
 function Intro:RegisterEditorPrompts(toggle)
     local switchText = Creator:IsAdvancedMode() and "Basic Options" or "Advanced Options"
+    local canSwitch = not self:IsFlagSet(INTRO_FLAG.BLOCK_QUICK_SWITCH)
+    local canRandomize = self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT)
     local canReset = not self:IsFlagSet(INTRO_FLAG.RESET_CHARACTER) and self:IsFlagSet(INTRO_FLAG.CHARACTER_RESET_PROMPT)
     local enableReset = Character:IsModified() or Character:IsRandomized()
 
@@ -2349,18 +2354,26 @@ function Intro:RegisterEditorPrompts(toggle)
             text = "Settings",
             visible = true,
             enabled = toggle,
+            hold = "SHORT_TIMED_EVENT",
         },
         switch = {
             controls = { "INPUT_GAME_MENU_LS" },
             text = switchText,
             visible = true,
-            enabled = toggle,
+            enabled = canSwitch and toggle,
+            hold = "SHORT_TIMED_EVENT",
+        },
+        randomize = {
+            controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
+            text = "Randomize",
+            visible = canRandomize,
+            enabled = canRandomize and toggle,
         },
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
-            visible = canReset and enableReset,
-            enabled = canReset and enableReset and toggle,
+            visible = not canRandomize and canReset,
+            enabled = not canRandomize and canReset and enableReset and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
     })
@@ -2576,6 +2589,22 @@ SignalBus:on("item_focused", function(itemId)
         Intro:SetFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
     else
         Intro:ClearFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
+    end
+end)
+
+SignalBus:on("new_page", function(pageId)
+    if pageId == UI_PAGE_ID.HAIR then
+        Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
+    elseif Character:IsMale() and pageId == UI_PAGE_ID.MAKEUP then
+        Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
+    else
+        Intro:ClearFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
+    end
+
+    if Creator:IsAdvancedMode() and pageId == UI_PAGE_ID.MAKEUP then
+        Intro:SetFlag(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT)
+    else
+        Intro:ClearFlag(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT)
     end
 end)
 

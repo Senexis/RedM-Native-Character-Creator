@@ -64,35 +64,19 @@ UI_PAGE_ID:AddAttribute("Activity", {
     [UI_PAGE_IDS.ATTRIBUTES] = `CHARACTER_CREATOR_ATTRIBUTES`,
 })
 
-UI_PAGE_ID:AddModeAttribute("Link", {
-    [CREATOR_MODE.DEFAULT] = {
-        [UI_PAGE_IDS.APPEARANCE] = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance" },
-        [UI_PAGE_IDS.EYES]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_eyes_and_brows_wrapper" },
-        [UI_PAGE_IDS.NOSE]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_nose_wrapper" },
-        [UI_PAGE_IDS.MOUTH]      = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_mouth_and_lips_wrapper" },
-        [UI_PAGE_IDS.JAW]        = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_jaw_and_chin_wrapper" },
-        [UI_PAGE_IDS.EARS]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_ears_wrapper" },
-        [UI_PAGE_IDS.CHEEKS]     = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_cheeks_wrapper" },
-        [UI_PAGE_IDS.HAIR]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_hair_wrapper" },
-        [UI_PAGE_IDS.LIFESTYLE]  = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_lifestyle_wrapper" },
-        [UI_PAGE_IDS.MAKEUP]     = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_makeup_wrapper" },
-        [UI_PAGE_IDS.WHISTLE]    = { [UI_PAGE_IDS.MAIN] = "to_cc_whistle" },
-        [UI_PAGE_IDS.ATTRIBUTES] = { [UI_PAGE_IDS.MAIN] = "to_cc_attributes" },
-    },
-    [CREATOR_MODE.ADVANCED] = {
-        [UI_PAGE_IDS.APPEARANCE] = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance" },
-        [UI_PAGE_IDS.EYES]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_eyes_and_brows_wrapper" },
-        [UI_PAGE_IDS.NOSE]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_nose_wrapper" },
-        [UI_PAGE_IDS.MOUTH]      = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_mouth_and_lips_wrapper" },
-        [UI_PAGE_IDS.JAW]        = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_jaw_and_chin_wrapper" },
-        [UI_PAGE_IDS.EARS]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_ears_wrapper" },
-        [UI_PAGE_IDS.CHEEKS]     = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_cheeks_wrapper" },
-        [UI_PAGE_IDS.HAIR]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance" },
-        [UI_PAGE_IDS.LIFESTYLE]  = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_lifestyle_wrapper" },
-        [UI_PAGE_IDS.MAKEUP]     = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance" },
-        [UI_PAGE_IDS.WHISTLE]    = { [UI_PAGE_IDS.MAIN] = "to_cc_whistle" },
-        [UI_PAGE_IDS.ATTRIBUTES] = { [UI_PAGE_IDS.MAIN] = "to_cc_attributes" },
-    }
+UI_PAGE_ID:AddAttribute("Link", {
+    [UI_PAGE_IDS.APPEARANCE] = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance" },
+    [UI_PAGE_IDS.EYES]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_eyes_and_brows_wrapper" },
+    [UI_PAGE_IDS.NOSE]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_nose_wrapper" },
+    [UI_PAGE_IDS.MOUTH]      = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_mouth_and_lips_wrapper" },
+    [UI_PAGE_IDS.JAW]        = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_jaw_and_chin_wrapper" },
+    [UI_PAGE_IDS.EARS]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_ears_wrapper" },
+    [UI_PAGE_IDS.CHEEKS]     = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_cheeks_wrapper" },
+    [UI_PAGE_IDS.HAIR]       = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_hair_wrapper" },
+    [UI_PAGE_IDS.LIFESTYLE]  = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_lifestyle_wrapper" },
+    [UI_PAGE_IDS.MAKEUP]     = { [UI_PAGE_IDS.MAIN] = "to_cc_appearance", [UI_PAGE_IDS.APPEARANCE] = "cc_appearance_makeup_wrapper" },
+    [UI_PAGE_IDS.WHISTLE]    = { [UI_PAGE_IDS.MAIN] = "to_cc_whistle" },
+    [UI_PAGE_IDS.ATTRIBUTES] = { [UI_PAGE_IDS.MAIN] = "to_cc_attributes" },
 })
 
 UI_PAGE_ID:AddModeAttribute("Camera", {
@@ -121,6 +105,7 @@ UI_PAGE_ID:AddModeAttribute("Camera", {
         [UI_PAGE_IDS.EARS]       = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_PAGE_IDS.CHEEKS]     = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_PAGE_IDS.LIFESTYLE]  = { Default = EDITOR_VIEW.FACE_CLOSE, Zoomed = EDITOR_VIEW.INVALID },
+        [UI_PAGE_IDS.MAKEUP]     = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_PAGE_IDS.WHISTLE]    = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
         [UI_PAGE_IDS.ATTRIBUTES] = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
     }
@@ -152,6 +137,7 @@ UI_PAGE_ID:AddModeAttribute("Ui", {
         [UI_PAGE_IDS.EARS]       = { Header = "NATIVE_CREATOR_FACE_HEADING", Subheader = nil },      -- Note: Subheader uses preset name
         [UI_PAGE_IDS.CHEEKS]     = { Header = "NATIVE_CREATOR_NECK_HEADING", Subheader = nil },      -- Note: Subheader uses preset name
         [UI_PAGE_IDS.LIFESTYLE]  = { Header = 0x35F8C892, Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
+        [UI_PAGE_IDS.MAKEUP]     = { Header = "NATIVE_CREATOR_HEAD_HEADING", Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
         [UI_PAGE_IDS.WHISTLE]    = { Header = "NATIVE_CREATOR_VOICE_HEADING", Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
     }
 })

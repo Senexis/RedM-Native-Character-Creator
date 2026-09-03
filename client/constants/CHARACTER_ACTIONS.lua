@@ -19,15 +19,19 @@ local CHARACTER_ACTIONS = {
     APPLY_ATTRIBUTE_HEALTH  = 14,
     APPLY_ATTRIBUTE_STAMINA = 15,
     APPLY_ATTRIBUTE_DEADEYE = 16,
-    APPLY_VOICE             = 17,
-    APPLY_HEIGHT            = 18,
-    APPLY_WEIGHT            = 19,
+    APPLY_HEIGHT            = 17,
+    APPLY_WEIGHT            = 18,
+    APPLY_HEAD_DRAWABLE     = 19,
+    APPLY_HEAD_ALBEDO       = 20,
+    APPLY_HEAD_NORMAL       = 21,
+    APPLY_HEAD_MATERIAL     = 22,
+    APPLY_VOICE             = 23,
 
     -- Select actions
-    PLAY_WHISTLE_SOUND      = 20,
-    RANDOMIZE_ITEM          = 21,
-    PLAY_VOCALIZATION       = 22,
-    RANDOMIZE_ADVANCED_ITEM = 23,
+    PLAY_WHISTLE_SOUND      = 24,
+    RANDOMIZE_ITEM          = 25,
+    PLAY_VOCALIZATION       = 26,
+    RANDOMIZE_ADVANCED_ITEM = 27,
 }
 
 ---@type CHARACTER_ACTIONS | EnumRegistry

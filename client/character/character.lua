@@ -22,6 +22,11 @@ local function GetDefaultData()
         eyeColor = 0,
         teeth = 0,
 
+        headDrawable = 0,
+        headAlbedo = 0,
+        headNormal = 0,
+        headMaterial = 0,
+
         hair = 0,
         hairColor = 0,
         beard = 0,
@@ -358,6 +363,10 @@ function Character:GetPedType()
     return self:IsMale() and 0 or 1
 end
 
+function Character:GetSkintone()
+    return self.skintone
+end
+
 function Character:GetHairColorString()
     local colors = CreatorConfig.HairColors
     local color = colors[self.hairColor % #colors + 1]
@@ -368,6 +377,43 @@ function Character:GetBeardColorString()
     local colors = CreatorConfig.HairColors
     local color = colors[self.beardColor % #colors + 1]
     return color or "GREY"
+end
+
+function Character:GetShopItemInfo(item)
+    local pedType = self:GetPedType()
+
+    local result, drawable, albedo, normal, material, palette, tint0, tint1, tint2 = Citizen.InvokeNative(
+        Natives.GetShopItemBaseLayers,
+        item,
+        0,
+        0,
+        pedType,
+        true,
+        Citizen.PointerValueInt(), -- drawable
+        Citizen.PointerValueInt(), -- albedo
+        Citizen.PointerValueInt(), -- normal
+        Citizen.PointerValueInt(), -- material
+        Citizen.PointerValueInt(), -- palette
+        Citizen.PointerValueInt(), -- tint0
+        Citizen.PointerValueInt(), -- tint1
+        Citizen.PointerValueInt(), -- tint2
+        Citizen.ResultAsInteger()
+    )
+
+    if result ~= 1 then
+        error(string.format("Failed to find shop item info for %s", item), 2)
+    end
+
+    return {
+        drawable = drawable,
+        albedo = albedo,
+        normal = normal,
+        material = material,
+        palette = palette,
+        tint0 = tint0,
+        tint1 = tint1,
+        tint2 = tint2,
+    }
 end
 
 function Character:ApplyShopItem(item)
@@ -620,12 +666,144 @@ function Character:GetHeadShopItem()
     return CreatorPresets:GetHeadShopItemForSkintone(self.skintone)
 end
 
+function Character:RemoveHead(skipEvent)
+    if not skipEvent then SignalBus:emit("head_removed") end
+    self:RemoveTagFromPed(COMPONENT_TAG.HEADS)
+end
+
+function Character:ApplyHeadDrawable(value, apply)
+    if value ~= nil then
+        self.headDrawable = value
+        self:SetModified()
+    end
+
+    if apply then self:ApplyHead(true) end
+end
+
+function Character:ApplyHeadAlbedo(value, apply)
+    if value ~= nil then
+        self.headAlbedo = value
+        self:SetModified()
+    end
+
+    if apply then self:ApplyHead(true) end
+end
+
+function Character:ApplyHeadNormal(value, apply)
+    if value ~= nil then
+        self.headNormal = value
+        self:SetModified()
+    end
+
+    if apply then self:ApplyHead(true) end
+end
+
+function Character:ApplyHeadMaterial(value, apply)
+    if value ~= nil then
+        self.headMaterial = value
+        self:SetModified()
+    end
+
+    if apply then self:ApplyHead(true) end
+end
+
 function Character:ApplyHead(apply)
     local head = self:GetHeadShopItem()
     if not head then return end
 
-    self:ApplyShopItem(head.id)
-    CharacterOverlay:UpdateBaseLayer(head.id, apply)
+    local info = self:GetShopItemInfo(head.id)
+    local shouldOverride = false
+
+    local drawable = info.drawable or 0
+    if self.headDrawable > 0 then
+        local drawables = self:IsMale() and CreatorConfig.CustomMaleHeadDrawables or CreatorConfig.CustomFemaleHeadDrawables
+        if not drawables then drawables = {} end
+
+        local normalized = (self.headDrawable - 1) % #drawables
+        local customDrawable = drawables[normalized + 1]
+
+        if self.headDrawable ~= (normalized + 1) then
+            self.headDrawable = (normalized + 1)
+        end
+
+        if customDrawable.value then
+            drawable = joaat(customDrawable.value)
+            shouldOverride = true
+        end
+    end
+
+    local albedo = info.albedo or 0
+    if self.headAlbedo > 0 then
+        local albedos = self:IsMale() and CreatorConfig.CustomMaleHeadAlbedos or CreatorConfig.CustomFemaleHeadAlbedos
+        if not albedos then albedos = {} end
+
+        local skintoneAlbedos = albedos[head.skintone + 1] or {}
+        local normalized = (self.headAlbedo - 1) % #skintoneAlbedos
+        local customAlbedo = skintoneAlbedos[normalized + 1]
+
+        if self.headAlbedo ~= (normalized + 1) then
+            self.headAlbedo = (normalized + 1)
+        end
+
+        if customAlbedo.value then
+            albedo = joaat(customAlbedo.value)
+            shouldOverride = true
+        end
+    end
+
+    local normal = info.normal or 0
+    if self.headNormal > 0 then
+        local normals = self:IsMale() and CreatorConfig.CustomMaleHeadNormals or CreatorConfig.CustomFemaleHeadNormals
+        if not normals then normals = {} end
+
+        local normalized = (self.headNormal - 1) % #normals
+        local customNormal = normals[normalized + 1]
+
+        if self.headNormal ~= (normalized + 1) then
+            self.headNormal = (normalized + 1)
+        end
+
+        if customNormal.value then
+            normal = joaat(customNormal.value)
+            shouldOverride = true
+        end
+    end
+
+    local material = info.material or 0
+    if self.headMaterial > 0 then
+        local materials = self:IsMale() and CreatorConfig.CustomMaleHeadMaterials or CreatorConfig.CustomFemaleHeadMaterials
+        if not materials then materials = {} end
+
+        local normalized = (self.headMaterial - 1) % #materials
+        local customMaterial = materials[normalized + 1]
+
+        if self.headMaterial ~= (normalized + 1) then
+            self.headMaterial = (normalized + 1)
+        end
+
+        if customMaterial.value then
+            material = joaat(customMaterial.value)
+            shouldOverride = true
+        end
+    end
+
+    CharacterOverlay:SetBaseLayer(albedo, normal, material, apply)
+
+    if not shouldOverride then
+        self:ApplyShopItem(head.id)
+        return
+    end
+
+    self:RemoveHead(true)
+
+    local ped = self:GetPed()
+    SetMetaPedTag(ped, drawable, albedo, normal, material, "METAPED_TINT_GENERIC", 0, 0, 0)
+
+    self:RequestUpdate()
+end
+
+function Character:WearingCustomHead()
+    return self.headDrawable > 0
 end
 
 function Character:ApplyAgeBlend(apply)
@@ -659,6 +837,8 @@ function Character:ApplySkintone(value, apply)
 
     self:ApplyHead(apply)
     self:ApplyBodyItems()
+
+    SignalBus:emit("skintone_changed", value)
 end
 
 function Character:GetBodyBuild()
@@ -1179,6 +1359,7 @@ function Character:RandomizeAll()
     if Creator:IsAdvancedMode() then
         self:RandomizeHeight()
         self:RandomizeWeight()
+        self:RandomizeCustomHead(true)
     end
 
     self:RandomizeWhistle(false)
@@ -1464,6 +1645,28 @@ function Character:RandomizeWeight()
     SignalBus:emit("weight_randomized", self.weight)
 end
 
+function Character:RandomizeCustomHead(apply)
+    local head = self:GetHeadShopItem()
+    if not head then return end
+
+    local drawables = self:IsMale() and CreatorConfig.CustomMaleHeadDrawables or CreatorConfig.CustomFemaleHeadDrawables
+    self:ApplyHeadDrawable(GetRandomIntInRange(0, #drawables), false)
+
+    local albedos = self:IsMale() and CreatorConfig.CustomMaleHeadAlbedos or CreatorConfig.CustomFemaleHeadAlbedos
+    local skintoneAlbedos = albedos[head.skintone + 1] or {}
+    self:ApplyHeadAlbedo(GetRandomIntInRange(0, #skintoneAlbedos), false)
+
+    local normals = self:IsMale() and CreatorConfig.CustomMaleHeadNormals or CreatorConfig.CustomFemaleHeadNormals
+    self:ApplyHeadNormal(GetRandomIntInRange(0, #normals), false)
+
+    local materials = self:IsMale() and CreatorConfig.CustomMaleHeadMaterials or CreatorConfig.CustomFemaleHeadMaterials
+    self:ApplyHeadMaterial(GetRandomIntInRange(0, #materials), false)
+
+    if apply then self:ApplyHead(true) end
+
+    SignalBus:emit("custom_head_randomized", self.headDrawable, self.headAlbedo, self.headNormal, self.headMaterial)
+end
+
 function Character:RandomizeVoice(preview)
     local voices = CreatorConfig.Voices
     self:ApplyVoice(GetRandomIntInRange(0, #voices))
@@ -1611,6 +1814,14 @@ SignalBus:on("adjustable_changed", function(itemId, value)
         Character:ApplyHeight(value)
     elseif action == CHARACTER_ACTION.APPLY_WEIGHT then
         Character:ApplyWeight(value)
+    elseif action == CHARACTER_ACTION.APPLY_HEAD_DRAWABLE then
+        Character:ApplyHeadDrawable(value, true)
+    elseif action == CHARACTER_ACTION.APPLY_HEAD_ALBEDO then
+        Character:ApplyHeadAlbedo(value, true)
+    elseif action == CHARACTER_ACTION.APPLY_HEAD_NORMAL then
+        Character:ApplyHeadNormal(value, true)
+    elseif action == CHARACTER_ACTION.APPLY_HEAD_MATERIAL then
+        Character:ApplyHeadMaterial(value, true)
     elseif action == CHARACTER_ACTION.APPLY_VOICE then
         Character:ApplyVoice(value)
     end
