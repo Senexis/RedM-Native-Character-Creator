@@ -561,13 +561,14 @@ end
 function Character:GetExpressionGameBounds(expressionId)
     local min, max = -1.0, 1.0
 
-    -- Fill the limites from the heritage if applicable and desired
-    if not self.ignoreHeritageLimits then
-        local data = CreatorPresets:GetFineTuningData()
-        local tuning = data[expressionId]
-        if tuning then
-            min, max = tuning.min, tuning.max
-        end
+    -- Fill the limits from the heritage
+    local data = CreatorPresets:GetFineTuningData()
+    local tuning = data[expressionId]
+
+    -- Apply the fine tuning limits if available and desired or not overridable
+    if tuning and (not tuning.overridable or not self.ignoreHeritageLimits) then
+        min = tuning.min or min
+        max = tuning.max or max
     end
 
     -- Swap bounds if the expression is flagged as reversed
@@ -629,23 +630,17 @@ end
 function Character:ApplyExpressionZonePreset(zone)
     local expressions = PED_EXPRESSION_ZONE:GetExpressions(zone) or {}
 
-    if not PED_EXPRESSION_ZONE:GetQuery(zone) then
-        for _, expressionId in ipairs(expressions) do
+    local presetIndex = self.presets[zone] or 0
+    local presetValues = CreatorPresets:GetExpressionZoneData(zone, presetIndex)
+
+    for _, expressionId in ipairs(expressions) do
+        local presetValue = presetValues[expressionId]
+
+        if presetValue ~= nil then
+            local uiValue = self:ExpressionGameToUiValue(expressionId, presetValue)
+            self:ApplyExpressionValue(expressionId, uiValue, false)
+        else
             self:ApplyExpressionValue(expressionId, nil, false)
-        end
-    else
-        local presetIndex = self.presets[zone] or 0
-        local presetValues = CreatorPresets:GetExpressionZoneData(zone, presetIndex)
-
-        for _, expressionId in ipairs(expressions) do
-            local presetValue = presetValues[expressionId]
-
-            if presetValue ~= nil then
-                local uiValue = self:ExpressionGameToUiValue(expressionId, presetValue)
-                self:ApplyExpressionValue(expressionId, uiValue, false)
-            else
-                self:ApplyExpressionValue(expressionId, nil, false)
-            end
         end
     end
 
@@ -883,9 +878,8 @@ function Character:ApplyBodyExpressions(value)
         self.bodyType = normalized
     end
 
-    for expressionKey, expressionValue in pairs(bodyBuild.expressions) do
-        local uiValue = self:ExpressionGameToUiValue(expressionKey, expressionValue)
-        self:ApplyExpressionValue(expressionKey, uiValue, false)
+    for presetKey, presetValue in pairs(bodyBuild.presets) do
+        self:ApplyPreset(presetKey, presetValue)
     end
 end
 

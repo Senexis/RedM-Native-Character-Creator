@@ -3,6 +3,7 @@
 ---@field GetIdFromName fun(self, name: string): number|nil
 ---@field GetQuery fun(self, id: number): number|nil
 ---@field GetExpressions fun(self, id: number): table|nil
+---@field GetDatabinding fun(self, id: number): table|nil
 ---@field ToString fun(self, id: number): string
 local PED_EXPRESSION_ZONES = {
     EYES      = 1,

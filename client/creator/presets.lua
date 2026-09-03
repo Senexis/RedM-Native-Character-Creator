@@ -222,7 +222,7 @@ function CreatorPresets:GetHeadShopItemForSkintone(skintone)
     return nil
 end
 
----@return table<number, { min: number, max: number }>
+---@return table<number, { min: number, max: number, overridable: boolean }>
 function CreatorPresets:GetFineTuningData()
     if self.cache.fineTuningData then
         return self.cache.fineTuningData
@@ -236,12 +236,24 @@ function CreatorPresets:GetFineTuningData()
         if CreatorXml:GetNode(EDITOR_XML_QUERY.EXPRESSION_FINE_TUNING_DATA_EXPRESSION_X, hash) then
             local min = CreatorXml:GetFloat(EDITOR_XML_QUERY.MIN_X)
             local max = CreatorXml:GetFloat(EDITOR_XML_QUERY.MAX_X)
-            result[name] = { min = min, max = max }
+            result[name] = { min = min, max = max, overridable = true }
         elseif CreatorXml:GetNode(EDITOR_XML_QUERY.EXPRESSION_FINE_TUNING_DATA_EXPRESSION_Y, hash) then
             local min = CreatorXml:GetFloat(EDITOR_XML_QUERY.MIN_Y)
             local max = CreatorXml:GetFloat(EDITOR_XML_QUERY.MAX_Y)
-            result[name] = { min = min, max = max }
+            result[name] = { min = min, max = max, overridable = true }
+        else
+            result[name] = { min = -1.0, max = 1.0, overridable = true }
         end
+
+        if CreatorConfig.ExpressionLimits and CreatorConfig.ExpressionLimits[name] then
+            local limits = CreatorConfig.ExpressionLimits[name]
+            result[name].min = limits.min or result[name].min
+            result[name].max = limits.max or result[name].max
+            result[name].overridable = limits.overridable or result[name].overridable
+        end
+
+        if result[name].min < -1.0 then result[name].min = -1.0 end
+        if result[name].max > 1.0 then result[name].max = 1.0 end
     end
 
     self.cache.fineTuningData = result
@@ -254,30 +266,49 @@ function CreatorPresets:GetExpressionZonePresets(zone)
         return self.cache.expressionZonePresets[zone]
     end
 
-    local query = PED_EXPRESSION_ZONE:GetQuery(zone)
-    if not query then
-        error("Invalid or unsupported expression zone: " .. PED_EXPRESSION_ZONE:ToString(zone), 2)
-    end
-
-    _setHeritageNode()
-
-    local count = CreatorXml:GetCount(query)
     local result = {}
+    local query = PED_EXPRESSION_ZONE:GetQuery(zone)
 
-    for i = 0, count - 1 do
+    if query then
         _setHeritageNode()
 
-        if CreatorXml:GetNode(query, i) then
-            local presetId = CreatorXml:GetHash(EDITOR_XML_QUERY.ID)
+        local count = CreatorXml:GetCount(query)
+        for i = 0, count - 1 do
+            _setHeritageNode()
 
-            if presetId ~= `CUSTOM_CREATOR_REROLL_OPTION` then
-                result[#result + 1] = { index = i, id = presetId }
+            if CreatorXml:GetNode(query, i) then
+                local presetId = CreatorXml:GetHash(EDITOR_XML_QUERY.ID)
+
+                if presetId ~= `CUSTOM_CREATOR_REROLL_OPTION` then
+                    result[#result + 1] = { index = i, id = presetId }
+                end
             end
         end
     end
 
+    local custom = self:GetCustomExpressionZonePresets(zone)
+    for i, item in ipairs(custom) do
+        result[i] = item
+    end
+
     if not self.cache.expressionZonePresets then self.cache.expressionZonePresets = {} end
     self.cache.expressionZonePresets[zone] = result
+
+    return result
+end
+
+function CreatorPresets:GetCustomExpressionZonePresets(zone)
+    local data = Character:IsMale() and CreatorConfig.CustomMaleExpressionPresetLabels or CreatorConfig.CustomFemaleExpressionPresetLabels
+    local zoneData = data[zone] or {}
+
+    local result = {}
+    for i, item in ipairs(zoneData) do
+        result[#result + 1] = { index = i, id = item }
+    end
+
+    if #result == 0 then
+        result[1] = { index = 1, id = "NATIVE_CREATOR_PRESET_DEFAULT" }
+    end
 
     return result
 end
@@ -290,37 +321,54 @@ function CreatorPresets:GetExpressionZoneData(zone, preset)
         return self.cache.expressionZoneData[key]
     end
 
-    -- The first preset is always the "Custom" option, which we do not want
-    preset = preset + 1
-
+    local result = {}
     local query = PED_EXPRESSION_ZONE:GetQuery(zone)
-    if not query then
-        error("Invalid or unsupported expression zone: " .. PED_EXPRESSION_ZONE:ToString(zone), 2)
+
+    if query then
+        _setHeritageNode()
+
+        -- The first preset is always the "Custom" option, which we do not want
+        if CreatorXml:GetNode(query, preset + 1) then
+            local zoneNode = CreatorXml:RequestGetNode()
+
+            local expressions = CreatorXml:GetCount(EDITOR_XML_QUERY.EXPRESSION_COUNT)
+            for i = 0, expressions - 1 do
+                CreatorXml:RequestSetNode(zoneNode)
+
+                local hash = CreatorXml:GetHash(EDITOR_XML_QUERY.EXPRESSION_ID, i)
+                local value = CreatorXml:GetFloat(EDITOR_XML_QUERY.EXPRESSION_VALUE, i)
+
+                local id = PED_EXPRESSION:GetIdFromHash(hash)
+                if id then result[id] = value end
+            end
+        else
+            error(string.format("Preset %d not found for expression zone %s", tostring(preset), PED_EXPRESSION_ZONE:ToString(zone)), 2)
+        end
     end
 
-    _setHeritageNode()
-
-    local result = {}
-
-    if CreatorXml:GetNode(query, preset) then
-        local zoneNode = CreatorXml:RequestGetNode()
-        local expressions = CreatorXml:GetCount(EDITOR_XML_QUERY.EXPRESSION_COUNT)
-
-        for i = 0, expressions - 1 do
-            CreatorXml:RequestSetNode(zoneNode)
-
-            local hash = CreatorXml:GetHash(EDITOR_XML_QUERY.EXPRESSION_ID, i)
-            local value = CreatorXml:GetFloat(EDITOR_XML_QUERY.EXPRESSION_VALUE, i)
-
-            local id = PED_EXPRESSION:GetIdFromHash(hash)
-            if id then result[id] = value end
-        end
-    else
-        error(string.format("Preset %d not found for expression zone %s", tostring(preset), PED_EXPRESSION_ZONE:ToString(zone)), 2)
+    local custom = self:GetCustomExpressionZoneData(zone, preset)
+    for id, value in pairs(custom) do
+        result[id] = value
     end
 
     if not self.cache.expressionZoneData then self.cache.expressionZoneData = {} end
     self.cache.expressionZoneData[key] = result
+
+    return result
+end
+
+function CreatorPresets:GetCustomExpressionZoneData(zone, preset)
+    -- UI value is 0-based, so add one to the preset
+    preset = preset + 1
+
+    local data = Character:IsMale() and CreatorConfig.CustomMaleExpressionPresetValues or CreatorConfig.CustomFemaleExpressionPresetValues
+    local expressions = PED_EXPRESSION_ZONE:GetExpressions(zone) or {}
+
+    local result = {}
+    for _, id in ipairs(expressions) do
+        local value = data[id] and data[id][preset] or nil
+        result[id] = value and math.max(-1.0, math.min(1.0, value)) or nil
+    end
 
     return result
 end

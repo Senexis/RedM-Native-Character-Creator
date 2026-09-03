@@ -7,6 +7,7 @@
 ---@field GetCamera fun(self, id: number): table|nil
 ---@field GetIdFromCamera fun(self, camera: table): number|nil
 ---@field GetUi fun(self, id: number): table|nil
+---@field GetZone fun(self, id: number): integer|nil
 ---@field GetIdFromUi fun(self, ui: table): number|nil
 ---@field GetNameFromId fun(self, id: number): string|nil
 ---@field GetIdFromName fun(self, name: string): number|nil
@@ -139,5 +140,24 @@ UI_PAGE_ID:AddModeAttribute("Ui", {
         [UI_PAGE_IDS.LIFESTYLE]  = { Header = 0x35F8C892, Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
         [UI_PAGE_IDS.MAKEUP]     = { Header = "NATIVE_CREATOR_HEAD_HEADING", Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
         [UI_PAGE_IDS.WHISTLE]    = { Header = "NATIVE_CREATOR_VOICE_HEADING", Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
+    }
+})
+
+UI_PAGE_ID:AddModeAttribute("Zone", {
+    [CREATOR_MODE.DEFAULT] = {
+        [UI_PAGE_IDS.EYES]   = PED_EXPRESSION_ZONE.EYES,
+        [UI_PAGE_IDS.NOSE]   = PED_EXPRESSION_ZONE.NOSE,
+        [UI_PAGE_IDS.MOUTH]  = PED_EXPRESSION_ZONE.MOUTH,
+        [UI_PAGE_IDS.JAW]    = PED_EXPRESSION_ZONE.JAW,
+        [UI_PAGE_IDS.EARS]   = PED_EXPRESSION_ZONE.EARS,
+        [UI_PAGE_IDS.CHEEKS] = PED_EXPRESSION_ZONE.CHEEKS,
+    },
+    [CREATOR_MODE.ADVANCED] = {
+        [UI_PAGE_IDS.EYES]   = PED_EXPRESSION_ZONE.SHOULDERS,
+        [UI_PAGE_IDS.NOSE]   = PED_EXPRESSION_ZONE.LIMBS,
+        [UI_PAGE_IDS.MOUTH]  = PED_EXPRESSION_ZONE.MOUTH_2,
+        [UI_PAGE_IDS.JAW]    = PED_EXPRESSION_ZONE.TORSO,
+        [UI_PAGE_IDS.EARS]   = PED_EXPRESSION_ZONE.FACE,
+        [UI_PAGE_IDS.CHEEKS] = PED_EXPRESSION_ZONE.NECK,
     }
 })

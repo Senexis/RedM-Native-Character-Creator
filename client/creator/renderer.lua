@@ -49,12 +49,7 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_HEAD_MATERIAL_TOOLTIP", "Facial overlays may override or reduce the effect of the head's finish.")
     AddTextEntry("NATIVE_CREATOR_HEAD_SKIN_TONE_TOOLTIP", "Changing your character's skin tone may make changes to the head's complexion.")
 
-    AddTextEntry("NATIVE_CREATOR_SHOULDERS_00", "Neutral")
-    AddTextEntry("NATIVE_CREATOR_LIMBS_00", "Neutral")
-    AddTextEntry("NATIVE_CREATOR_MOUTH_2_00", "Neutral")
-    AddTextEntry("NATIVE_CREATOR_TORSO_00", "Neutral")
-    AddTextEntry("NATIVE_CREATOR_FACE_00", "Neutral")
-    AddTextEntry("NATIVE_CREATOR_NECK_00", "Neutral")
+    AddTextEntry("NATIVE_CREATOR_PRESET_DEFAULT", "Standard")
 
     for _, height in ipairs(CreatorConfig.Heights) do
         if height.label then AddTextEntry(height.id, height.label) end
@@ -268,33 +263,19 @@ function CreatorRenderer:UpdateSubheaderLabel(subheader)
 end
 
 function CreatorRenderer:UpdateSubheaderOverride(pageId)
-    if pageId == UI_PAGE_ID.EYES then
-        local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__EYES_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EYES_%02d" or "NATIVE_CREATOR_SHOULDERS_%02d"
-        self.subheaderOverride = string.format(label, preset)
-    elseif pageId == UI_PAGE_ID.NOSE then
-        local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__NOSE_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_NOSE_%02d" or "NATIVE_CREATOR_LIMBS_%02d"
-        self.subheaderOverride = string.format(label, preset)
-    elseif pageId == UI_PAGE_ID.MOUTH then
-        local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__MOUTH_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_MOUTH_%02d" or "NATIVE_CREATOR_MOUTH_2_%02d"
-        self.subheaderOverride = string.format(label, preset)
-    elseif pageId == UI_PAGE_ID.JAW then
-        local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__JAW_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_JAW_%02d" or "NATIVE_CREATOR_TORSO_%02d"
-        self.subheaderOverride = string.format(label, preset)
-    elseif pageId == UI_PAGE_ID.EARS then
-        local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__EARS_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_EARS_%02d" or "NATIVE_CREATOR_FACE_%02d"
-        self.subheaderOverride = string.format(label, preset)
-    elseif pageId == UI_PAGE_ID.CHEEKS then
-        local preset = CreatorDatabinding:ReadInt(DATABINDING_ID.APPEARANCE__CHEEKS_PRESET__VALUE)
-        local label = Creator:IsDefaultMode() and "EXPRESSION_PRESET_CHEEKS_%02d" or "NATIVE_CREATOR_NECK_%02d"
-        self.subheaderOverride = string.format(label, preset)
-    else
-        self.subheaderOverride = nil
-    end
+    self.subheaderOverride = nil
+
+    local zone = UI_PAGE_ID:GetZone(pageId)
+    if not zone then return end
+
+    local databinding = PED_EXPRESSION_ZONE:GetDatabinding(zone)
+    if not databinding or not databinding.Value then return end
+
+    local labels = CreatorPresets:GetExpressionZonePresets(zone)
+    local value = CreatorDatabinding:ReadInt(databinding.Value)
+    local label = labels[value + 1] or { index = 1, id = "NATIVE_CREATOR_PRESET_DEFAULT" }
+
+    self.subheaderOverride = label.id
 end
 
 function CreatorRenderer:UpdateFooterLabel(footer)
@@ -654,15 +635,9 @@ end
 function CreatorRenderer:GetPresetLabels(zone)
     local labels = {}
 
-    if PED_EXPRESSION_ZONE:GetQuery(zone) then
-        local presets = CreatorPresets:GetExpressionZonePresets(zone)
-        for _, preset in ipairs(presets) do
-            labels[#labels + 1] = preset.id
-        end
-    else
-        local format = "NATIVE_CREATOR_%s_%02d"
-        local name = PED_EXPRESSION_ZONE:GetName(zone)
-        labels[#labels + 1] = string.format(format, name, 0)
+    local presets = CreatorPresets:GetExpressionZonePresets(zone)
+    for _, preset in ipairs(presets) do
+        labels[#labels + 1] = preset.id
     end
 
     return labels
