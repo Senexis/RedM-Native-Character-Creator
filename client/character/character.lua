@@ -1646,23 +1646,29 @@ function Character:RandomizeCustomHead(apply)
     local drawables = self:IsMale() and CreatorConfig.CustomMaleHeadDrawables or CreatorConfig.CustomFemaleHeadDrawables
     self:ApplyHeadDrawable(GetRandomIntInRange(0, #drawables), false)
 
-    local percentToSkip = CreatorConfig.RandomizePercentToSkipHeadCustomization or 70
-    local shouldSkip = GetRandomIntInRange(0, 100) < percentToSkip
-
     local albedos = self:IsMale() and CreatorConfig.CustomMaleHeadAlbedos or CreatorConfig.CustomFemaleHeadAlbedos
     local skintoneAlbedos = albedos[head.skintone + 1] or {}
     local albedoIndex = GetRandomIntInRange(0, #skintoneAlbedos)
-    if shouldSkip then albedoIndex = 0 end
+
+    local percentToSkipAlbedo = CreatorConfig.RandomizePercentToSkipHeadAlbedo or 70
+    if GetRandomIntInRange(0, 100) < percentToSkipAlbedo then albedoIndex = 0 end
+
     self:ApplyHeadAlbedo(albedoIndex, false)
 
     local normals = self:IsMale() and CreatorConfig.CustomMaleHeadNormals or CreatorConfig.CustomFemaleHeadNormals
     local normalIndex = GetRandomIntInRange(0, #normals)
-    if shouldSkip then normalIndex = 0 end
+
+    local percentToSkipNormal = CreatorConfig.RandomizePercentToSkipHeadNormal or 30
+    if GetRandomIntInRange(0, 100) < percentToSkipNormal then normalIndex = 0 end
+
     self:ApplyHeadNormal(normalIndex, false)
 
     local materials = self:IsMale() and CreatorConfig.CustomMaleHeadMaterials or CreatorConfig.CustomFemaleHeadMaterials
     local materialIndex = GetRandomIntInRange(0, #materials)
-    if shouldSkip then materialIndex = 0 end
+
+    local percentToSkipMaterial = CreatorConfig.RandomizePercentToSkipHeadMaterial or 70
+    if GetRandomIntInRange(0, 100) < percentToSkipMaterial then materialIndex = 0 end
+
     self:ApplyHeadMaterial(materialIndex, false)
 
     if apply then self:ApplyHead(true) end
