@@ -149,3 +149,28 @@ PED_EXPRESSION_ZONE:AddModeAttribute("Databinding", {
         [PED_EXPRESSION_ZONES.NECK]      = { Value = DATABINDING_ID.APPEARANCE__CHEEKS_PRESET__VALUE },
     }
 })
+
+PED_EXPRESSION_ZONE:AddModeAttribute("Randomized", {
+    [CREATOR_MODE.DEFAULT] = {
+        [PED_EXPRESSION_ZONES.EYES]   = true,
+        [PED_EXPRESSION_ZONES.NOSE]   = true,
+        [PED_EXPRESSION_ZONES.MOUTH]  = true,
+        [PED_EXPRESSION_ZONES.JAW]    = true,
+        [PED_EXPRESSION_ZONES.EARS]   = true,
+        [PED_EXPRESSION_ZONES.CHEEKS] = true,
+    },
+    [CREATOR_MODE.ADVANCED] = {
+        [PED_EXPRESSION_ZONES.EYES]      = true,
+        [PED_EXPRESSION_ZONES.NOSE]      = true,
+        [PED_EXPRESSION_ZONES.MOUTH]     = true,
+        [PED_EXPRESSION_ZONES.JAW]       = true,
+        [PED_EXPRESSION_ZONES.EARS]      = true,
+        [PED_EXPRESSION_ZONES.CHEEKS]    = true,
+        [PED_EXPRESSION_ZONES.SHOULDERS] = true,
+        [PED_EXPRESSION_ZONES.LIMBS]     = true,
+        [PED_EXPRESSION_ZONES.MOUTH_2]   = true,
+        [PED_EXPRESSION_ZONES.TORSO]     = true,
+        [PED_EXPRESSION_ZONES.FACE]      = true,
+        [PED_EXPRESSION_ZONES.NECK]      = true,
+    }
+})

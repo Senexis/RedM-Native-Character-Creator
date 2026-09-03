@@ -1457,7 +1457,7 @@ function Character:RandomizeWeariness()
 end
 
 function Character:RandomizePresets()
-    local presets = PED_EXPRESSION_ZONE:Pluck("Query", "Id")
+    local presets = PED_EXPRESSION_ZONE:Pluck("Randomized", "Id")
     for key, _ in pairs(presets) do
         self:RandomizePreset(key)
     end
