@@ -126,6 +126,9 @@ CreatorConfig.RandomizePercentToSkipOverlay = 30
 -- To reduce visual clutter, this is the percentage chance the makeup preset application gets skipped
 CreatorConfig.RandomizePercentToSkipMakeup = 30
 
+-- To reduce the likelyhood of "extreme" heads, this is the percentage chance the head albedo/normal/material randomization gets skipped
+CreatorConfig.RandomizePercentToSkipHeadCustomization = 70
+
 -- Used to prevent odd-looking randomized characters, feel free to add or remove presets
 -- Uses blend names from CharacterBlends (see client/character/blends.lua) and alphas.
 -- For overlays that support tints (EYESHADOW, LIPSTICK), both blend and tint must be blend names.
