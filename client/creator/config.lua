@@ -1,7 +1,7 @@
 CreatorConfig = {}
 
 -- Whether to log debug information to the console
-CreatorConfig.Debug = true
+CreatorConfig.Debug = false
 
 CreatorConfig.MaxNameLength = 50
 CreatorConfig.MinAge = 18
@@ -208,12 +208,7 @@ CreatorConfig.MakeupPresets = {
 --- ==         BODY BUILD CONFIG           ==
 --- =========================================
 
--- You may add or remove body builds here.
--- The ID field is used for the stepper labels in the character creator UI.
--- Note that the "build" value must match the corresponding value in CHARACTER_BODY_BUILDS.
--- The "expressions" table contains the expression values for each body build, which are applied to the ped when the body build is selected.
--- The expression keys are based on the PED_EXPRESSION enum, which can be found in PED_EXPRESSIONS.
--- Note that the expression values are floats between -1.0 and 1.0 and will be translated to UI values between 0.0 and 1.0 later.
+-- TODO: UPDATE DOCS
 
 CreatorConfig.MaleBodyBuilds = {
     {
@@ -373,6 +368,45 @@ CreatorConfig.CustomFemaleExpressionPresetValues = {
     [PED_EXPRESSION.FOREARMS]         = { 0.0, -0.7, -0.4, 0.6, 0.8 },
     [PED_EXPRESSION.UPPER_LEGS]       = { 0.0, -0.8, -0.2, 0.8, 0.8 },
     [PED_EXPRESSION.LOWER_LEGS]       = { 0.0, -0.9, -0.9, 0.8, 0.8 },
+}
+
+--- =========================================
+--- ==      EXPRESSION LIMIT CONFIG        ==
+--- =========================================
+
+-- TODO: UPDATE DOCS
+
+CreatorConfig.ExpressionLimits = {
+    [PED_EXPRESSION.SHOULDERS_WIDTH]     = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.SHOULDERS_DEPTH]     = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.SHOULDERS_HEIGHT]    = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.CHEST_WIDTH]         = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.CHEST_DEPTH]         = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.BELLY_WIDTH]         = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.BELLY_DEPTH]         = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.LATS]                = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.TRAPS]               = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.UPPER_ARMS]          = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.FOREARMS]            = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.UPPER_LEGS]          = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.LOWER_LEGS]          = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.NECK_WIDTH]          = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.NECK_DEPTH]          = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_L_WIDTH]    = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_R_WIDTH]    = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTH_H_POS]         = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_L_DEPTH]    = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_R_DEPTH]    = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_L_HEIGHT]   = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_R_HEIGHT]   = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_L_LIP_DIST] = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.MOUTHCRN_R_LIP_DIST] = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.FACE_WIDTH]          = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.CHEEKS_FULLNESS]     = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.GLUTES]              = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.EYELID_L_POS]        = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.EYELID_R_POS]        = { min = -1.0, max = 1.0, overridable = true },
+    [PED_EXPRESSION.CHEST_SAG]           = { min = -1.0, max = 1.0, overridable = true },
 }
 
 --- =========================================
@@ -1719,37 +1753,4 @@ CreatorConfig.Overlays = {
         { id = "CHAR_CREATOR_SCAR_15", label = nil, blend = "BLEND_SCAR_15" },
         { id = "CHAR_CREATOR_SCAR_16", label = nil, blend = "BLEND_SCAR_16" },
     },
-}
-
-CreatorConfig.ExpressionLimits = {
-    [PED_EXPRESSION.SHOULDERS_WIDTH]     = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.SHOULDERS_DEPTH]     = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.SHOULDERS_HEIGHT]    = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.CHEST_WIDTH]         = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.CHEST_DEPTH]         = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.BELLY_WIDTH]         = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.BELLY_DEPTH]         = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.LATS]                = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.TRAPS]               = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.UPPER_ARMS]          = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.FOREARMS]            = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.UPPER_LEGS]          = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.LOWER_LEGS]          = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.NECK_WIDTH]          = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.NECK_DEPTH]          = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_L_WIDTH]    = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_R_WIDTH]    = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTH_H_POS]         = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_L_DEPTH]    = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_R_DEPTH]    = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_L_HEIGHT]   = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_R_HEIGHT]   = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_L_LIP_DIST] = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.MOUTHCRN_R_LIP_DIST] = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.FACE_WIDTH]          = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.CHEEKS_FULLNESS]     = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.GLUTES]              = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.EYELID_L_POS]        = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.EYELID_R_POS]        = { min = -1.0, max = 1.0, overridable = true },
-    [PED_EXPRESSION.CHEST_SAG]           = { min = -1.0, max = 1.0, overridable = true },
 }
