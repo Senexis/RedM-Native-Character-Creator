@@ -24,6 +24,11 @@ function CreatorXml:Reset()
 end
 
 function CreatorXml:Initialize()
+    if ParseddataIsFileLoaded(self.loadedXmlFile) == 1 then
+        Utils:Debug("CREATOR_XML_INITIALIZE - XML file already loaded")
+        return true
+    end
+
     if ParseddataIsFileValid(self.stateXmlFile) ~= 1 then
         local file = ParseddataLoadFileHash(`CHARACTER_EDITOR_DATA`)
         if file == 0 then return false end

@@ -650,7 +650,7 @@ function CreatorDatabinding:UpdateBlockedOverlays()
         if not databinding then goto continue end
 
         if not databinding.Enabled then
-            Utils:Debug(string.format("Skipping overlay layer %s because it has no enabled databinding", OVERLAY_LAYER:ToString(layer)))
+            Utils:Warn(string.format("Skipping overlay layer %s because it has no enabled databinding", OVERLAY_LAYER:ToString(layer)))
             goto continue
         end
 

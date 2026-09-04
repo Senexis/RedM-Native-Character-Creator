@@ -195,8 +195,8 @@ function Creator:UpdateStateWaitToStart()
     end
 
     if Character:IsPlayer() then
-        Utils:Debug("Warning: You shouldn't be using a player ped as the editor entity directly")
-        Utils:Debug("This can cause sync issues with other players, please use networked clones instead")
+        Utils:Warn("Warning: You shouldn't be using a player ped as the editor entity directly")
+        Utils:Warn("This can cause sync issues with other players, please use networked clones instead")
     end
 
     self:SetState(EDITOR_STATE.SETUP)
@@ -205,11 +205,15 @@ end
 function Creator:UpdateStateSetup()
     DisableAllControlActions(0)
 
+    if not CreatorXml:Initialize() then
+        return
+    end
+
     CreatorXml:RequestReset(0)
 
     local config = Character:GetCreatorConfig()
     if not CreatorPresets:Init(config) then
-        Utils:Debug(string.format("Editor config %s not defined in XML", EDITOR_CONFIG:ToString(config)))
+        Utils:Error(string.format("Editor config %s not defined in XML", EDITOR_CONFIG:ToString(config)))
         self:SetState(EDITOR_STATE.TEARDOWN)
         return
     end
@@ -347,7 +351,7 @@ function Creator:UpdateStateInEditor()
         local targetPage = UI_PAGE_ID:GetIdFromHash(self.restoreTarget) or UI_PAGE_ID.INVALID
 
         if currentPage == UI_PAGE_ID.INVALID or targetPage == UI_PAGE_ID.INVALID then
-            Utils:Debug("Invalid activity or restore target:", tostring(currentActivity), tostring(self.restoreTarget))
+            Utils:Error("Invalid activity or restore target:", tostring(currentActivity), tostring(self.restoreTarget))
             self:ClearFlag(EDITOR_FLAG.RESTORE)
             return
         end
@@ -384,7 +388,7 @@ function Creator:UpdateStateInEditor()
         end
 
         if RequestUiappTransitionByHash(`character_creator`, transition) ~= 1 then
-            Utils:Debug("Failed to transition into", tostring(transition))
+            Utils:Warn("Failed to transition into", tostring(transition))
         end
     end
 end
@@ -442,6 +446,7 @@ function Creator:UpdateStateTeardown()
         SignalBus:emit("menu_cancel")
     end
 
+    IntroXml:Reset()
     CreatorXml:Reset()
     CreatorMenu:Reset()
 

@@ -44,7 +44,7 @@ function CharacterOverlay:Maintain()
         local counter = 0
         for _, layer in ipairs(sorted) do
             if counter >= self.MAX_LAYERS_COUNT then
-                Utils:Debug(string.format("Cannot add more than %d layers to texture blend", self.MAX_LAYERS_COUNT))
+                Utils:Warn(string.format("Cannot add more than %d layers to texture blend", self.MAX_LAYERS_COUNT))
                 break
             end
 
@@ -52,7 +52,7 @@ function CharacterOverlay:Maintain()
             layer.index = AddTextureLayer(self.drawable, layer.albedo, layer.normal, layer.material, layer.blendType, alpha, layer.sheetGridIndex)
 
             if layer.index <= -1 then
-                Utils:Debug(string.format("Failed to add layer %s to texture blend", OVERLAY_LAYER:ToString(layer.layer)))
+                Utils:Error(string.format("Failed to add layer %s to texture blend", OVERLAY_LAYER:ToString(layer.layer)))
                 goto continue
             end
 

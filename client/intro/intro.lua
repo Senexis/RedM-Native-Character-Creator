@@ -251,17 +251,25 @@ function Intro:MaintainLoadAssets()
         return
     end
 
-    if not self:LoadConfiguration() then
+    if not CreatorXml:Initialize() then
         if GetGameTimer() - self.stateChangeTime > TIMEOUT_GENERIC then
-            self:Error("Failed to load required data. Please try again.", 0202)
+            self:Error("Failed to initialize required data. Please try again.", 0202)
         end
 
-        Utils:Debug("MAINTAIN_LOAD_ASSETS - failed to load configuration")
+        Utils:Debug("MAINTAIN_LOAD_ASSETS - waiting for parsed data to load")
+        return
+    end
+
+    if not self:LoadConfiguration() then
+        if GetGameTimer() - self.stateChangeTime > TIMEOUT_GENERIC then
+            self:Error("Failed to load required data. Please try again.", 0203)
+        end
+
+        Utils:Debug("MAINTAIN_LOAD_ASSETS - waiting to load configuration")
         return
     end
 
     IntroXml:Reset()
-    CreatorXml:Reset()
     Creator:Initialize()
 
     SetAmbientZoneListState("AZL_RDRO_Character_Creation_Area", true, true)
@@ -311,7 +319,7 @@ function Intro:MaintainLoadArea()
 
     if IsLoadSceneLoaded() ~= 1 then
         if GetGameTimer() - self.stateChangeTime > TIMEOUT_LOAD then
-            Utils:Debug("MAINTAIN_LOAD_AREA - load scene timed out!")
+            Utils:Warn("MAINTAIN_LOAD_AREA - load scene timed out!")
             goto load_timeout
         end
 
@@ -501,7 +509,7 @@ function Intro:MaintainApplyRandomization()
                 self:Error("Failed to create the male character. Please try again.", 0702)
             end
 
-            Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - failed to initialize male character presets")
+            Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - waiting to initialize male character presets")
             return
         end
 
@@ -525,7 +533,7 @@ function Intro:MaintainApplyRandomization()
                 self:Error("Failed to create the female character. Please try again.", 0703)
             end
 
-            Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - failed to initialize female character presets")
+            Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - waiting to initialize female character presets")
             return
         end
 
@@ -672,6 +680,8 @@ function Intro:MaintainSelectGender()
         return
     end
 
+    DisableAllControlActions(0)
+
     if not self:FadeInScreen(2000) then
         Utils:Debug("MAINTAIN_SELECT_GENDER - still fading in... ")
         return
@@ -690,7 +700,6 @@ function Intro:MaintainSelectGender()
         self:SetFlag(INTRO_FLAG.IDLE_DIALOG_PLAYED)
     end
 
-    DisableAllControlActions(0)
     EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
     EnableControlAction(0, `INPUT_STICKY_FEED_ACCEPT`, true)
     EnableControlAction(0, `INPUT_STICKY_FEED_CANCEL`, true)
@@ -1489,7 +1498,7 @@ function Intro:MaintainExit()
 
         if IsLoadSceneLoaded() ~= 1 then
             if GetGameTimer() - self.stateChangeTime > TIMEOUT_LOAD then
-                Utils:Debug("MAINTAIN_EXIT - load scene timed out!")
+                Utils:Warn("MAINTAIN_EXIT - load scene timed out!")
                 goto load_timeout
             end
 
@@ -1538,10 +1547,11 @@ function Intro:MaintainExit()
     self:DestroyAllPeds()
     self:DestroyAllCameras()
 
-    IntroXml:Reset()
+    Creator:Finish(false)
     IntroAnimations:Reset()
 
-    Creator:Finish(false)
+    IntroXml:Reset()
+    CreatorXml:Reset()
 
     SetEntityCoordsAndHeading(self.playerPedId, pos.x, pos.y, pos.z, heading, true, false, true)
     SetPlayerInvincible(self.playerIndex, false)
@@ -1789,8 +1799,6 @@ function Intro:LoadConfiguration()
     if not initCamFocus then return false end
 
     -- Load editor view camera data from CHARACTER_EDITOR_DATA
-    if not CreatorXml:Initialize() then return false end
-
     local EDITOR_VIEW_IDS <const> = {
         EDITOR_VIEW.FULL_BODY,
         EDITOR_VIEW.FULL_BODY_CLOSE,
@@ -1935,7 +1943,7 @@ end
 function Intro:CreatePedPreset(config)
     local data = self.config.presets[config]
     if not data then
-        Utils:Debug("MAINTAIN_CREATE_PED_PRESETS - no data for ped preset", EDITOR_CONFIG:ToString(config))
+        Utils:Warn("MAINTAIN_CREATE_PED_PRESETS - no data for ped preset", EDITOR_CONFIG:ToString(config))
         return false
     end
 
@@ -1957,7 +1965,7 @@ function Intro:CreatePedPreset(config)
     local ped = CreatePed(model, position.x, position.y, position.z, heading, true, true, false, false)
 
     if DoesEntityExist(ped) ~= 1 then
-        Utils:Debug("MAINTAIN_CREATE_PED_PRESETS - failed to create ped preset", EDITOR_CONFIG:ToString(config))
+        Utils:Error("MAINTAIN_CREATE_PED_PRESETS - failed to create ped preset", EDITOR_CONFIG:ToString(config))
         return false
     end
 
@@ -1999,8 +2007,13 @@ function Intro:ResetCharacter()
         return false
     end
 
+    if not CreatorXml:Initialize() then
+        Utils:Debug("RESET_CHARACTER - waiting for creator xml to initialize")
+        return false
+    end
+
     if not CreatorPresets:Init(self.selectedPreset) then
-        Utils:Debug("RESET_CHARACTER - failed to initialize character presets")
+        Utils:Debug("RESET_CHARACTER - waiting for creator presets to initialize")
         return false
     end
 
@@ -2184,7 +2197,7 @@ function Intro:SetupMirrorInteriorGroup()
     local interior = GetInteriorAtCoords(-561.8157, -3780.966, 239.0805)
 
     if IsValidInterior(interior) ~= 1 then
-        Utils:Debug("NET_CHAR_CREATOR_SETUP_MIRROR_INTERIOR_GROUP - interior was not valid")
+        Utils:Warn("NET_CHAR_CREATOR_SETUP_MIRROR_INTERIOR_GROUP - interior was not valid")
         return
     end
 
@@ -2247,7 +2260,7 @@ function Intro:CreateConversation(conversation, singleLine, singleLineIndex, pre
     end
 
     if not started then
-        Utils:Debug("NET_CHAR_CREATOR_CREATE_CONVERSATION - Couldn't play convo: ", conversation)
+        Utils:Warn("NET_CHAR_CREATOR_CREATE_CONVERSATION - Couldn't play convo: ", conversation)
         return false
     end
 
@@ -2561,6 +2574,8 @@ function Intro:ClearFlag(flag)
 end
 
 function Intro:Error(message, code)
+    Utils:Error(message, code)
+
     local suffix = ""
     if code then
         suffix = string.format("~n~~n~~COLOR_MENU_GREY_DARK~Error code %04d", code)

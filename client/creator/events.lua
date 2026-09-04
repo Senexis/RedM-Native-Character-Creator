@@ -85,33 +85,33 @@ function CreatorEvents:Maintain()
                 local ok, error = pcall(self.OnItemFocused, self, parameter)
                 if not ok then
                     local enum = UI_ITEM_ID:GetIdFromHash(parameter)
-                    Utils:Debug(string.format("Failed to handle item focused event on item %s: %s", enum, error))
+                    Utils:Error(string.format("Failed to handle item focused event on item %s: %s", enum, error))
                 end
             elseif event == `DATA_ADJUSTABLE_CHANGED` then
                 parameter = self.currentFocusedItem
                 local ok, error = pcall(self.OnDataAdjustableChanged, self, parameter, index)
                 if not ok then
                     local enum = UI_ITEM_ID:GetIdFromHash(parameter)
-                    Utils:Debug(string.format("Failed to handle data adjustable changed event on item %s: %s", enum, error))
+                    Utils:Error(string.format("Failed to handle data adjustable changed event on item %s: %s", enum, error))
                 end
             elseif event == `ITEM_SELECTED` then
                 local ok, error = pcall(self.OnItemSelected, self, parameter)
                 if not ok then
                     local enum = UI_ACTION_ID:GetIdFromHash(parameter)
-                    Utils:Debug(string.format("Failed to handle item selected event on item %s: %s", enum, error))
+                    Utils:Error(string.format("Failed to handle item selected event on item %s: %s", enum, error))
                 end
             elseif event == `NEW_PAGE` then
                 self.currentPage = parameter
                 local ok, error = pcall(self.OnNewPage, self, parameter)
                 if not ok then
                     local enum = UI_PAGE_ID:GetIdFromHash(parameter)
-                    Utils:Debug(string.format("Failed to handle new page event on page %s: %s", enum, error))
+                    Utils:Error(string.format("Failed to handle new page event on page %s: %s", enum, error))
                 end
             elseif event == `INDEX_CHANGE_REQUESTED` then
                 local ok, error = pcall(self.OnIndexChangeRequested, self, parameter)
                 if not ok then
                     local enum = UI_ITEM_ID:GetIdFromHash(parameter)
-                    Utils:Debug(string.format("Failed to handle index change requested event on item %s: %s", enum, error))
+                    Utils:Error(string.format("Failed to handle index change requested event on item %s: %s", enum, error))
                 end
             end
         end

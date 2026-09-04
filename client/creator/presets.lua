@@ -35,6 +35,7 @@ function CreatorPresets:Init(config)
     CreatorXml:RequestReset(0)
 
     if not CreatorXml:GetNode(EDITOR_XML_QUERY.CONFIG_NODE, hash) then
+        Utils:Error("Failed to get config node for hash", hash)
         return false
     end
 

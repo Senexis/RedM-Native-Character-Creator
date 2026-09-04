@@ -517,7 +517,7 @@ function CreatorRenderer:RequestSwatchTextures()
                 -- GENERATE_SWATCH_TEXTURE_DIRECTLY
                 local ok, error = pcall(Citizen.InvokeNative, 0x646ED1A1D28487DF, itemData.entry, struct:Buffer())
                 if not ok then
-                    Utils:Debug(string.format("Failed to generate direct swatch texture for entry %d: %s", itemData.entry, error))
+                    Utils:Error(string.format("Failed to generate direct swatch texture for entry %d: %s", itemData.entry, error))
                 end
             else
                 local pedType = Character:GetPedType()
@@ -525,7 +525,7 @@ function CreatorRenderer:RequestSwatchTextures()
                 -- GENERATE_SWATCH_TEXTURE
                 local ok, error = pcall(GenerateSwatchTexture, itemData.entry, itemData.component, pedType, true)
                 if not ok then
-                    Utils:Debug(string.format("Failed to generate component swatch texture for entry %d: %s", itemData.entry, error))
+                    Utils:Error(string.format("Failed to generate component swatch texture for entry %d: %s", itemData.entry, error))
                 end
             end
 

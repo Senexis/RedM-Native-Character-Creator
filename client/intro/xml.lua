@@ -24,6 +24,11 @@ function IntroXml:Reset()
 end
 
 function IntroXml:Initialize()
+    if ParseddataIsFileLoaded(self.loadedXmlFile) == 1 then
+        Utils:Debug("INTRO_XML_INITIALIZE - XML file already loaded")
+        return true
+    end
+
     if ParseddataIsFileValid(self.stateXmlFile) ~= 1 then
         local file = ParseddataLoadFileHash(`NET_CHAR_CREATOR_DATA`)
         if file == 0 then return false end
