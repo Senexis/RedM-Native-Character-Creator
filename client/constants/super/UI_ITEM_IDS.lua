@@ -436,7 +436,7 @@ UI_ITEM_ID:AddModeAttribute("Ui", {
         [UI_ITEM_IDS.APPEARANCE__EYES]         = { Footer = "CHAR_CREATOR_GENERAL_CUSTOMIZATION_TOOLTIP", Image = "character_creator_build" },
         [UI_ITEM_IDS.APPEARANCE__NOSE]         = { Footer = "CHAR_CREATOR_GENERAL_CUSTOMIZATION_TOOLTIP", Image = "character_creator_build" },
         [UI_ITEM_IDS.APPEARANCE__MOUTH]        = { Footer = "CHAR_CREATOR_GENERAL_CUSTOMIZATION_TOOLTIP", Image = "character_creator_mouth" },
-        [UI_ITEM_IDS.APPEARANCE__JAW]          = { Footer = "CHAR_CREATOR_GENERAL_CUSTOMIZATION_TOOLTIP", Image = "character_creator_build" },
+        [UI_ITEM_IDS.APPEARANCE__JAW]          = { Footer = "NATIVE_CREATOR_TORSO_CUSTOMIZE", Image = "character_creator_build" },
         [UI_ITEM_IDS.APPEARANCE__EARS]         = { Footer = "CHAR_CREATOR_GENERAL_CUSTOMIZATION_TOOLTIP", Image = "character_creator_cranial_proportions" },
         [UI_ITEM_IDS.APPEARANCE__CHEEKS]       = { Footer = "CHAR_CREATOR_GENERAL_CUSTOMIZATION_TOOLTIP", Image = "character_creator_cranial_proportions" },
         [UI_ITEM_IDS.APPEARANCE__LIFESTYLE]    = { Footer = "CHAR_CREATOR_TOOLTIP_LIFESTYLE", Image = "character_creator_lifestyle" },

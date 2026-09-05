@@ -24,6 +24,7 @@ client_scripts {
     "client/dataview.lua",
     "client/alerts.lua",
     "client/enums.lua",
+    "client/nui.lua",
     "client/constants/*.lua",
     "client/constants/super/*.lua",
 

@@ -195,8 +195,10 @@ function Intro:MaintainInit()
     end
 
     TextBlockRequest("NETCHAR")
-    EnableHudContext(`HUD_CTX_CHARACTER_CREATOR`)
     RequestAnimDict("mech_loco@generic@handcuffed")
+
+    EnableHudContext(`HUD_CTX_CHARACTER_CREATOR`)
+    EnableHudContext(`HUD_CTX_SHOP_OBJECTIVE`)
 
     self:SetState(INTRO_STATE.LOAD_ASSETS)
 end
@@ -742,6 +744,7 @@ function Intro:MaintainSelectGender()
     elseif self.selectedPreset == EDITOR_CONFIG.MALE then
         EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, true)
         EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, true)
+        EnableControlAction(0, `INPUT_GAME_MENU_RS`, true)
 
         if self:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED) then
             EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, true)
@@ -749,6 +752,7 @@ function Intro:MaintainSelectGender()
     elseif self.selectedPreset == EDITOR_CONFIG.FEMALE then
         EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, true)
         EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, true)
+        EnableControlAction(0, `INPUT_GAME_MENU_RS`, true)
 
         if self:IsFlagSet(INTRO_FLAG.FEMALE_PED_RANDOMIZED) then
             EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, true)
@@ -757,19 +761,23 @@ function Intro:MaintainSelectGender()
 
     self:RegisterCharacterPrompts(true)
 
-    if IsControlJustPressed(0, `INPUT_GAME_MENU_LEFT`) then
+    if IsControlJustReleased(0, `INPUT_GAME_MENU_LEFT`) then
         self:PlaySound("gender_left", "RDRO_Character_Creator_Sounds")
         self:SetActivePedPreset(EDITOR_CONFIG.MALE, false)
-    elseif IsControlJustPressed(0, `INPUT_GAME_MENU_RIGHT`) then
+    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) then
         self:PlaySound("gender_right", "RDRO_Character_Creator_Sounds")
         self:SetActivePedPreset(EDITOR_CONFIG.FEMALE, false)
     elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
         UiPromptRestartModes(self.prompts.reset)
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
-    elseif IsControlJustPressed(0, `INPUT_GAME_MENU_ACCEPT`) then
+    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
+        self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+        self:ImportCharacter()
+    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:DestroyPrompts()
+        self:DestroyObjective()
 
         self:StopAllConversations()
         self:CreateConversation("CHAR_CHOOSE")
@@ -1005,7 +1013,7 @@ function Intro:MaintainCustomizePed()
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSwitch()
-        elseif self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT) and IsControlJustPressed(2, `INPUT_GAME_MENU_EXTRA_OPTION`) then
+        elseif self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT) and IsControlJustReleased(2, `INPUT_GAME_MENU_EXTRA_OPTION`) then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             Character:RandomizeCustomHead(true)
         elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
@@ -1297,6 +1305,7 @@ function Intro:MaintainMugshot()
         EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
         EnableControlAction(0, `INPUT_SHOP_CHANGE_CURRENCY`, true)
         EnableControlAction(0, `INPUT_GAME_MENU_OPTION`, true)
+        EnableControlAction(0, `INPUT_GAME_MENU_RS`, true)
 
         local held = IsControlPressed(0, `INPUT_SHOP_CHANGE_CURRENCY`) == 1
         self:RegisterMugshotPrompts(true, held)
@@ -1312,16 +1321,16 @@ function Intro:MaintainMugshot()
         end
 
         if held then
-            if IsControlJustPressed(0, `INPUT_GAME_MENU_LEFT`) then
+            if IsControlJustReleased(0, `INPUT_GAME_MENU_LEFT`) then
                 self:PlaySound("Amount_Decrease", "HUD_Donate_Sounds")
                 self.mugshotTimer = math.max(self.mugshotTimer - 1, 3)
-            elseif IsControlJustPressed(0, `INPUT_GAME_MENU_RIGHT`) then
+            elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) then
                 self:PlaySound("Amount_Increase", "HUD_Donate_Sounds")
                 self.mugshotTimer = math.min(self.mugshotTimer + 1, 30)
-            elseif IsControlJustPressed(0, `INPUT_GAME_MENU_ACCEPT`) then
+            elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
                 self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
                 self.mugshotShowUi = not self.mugshotShowUi
-            elseif self.mugshotShowUi and IsControlJustPressed(0, `INPUT_GAME_MENU_OPTION`) then
+            elseif self.mugshotShowUi and IsControlJustReleased(0, `INPUT_GAME_MENU_OPTION`) then
                 self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
                 NextOnscreenKeyboardResultWillDisplayUsingTheseFonts(256)
                 DisplayOnscreenKeyboard(4, "MUGSHOT_TITLE_PROMPT", "", self.mugshotTitle or "", "", "", "", maxTitleLength)
@@ -1331,25 +1340,13 @@ function Intro:MaintainMugshot()
             return
         end
 
-        if IsControlJustPressed(0, `INPUT_GAME_MENU_CANCEL`) then
-            Utils:Debug("NET_CHAR_CREATOR_UPDATE_MISSION_STATE__EDITOR__MUGSHOT - player declined to confirm their character")
-
-            self:PlaySound("BACK", "RDRO_Character_Creator_Sounds")
+        if IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
+            self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+            self:ExportCharacter()
+        elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
+            -- No sound as the flash will play
             self:DestroyPrompts()
-
-            if not self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
-                self:StopAllConversations()
-                self:CreateConversation("CHAR_BACKCUST")
-            end
-
-            Citizen.InvokeNative(Natives.GraphicsReleasePostfx, self.photoPostfx)
-
-            self:SetState(INTRO_STATE.TRANSITION_BACK_TO_CUSTOMIZE)
-            self:SetState(INTRO_MUGSHOT_STATE.PROMPT, "MUGSHOT")
-        elseif IsControlJustPressed(0, `INPUT_GAME_MENU_ACCEPT`) then
-            Utils:Debug("NET_CHAR_CREATOR_UPDATE_MISSION_STATE__EDITOR__MUGSHOT - player selected to confirm their character.")
-
-            self:DestroyPrompts()
+            self:DestroyObjective()
 
             if self.mugshotShowUi then
                 local root = DatabindingAddDataContainerFromPath("", "CharacterCreationRoot")
@@ -1363,10 +1360,25 @@ function Intro:MaintainMugshot()
             end
 
             self:SetState(INTRO_MUGSHOT_STATE.INIT, "MUGSHOT")
+        elseif IsControlJustReleased(0, `INPUT_GAME_MENU_CANCEL`) then
+            self:PlaySound("BACK", "RDRO_Character_Creator_Sounds")
+            self:DestroyPrompts()
+            self:DestroyObjective()
+
+            if not self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
+                self:StopAllConversations()
+                self:CreateConversation("CHAR_BACKCUST")
+            end
+
+            Citizen.InvokeNative(Natives.GraphicsReleasePostfx, self.photoPostfx)
+
+            self:SetState(INTRO_STATE.TRANSITION_BACK_TO_CUSTOMIZE)
+            self:SetState(INTRO_MUGSHOT_STATE.PROMPT, "MUGSHOT")
         end
     elseif self.mugshotState == INTRO_MUGSHOT_STATE.INIT then
         CancelOnscreenKeyboard()
         self:DestroyPrompts()
+        self:DestroyObjective()
 
         if PedmugshotTake() ~= 1 then
             if GetGameTimer() - self.subStateChangeTime > TIMEOUT_GENERIC then
@@ -1514,7 +1526,9 @@ function Intro:MaintainExit()
     ClearOverrideWeather()
     ClearTimecycleModifier()
     NetworkClearClockTimeOverride()
+
     DisableHudContext(`HUD_CTX_CHARACTER_CREATOR`)
+    DisableHudContext(`HUD_CTX_SHOP_OBJECTIVE`)
 
     self:StopAllConversations()
 
@@ -2021,7 +2035,7 @@ function Intro:ResetCharacter()
 
     Utils:Debug("RESET_CHARACTER - resetting character")
     Character:Reset()
-    Character.name = name
+    Character:ApplyName(name)
     Character:SetPed(ped)
     Character:ApplyAll()
 
@@ -2042,6 +2056,23 @@ function Intro:ResetCharacter()
 
     Utils:Debug("RESET_CHARACTER - character reset")
     return true
+end
+
+function Intro:ImportCharacter()
+    Creator:Import(Character:GenerateName(), Character:GenerateAge())
+end
+
+function Intro:ExportCharacter()
+    local data = Character:Export()
+    NuiHelper:Copy(data)
+
+    print("Here's a copy of your character's data:")
+    print(json.encode(data))
+
+    local name = Character.name or "your character"
+    local objective = string.format("Exported %s's data to your clipboard, paste their data somewhere safe like a notetaking app before continuing.", name)
+
+    self:CreateObjective(objective)
 end
 
 function Intro:FadeOutScreen(duration)
@@ -2320,6 +2351,12 @@ function Intro:RegisterCharacterPrompts(toggle)
     end
 
     self:RegisterPrompts({
+        import = {
+            controls = { "INPUT_GAME_MENU_RS" },
+            text = "Import",
+            visible = true,
+            enabled = toggle,
+        },
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
@@ -2410,6 +2447,12 @@ function Intro:RegisterMugshotPrompts(toggle, held)
             visible = true,
             enabled = toggle,
         },
+        export = {
+            controls = { "INPUT_GAME_MENU_RS" },
+            text = "Export",
+            visible = not held,
+            enabled = toggle,
+        },
         time = {
             controls = { "INPUT_GAME_MENU_LEFT", "INPUT_GAME_MENU_RIGHT" },
             text = string.format("Extra Time (%ds)", seconds),
@@ -2481,6 +2524,10 @@ function Intro:DestroyPrompts()
 end
 
 function Intro:CreateObjective(text)
+    if self.objectiveShown then
+        self:DestroyObjective()
+    end
+
     UilogSetCachedObjective(text)
     UilogPrintCachedObjective()
 
@@ -2488,10 +2535,7 @@ function Intro:CreateObjective(text)
 end
 
 function Intro:DestroyObjective()
-    if self.objectiveShown then
-        UilogClearCachedObjective()
-    end
-
+    UilogClearCachedObjective()
     self.objectiveShown = false
 end
 

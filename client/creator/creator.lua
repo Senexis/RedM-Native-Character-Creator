@@ -115,6 +115,16 @@ function Creator:Rename()
     self:SetFlag(EDITOR_FLAG.NAME_PROMPT)
 end
 
+function Creator:Import(placeholderName, placeholderAge)
+    if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
+        return
+    end
+
+    NuiHelper:Open(placeholderName, placeholderAge)
+
+    self:SetFlag(EDITOR_FLAG.IMPORT_PROMPT)
+end
+
 function Creator:SetState(newState)
     Utils:Debug(string.format("Changing state from %s to %s", EDITOR_STATE:ToString(self.state), EDITOR_STATE:ToString(newState)))
 
@@ -251,7 +261,8 @@ function Creator:UpdateStateInMenu()
     end
 
     if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) and UpdateOnscreenKeyboard() == 1 then
-        Character.name = GetOnscreenKeyboardResult()
+        local result = GetOnscreenKeyboardResult()
+        Character:ApplyName(result)
         CreatorMenu:Refresh()
         self:ClearFlag(EDITOR_FLAG.NAME_PROMPT)
     end
@@ -655,6 +666,10 @@ function Creator:ClearFlag(flag)
     Utils:Debug(string.format("Clearing flag %s", EDITOR_FLAG:ToString(flag)))
     self.flags = (self.flags or 0) & (~flag)
 end
+
+SignalBus:on("character_pasted", function()
+    Creator:ClearFlag(EDITOR_FLAG.IMPORT_PROMPT)
+end)
 
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end

@@ -481,6 +481,35 @@ function Character:ApplyAll()
     self:ApplyOverlays(true)
 end
 
+function Character:ApplyName(value)
+    if value ~= nil then
+        self.name = value
+        self:SetModified()
+    end
+end
+
+function Character:GenerateName()
+    local firstNames = self:IsMale() and CreatorConfig.MaleNames or CreatorConfig.FemaleNames
+    if not firstNames or #firstNames == 0 then
+        firstNames = self:IsMale() and { "John" } or { "Jane" }
+    end
+
+    local surnames = CreatorConfig.Surnames
+    if not surnames or #surnames == 0 then
+        surnames = { "Doe" }
+    end
+
+    local firstIndex = GetRandomIntInRange(1, #firstNames + 1)
+    local lastIndex = GetRandomIntInRange(1, #surnames + 1)
+
+    return firstNames[firstIndex] .. " " .. surnames[lastIndex]
+end
+
+function Character:RandomizeName()
+    local name = self:GenerateName()
+    self:ApplyName(name)
+end
+
 function Character:ApplyHeight(value, apply)
     if value ~= nil then
         self.height = value
@@ -1379,8 +1408,12 @@ function Character:RandomizeSkintone()
     SignalBus:emit("skintone_randomized", self.skintone)
 end
 
+function Character:GenerateAge()
+    return GetRandomIntInRange(CreatorConfig.MinAge or 18, (CreatorConfig.MaxAge or 60) + 1)
+end
+
 function Character:RandomizeAge()
-    self.age = GetRandomIntInRange(CreatorConfig.MinAge or 18, (CreatorConfig.MaxAge or 60) + 1)
+    self.age = self:GenerateAge()
     self:ApplyAgeAlpha(self.age, true)
     SignalBus:emit("age_randomized", self.age)
 end
@@ -1869,6 +1902,11 @@ SignalBus:on("action_selected", function(actionId, itemId)
             Character:RandomizeVoice(true)
         end
     end
+end)
+
+SignalBus:on("character_pasted", function(data)
+    Character:Import(data)
+    Character:ApplyAll()
 end)
 
 CreateThread(function()

@@ -47,35 +47,6 @@ function CreatorMenu:Confirm()
     self:Refresh()
 end
 
-function CreatorMenu:GenerateName(config)
-    SetRandomSeed(GetGameTimer() + config)
-
-    local firstList = IntroConfig.Names[config] or {}
-    local lastList = IntroConfig.Names.surnames or {}
-
-    if #firstList == 0 or #lastList == 0 then
-        if config == EDITOR_CONFIG.MALE then
-            return "John Doe"
-        elseif config == EDITOR_CONFIG.FEMALE then
-            return "Jane Doe"
-        else
-            ShowAlert(
-                "ERROR",
-                "ALERT",
-                "Failed to generate a random name due to an invalid character being used. Contact the server staff.",
-                { acceptHash = `IB_DISMISS` }
-            )
-
-            return ""
-        end
-    end
-
-    local firstIndex = GetRandomIntInRange(1, #firstList + 1)
-    local lastIndex = GetRandomIntInRange(1, #lastList + 1)
-
-    return firstList[firstIndex] .. " " .. lastList[lastIndex]
-end
-
 function CreatorMenu:GetTimecycleLabels()
     local labels = {}
 
@@ -115,6 +86,10 @@ function CreatorMenu:GetTimeOfDayValue(value)
 end
 
 function CreatorMenu:GetMenu()
+    local hasName = Character.name and Character.name ~= ""
+    local rerolling = self.rerolling or false
+    local hasCreated = self.created or false
+
     local presetRandomized = false
     if Creator.config == EDITOR_CONFIG.MALE and Intro:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED) then
         presetRandomized = true
@@ -123,7 +98,7 @@ function CreatorMenu:GetMenu()
     end
 
     local nameDisplay = {
-        Visible = Character.name ~= "",
+        Visible = hasName,
         Text = Character.name,
         Centered = true,
         IconVisible = true,
@@ -131,12 +106,8 @@ function CreatorMenu:GetMenu()
         IconTexture = "blip_ambient_vip",
     }
 
-    local hasName = Character.name ~= ""
-    local rerolling = self.rerolling or false
-    local hasCreated = self.created or false
-
     local defaultLabel = rerolling and "Edit Character" or "Create Character"
-    local defaultDescription = rerolling and "Edit your character's appearance." or "Create a new character to play as."
+    local defaultDescription = rerolling and "Make changes to your character's appearance." or "Create a new character to play as. If you like the starting appearance, you may choose to skip."
     local exitLabel = rerolling and "Exit" or "Back"
 
     local skipPrompt = {
@@ -168,9 +139,9 @@ function CreatorMenu:GetMenu()
                 Id = "ACTION_NAME",
                 Type = "TEXT",
                 Label = "Name",
-                Footer = "Press ~INPUT_GAME_MENU_EXTRA_OPTION~ to randomize your name.",
+                Footer = "Press ~INPUT_GAME_MENU_RS~ to import a character.",
                 Data = {
-                    ItemDescription = "Set your character's name.",
+                    ItemDescription = "Name your character. You may choose a randomized name to get started.",
                     Equipped = not rerolling and hasName,
                     ItemInfo1 = nameDisplay,
                 },
@@ -183,17 +154,23 @@ function CreatorMenu:GetMenu()
                     Toggle = {
                         Label = "Randomize",
                         Action = function()
-                            Character.name = self:GenerateName(Creator.config)
+                            Character:RandomizeName()
                             self:Refresh()
                         end,
                     },
+                    Info = {
+                        Label = "Import",
+                        Action = function()
+                            Intro:ImportCharacter()
+                        end,
+                    }
                 },
             },
             {
                 Id = "ACTION_DEFAULT",
                 Type = "TEXT",
                 Label = defaultLabel,
-                Disabled = not rerolling and not hasName,
+                Disabled = not hasName,
                 Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
                 Data = {
                     DisabledFooter = "~e~Set a name first.",
@@ -214,12 +191,12 @@ function CreatorMenu:GetMenu()
             {
                 Id = "ACTION_ADVANCED",
                 Type = "TEXT",
-                Label = "Advanced Mode",
-                Disabled = not rerolling and not hasName,
+                Label = "Advanced Options",
+                Disabled = not hasName,
                 Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
                 Data = {
                     DisabledFooter = "~e~Set a name first.",
-                    ItemDescription = "Optional. Tweak various character attributes.",
+                    ItemDescription = "Make various advanced adjustments to your character to fine-tune their appearance.",
                     Equipped = not rerolling and hasCreated,
                     ItemInfo1 = nameDisplay,
                 },
@@ -238,6 +215,7 @@ function CreatorMenu:GetMenu()
                 Id = SETTINGS_ID,
                 Type = "TEXT",
                 Label = "Settings",
+                Scene = "ITEM_LIST_DESCRIPTION",
                 Title = "SETTINGS",
                 Subtitle = "Creator Settings",
                 Footer = "Hold ~INPUT_GAME_MENU_TAB_LEFT_SECONDARY~ in the Creator to access settings.",
@@ -436,56 +414,45 @@ function CreatorMenu:GetMenu()
                             },
                         },
                     },
-                    {
-                        Id = "SETTING_EXPORT",
-                        Type = "TEXT",
-                        Label = "Export Character",
-                        Disabled = not rerolling and not hasName,
-                        Data = {
-                            DisabledFooter = "~e~Set a name first.",
-                            ItemDescription = "Export your character's appearance data to your clipboard.",
-                        },
-                        Prompts = {
-                            Select = {
-                                Action = function()
-                                    local data = Character:Export()
-                                    SendNUIMessage({
-                                        type = "copy",
-                                        text = json.encode(data, { indent = true })
-                                    })
-                                end,
-                            },
-                        },
-                    }
                 }
             },
             {
                 Id = "ACTION_CONFIRM",
                 Type = "TEXT",
                 Label = "Confirm",
-                Disabled = not rerolling and (not hasName or not hasCreated),
+                Disabled = not hasName or not hasCreated,
+                Footer = "Press ~INPUT_GAME_MENU_RS~ to export your character.",
                 Data = {
                     DisabledFooter = "~e~Create a character first.",
                     ItemDescription = "Take a picture of your character and confirm your appearance.",
                     ItemInfo1 = nameDisplay,
                 },
-                Action = function()
-                    self:Close()
-                    Creator:Finish(true)
-                end,
+                Prompts = {
+                    Select = {
+                        Action = function()
+                            self:Close()
+                            Creator:Finish(true)
+                        end,
+                    },
+                    Info = {
+                        Label = "Export",
+                        Action = function()
+                            Intro:ExportCharacter()
+                        end,
+                    }
+                },
             },
         },
     }
 end
 
-ShopApi.RegisterDynamic(MENU_ID, function()
-    return CreatorMenu:GetMenu()
+SignalBus:on("character_pasted", function()
+    CreatorMenu.created = true
+    CreatorMenu:Refresh()
 end)
 
-AddEventHandler("onResourceStop", function(resourceName)
-    if GetCurrentResourceName() ~= resourceName then return end
-    CreatorMenu:Close()
-    ClearTimecycleModifier()
+ShopApi.RegisterDynamic(MENU_ID, function()
+    return CreatorMenu:GetMenu()
 end)
 
 AddEventHandler("native_shop:closing", function(menu)
@@ -495,4 +462,10 @@ AddEventHandler("native_shop:closing", function(menu)
     elseif menu == MENU_ID then
         Creator:Finish(false)
     end
+end)
+
+AddEventHandler("onResourceStop", function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    CreatorMenu:Close()
+    ClearTimecycleModifier()
 end)

@@ -106,7 +106,7 @@ UI_PAGE_ID:AddModeAttribute("Camera", {
         [UI_PAGE_IDS.EARS]       = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_PAGE_IDS.CHEEKS]     = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_PAGE_IDS.LIFESTYLE]  = { Default = EDITOR_VIEW.FACE_CLOSE, Zoomed = EDITOR_VIEW.INVALID },
-        [UI_PAGE_IDS.MAKEUP]     = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
+        [UI_PAGE_IDS.MAKEUP]     = { Default = EDITOR_VIEW.FACE_CLOSE, Zoomed = EDITOR_VIEW.INVALID },
         [UI_PAGE_IDS.WHISTLE]    = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
         [UI_PAGE_IDS.ATTRIBUTES] = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
     }

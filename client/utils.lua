@@ -13,22 +13,6 @@ function Utils:CopyData(source, target)
     return target
 end
 
-function Utils:ExportData(data)
-    local binaryData = msgpack.pack(data)
-
-    return (binaryData:gsub('.', function(c)
-        return string.format('%02x', string.byte(c))
-    end))
-end
-
-function Utils:ImportData(hexString)
-    local binaryData = hexString:gsub('..', function(cc)
-        return string.char(tonumber(cc, 16))
-    end)
-
-    return msgpack.unpack(binaryData)
-end
-
 function Utils:Debug(...)
     if CreatorConfig.Debug ~= true then return end
 
