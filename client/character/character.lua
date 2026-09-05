@@ -186,6 +186,8 @@ function Character:Import(data)
     end
 
     local MAPPER <const> = {
+        ["ignoreHeritageLimits"] = true,
+        ["ignoreOverlayLimits"] = true,
         ["name"] = self.ApplyName,
         ["age"] = self.ApplyAgeAlpha,
         ["height"] = self.ApplyHeight,
@@ -208,58 +210,69 @@ function Character:Import(data)
         ["hairColor"] = self.ApplyHairColor,
         ["beard"] = self.ApplyBeardStyle,
         ["beardColor"] = self.ApplyBeardColor,
+        ["presets"] = true,
+        ["expressions"] = true,
+        ["layers"] = true,
+        ["layerColors"] = true,
     }
 
-    for dataKey, dataValue in pairs(data) do
-        Utils:Debug("Applying character data key:", type(dataKey), tostring(dataKey), "with value:", type(dataValue), tostring(dataValue))
+    for key, _ in pairs(data) do
+        if not MAPPER[key] then
+            Utils:Warn("Unknown character data key", tostring(key), "skipping...")
+        end
+    end
 
-        if dataKey == "ignoreHeritageLimits" then
-            self.ignoreHeritageLimits = (dataValue == true)
+    for key, func in pairs(MAPPER) do
+        local value = data[key]
+        Utils:Debug("Applying character data for key", tostring(key), "with value", type(value), tostring(value))
+
+        if key == "ignoreHeritageLimits" then
+            self.ignoreHeritageLimits = (value == true)
             if self.ignoreHeritageLimits then
-                Utils:Warn("Ignore heritage limits enabled, let me know if you encounter issues")
+                Utils:Warn("Ignore heritage limits enabled, proceeding without restrictions")
             end
-        elseif dataKey == "ignoreOverlayLimits" then
-            self.ignoreOverlayLimits = (dataValue == true)
+        elseif key == "ignoreOverlayLimits" then
+            self.ignoreOverlayLimits = (value == true)
             if self.ignoreOverlayLimits then
-                Utils:Warn("Ignore overlay limits enabled, let me know if you encounter issues")
+                Utils:Warn("Ignore overlay limits enabled, proceeding without restrictions")
             end
-        elseif dataKey == "presets" then
-            if type(dataValue) == "table" then
-                for presetKey, presetValue in pairs(dataValue) do
+        elseif key == "presets" then
+            if type(value) == "table" then
+                for presetKey, presetValue in pairs(value) do
                     local presetKeyNum = tonumber(presetKey)
                     local presetValNum = tonumber(presetValue)
 
                     if presetKeyNum and presetValNum then
                         presetValNum = math.max(0, presetValNum)
-                        Utils:Debug("Applying preset for zone:", PED_EXPRESSION_ZONE:ToString(presetKeyNum), "with value:", tostring(presetValNum))
+                        Utils:Debug("Applying preset for zone", PED_EXPRESSION_ZONE:ToString(presetKeyNum), "with value", tostring(presetValNum))
                         self:ApplyPreset(presetKeyNum, presetValNum)
                     else
-                        Utils:Warn("Invalid preset for zone:", tostring(presetKey), "with value:", tostring(presetValue))
+                        Utils:Warn("Invalid preset for zone", tostring(presetKey), "with value", tostring(presetValue))
                     end
                 end
             else
-                Utils:Warn("Invalid presets format. Expected a table, got:", type(dataValue))
+                Utils:Warn("Invalid presets format. Expected a table, got", type(value))
             end
-        elseif dataKey == "expressions" then
-            if type(dataValue) == "table" then
-                for expressionKey, expressionVal in pairs(dataValue) do
+        elseif key == "expressions" then
+            if type(value) == "table" then
+                for expressionKey, expressionVal in pairs(value) do
                     local expressionKeyNum = tonumber(expressionKey)
                     local expressionValNum = tonumber(expressionVal)
 
                     if expressionKeyNum and expressionValNum then
                         expressionValNum = math.min(1.0, math.max(-1.0, expressionValNum))
-                        Utils:Debug("Applying expression:", PED_EXPRESSION:ToString(expressionKeyNum), "with value:", tostring(expressionValNum))
+                        Utils:Debug("Applying expression", PED_EXPRESSION:ToString(expressionKeyNum), "with value", tostring(expressionValNum))
                         self:ApplyExpressionValue(expressionKeyNum, expressionValNum)
                     else
-                        Utils:Warn("Invalid expression for expression:", tostring(expressionKey), "with value:", tostring(expressionVal))
+                        Utils:Warn("Invalid expression for expression", tostring(expressionKey), "with value", tostring(expressionVal))
                     end
                 end
             else
-                Utils:Warn("Invalid expressions format. Expected a table, got:", type(dataValue))
+                Utils:Warn("Invalid expressions format. Expected a table, got", type(value))
             end
-        elseif dataKey == "layers" then
-            if type(dataValue) == "table" then
-                for layerKey, layerValue in pairs(dataValue) do
+        elseif key == "layers" then
+            if type(value) == "table" then
+                for layerKey, layerValue in pairs(value) do
                     local layerKeyNum = tonumber(layerKey)
 
                     if layerKeyNum then
@@ -270,37 +283,37 @@ function Character:Import(data)
                         id = math.max(0, id)
                         alpha = math.min(1.0, math.max(0.0, alpha))
 
-                        Utils:Debug("Applying layer:", OVERLAY_LAYER:ToString(layerKeyNum), "with id:", id, "alpha:", alpha)
+                        Utils:Debug("Applying layer", OVERLAY_LAYER:ToString(layerKeyNum), "with id", id, "alpha", alpha)
                         self:ApplyOverlayBlend(layerKeyNum, id)
                         self:ApplyOverlayAlpha(layerKeyNum, alpha)
                     else
-                        Utils:Warn("Invalid layer key:", tostring(layerKey), "with value:", tostring(layerValue))
+                        Utils:Warn("Invalid layer key", tostring(layerKey), "with value", tostring(layerValue))
                     end
                 end
             else
-                Utils:Warn("Invalid layers format. Expected a table, got:", type(dataValue))
+                Utils:Warn("Invalid layers format. Expected a table, got", type(value))
             end
-        elseif dataKey == "layerColors" then
-            if type(dataValue) == "table" then
-                for layerKey, layerVal in pairs(dataValue) do
+        elseif key == "layerColors" then
+            if type(value) == "table" then
+                for layerKey, layerVal in pairs(value) do
                     local layerKeyNum = tonumber(layerKey)
                     local layerValNum = tonumber(layerVal) or 0
 
                     if layerKeyNum then
                         layerValNum = math.max(0, layerValNum)
-                        Utils:Debug("Applying layer color for layer:", OVERLAY_LAYER:ToString(layerKeyNum), "with value:", tostring(layerValNum))
+                        Utils:Debug("Applying layer color for layer", OVERLAY_LAYER:ToString(layerKeyNum), "with value", tostring(layerValNum))
                         self:ApplyOverlayColor(layerKeyNum, layerValNum)
                     else
-                        Utils:Warn("Invalid layer key for color:", tostring(layerKey), "with value:", tostring(layerVal))
+                        Utils:Warn("Invalid layer key for color", tostring(layerKey), "with value", tostring(layerVal))
                     end
                 end
             else
-                Utils:Warn("Invalid layerColors format. Expected a table, got:", type(dataValue))
+                Utils:Warn("Invalid layerColors format. Expected a table, got", type(value), tostring(value))
             end
-        elseif MAPPER[dataKey] ~= nil then
-            MAPPER[dataKey](self, dataValue)
+        elseif type(func) == "function" then
+            func(self, value)
         else
-            Utils:Warn("Unknown character data key:", tostring(dataKey), "with value:", tostring(dataValue))
+            Utils:Warn("Missing logic for key", tostring(key), "received value", type(value), tostring(value))
         end
     end
 
