@@ -1584,11 +1584,11 @@ function Intro:SetupEditor()
     self.clothingLevel = CLOTHING_SETTING.DEFAULT
 
     if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) and self.rerollImportData then
-        Character:Import(self.rerollImportData)
+        Character:ImportRaw(self.rerollImportData)
         self.presetData[self.selectedPreset] = self.rerollImportData
         self.rerollImportData = nil
     else
-        Character:Import(self.presetData[self.selectedPreset] or {})
+        Character:ImportRaw(self.presetData[self.selectedPreset] or {})
     end
 
     Character:SetPed(self.presetPeds[self.selectedPreset])
@@ -1868,7 +1868,7 @@ function Intro:LoadConfiguration()
         editorViews = editorViews,
     }
 
-    Utils:Debug("MAINTAIN_LOAD_CONFIGURATION - loaded configuration successfully", json.encode(self.config, { indent = true }))
+    Utils:Debug("MAINTAIN_LOAD_CONFIGURATION - loaded configuration successfully", json.encode(self.config))
 
     return true
 end
@@ -2351,12 +2351,14 @@ function Intro:RegisterCharacterPrompts(toggle)
     end
 
     self:RegisterPrompts({
+        -- TODO: Does not show for some reason
         import = {
             controls = { "INPUT_GAME_MENU_RS" },
             text = "Import",
             visible = true,
             enabled = toggle,
         },
+        -- End TODO
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",

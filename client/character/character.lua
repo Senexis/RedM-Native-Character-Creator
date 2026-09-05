@@ -167,7 +167,7 @@ function Character:Reset()
     end
 end
 
-function Character:Import(data)
+function Character:ImportRaw(data)
     for k, v in pairs(data) do
         if self[k] ~= nil then
             if type(v) == "table" then
@@ -177,6 +177,134 @@ function Character:Import(data)
             end
         end
     end
+end
+
+function Character:Import(data)
+    if type(data) ~= "table" then
+        Utils:Warn("Failed to import character data, expected table but got", type(data))
+        return
+    end
+
+    local MAPPER <const> = {
+        ["name"] = self.ApplyName,
+        ["age"] = self.ApplyAgeAlpha,
+        ["height"] = self.ApplyHeight,
+        ["weight"] = self.ApplyWeight,
+        ["weariness"] = self.ApplyWeariness,
+        ["voice"] = self.ApplyVoice,
+        ["whistleStyle"] = self.ApplyWhistleStyle,
+        ["whistlePitch"] = self.ApplyWhistlePitch,
+        ["whistleClarity"] = self.ApplyWhistleClarity,
+        ["heritage"] = self.ApplyHeritage,
+        ["skintone"] = self.ApplySkintone,
+        ["bodyType"] = self.ApplyBody,
+        ["eyeColor"] = self.ApplyEyeColor,
+        ["teeth"] = self.ApplyTeeth,
+        ["headDrawable"] = self.ApplyHeadDrawable,
+        ["headAlbedo"] = self.ApplyHeadAlbedo,
+        ["headNormal"] = self.ApplyHeadNormal,
+        ["headMaterial"] = self.ApplyHeadMaterial,
+        ["hair"] = self.ApplyHairStyle,
+        ["hairColor"] = self.ApplyHairColor,
+        ["beard"] = self.ApplyBeardStyle,
+        ["beardColor"] = self.ApplyBeardColor,
+    }
+
+    for dataKey, dataValue in pairs(data) do
+        Utils:Debug("Applying character data key:", type(dataKey), tostring(dataKey), "with value:", type(dataValue), tostring(dataValue))
+
+        if dataKey == "ignoreHeritageLimits" then
+            self.ignoreHeritageLimits = (dataValue == true)
+            if self.ignoreHeritageLimits then
+                Utils:Warn("Ignore heritage limits enabled, let me know if you encounter issues")
+            end
+        elseif dataKey == "ignoreOverlayLimits" then
+            self.ignoreOverlayLimits = (dataValue == true)
+            if self.ignoreOverlayLimits then
+                Utils:Warn("Ignore overlay limits enabled, let me know if you encounter issues")
+            end
+        elseif dataKey == "presets" then
+            if type(dataValue) == "table" then
+                for presetKey, presetValue in pairs(dataValue) do
+                    local presetKeyNum = tonumber(presetKey)
+                    local presetValNum = tonumber(presetValue)
+
+                    if presetKeyNum and presetValNum then
+                        presetValNum = math.max(0, presetValNum)
+                        Utils:Debug("Applying preset for zone:", PED_EXPRESSION_ZONE:ToString(presetKeyNum), "with value:", tostring(presetValNum))
+                        self:ApplyPreset(presetKeyNum, presetValNum)
+                    else
+                        Utils:Warn("Invalid preset for zone:", tostring(presetKey), "with value:", tostring(presetValue))
+                    end
+                end
+            else
+                Utils:Warn("Invalid presets format. Expected a table, got:", type(dataValue))
+            end
+        elseif dataKey == "expressions" then
+            if type(dataValue) == "table" then
+                for expressionKey, expressionVal in pairs(dataValue) do
+                    local expressionKeyNum = tonumber(expressionKey)
+                    local expressionValNum = tonumber(expressionVal)
+
+                    if expressionKeyNum and expressionValNum then
+                        expressionValNum = math.min(1.0, math.max(-1.0, expressionValNum))
+                        Utils:Debug("Applying expression:", PED_EXPRESSION:ToString(expressionKeyNum), "with value:", tostring(expressionValNum))
+                        self:ApplyExpressionValue(expressionKeyNum, expressionValNum)
+                    else
+                        Utils:Warn("Invalid expression for expression:", tostring(expressionKey), "with value:", tostring(expressionVal))
+                    end
+                end
+            else
+                Utils:Warn("Invalid expressions format. Expected a table, got:", type(dataValue))
+            end
+        elseif dataKey == "layers" then
+            if type(dataValue) == "table" then
+                for layerKey, layerValue in pairs(dataValue) do
+                    local layerKeyNum = tonumber(layerKey)
+
+                    if layerKeyNum then
+                        local isTable = type(layerValue) == "table"
+                        local id = (isTable and tonumber(layerValue.id)) or 0
+                        local alpha = (isTable and tonumber(layerValue.alpha)) or 1.0
+
+                        id = math.max(0, id)
+                        alpha = math.min(1.0, math.max(0.0, alpha))
+
+                        Utils:Debug("Applying layer:", OVERLAY_LAYER:ToString(layerKeyNum), "with id:", id, "alpha:", alpha)
+                        self:ApplyOverlayBlend(layerKeyNum, id)
+                        self:ApplyOverlayAlpha(layerKeyNum, alpha)
+                    else
+                        Utils:Warn("Invalid layer key:", tostring(layerKey), "with value:", tostring(layerValue))
+                    end
+                end
+            else
+                Utils:Warn("Invalid layers format. Expected a table, got:", type(dataValue))
+            end
+        elseif dataKey == "layerColors" then
+            if type(dataValue) == "table" then
+                for layerKey, layerVal in pairs(dataValue) do
+                    local layerKeyNum = tonumber(layerKey)
+                    local layerValNum = tonumber(layerVal) or 0
+
+                    if layerKeyNum then
+                        layerValNum = math.max(0, layerValNum)
+                        Utils:Debug("Applying layer color for layer:", OVERLAY_LAYER:ToString(layerKeyNum), "with value:", tostring(layerValNum))
+                        self:ApplyOverlayColor(layerKeyNum, layerValNum)
+                    else
+                        Utils:Warn("Invalid layer key for color:", tostring(layerKey), "with value:", tostring(layerVal))
+                    end
+                end
+            else
+                Utils:Warn("Invalid layerColors format. Expected a table, got:", type(dataValue))
+            end
+        elseif MAPPER[dataKey] ~= nil then
+            MAPPER[dataKey](self, dataValue)
+        else
+            Utils:Warn("Unknown character data key:", tostring(dataKey), "with value:", tostring(dataValue))
+        end
+    end
+
+    self:ApplyAll()
 end
 
 function Character:Export()
@@ -877,6 +1005,11 @@ function Character:GetBodyBuild()
     return bodyBuild.build or CHARACTER_BODY_BUILD.NEUTRAL
 end
 
+function Character:ApplyBody(value)
+    self:ApplyBodyItems(value)
+    self:ApplyBodyExpressions(value)
+end
+
 function Character:ApplyBodyItems(value)
     if value ~= nil then
         self.bodyType = value
@@ -1421,10 +1554,7 @@ end
 function Character:RandomizeBodyBuild()
     local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
     local index = GetRandomIntInRange(0, #bodyBuilds)
-
-    self:ApplyBodyItems(index)
-    self:ApplyBodyExpressions(index)
-
+    self:ApplyBody(index)
     SignalBus:emit("body_randomized", self.bodyType)
 end
 
@@ -1826,8 +1956,7 @@ SignalBus:on("adjustable_changed", function(itemId, value)
     elseif action == CHARACTER_ACTION.APPLY_AGE_ALPHA then
         Character:ApplyAgeAlpha(value, true)
     elseif action == CHARACTER_ACTION.APPLY_BODY_BUILD then
-        Character:ApplyBodyItems(value)
-        Character:ApplyBodyExpressions(value)
+        Character:ApplyBody(value)
     elseif action == CHARACTER_ACTION.APPLY_EYE_COLOR then
         Character:ApplyEyeColor(value)
     elseif action == CHARACTER_ACTION.APPLY_TEETH then
@@ -1906,7 +2035,6 @@ end)
 
 SignalBus:on("character_pasted", function(data)
     Character:Import(data)
-    Character:ApplyAll()
 end)
 
 CreateThread(function()
