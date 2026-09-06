@@ -115,13 +115,13 @@ function Creator:Rename()
     self:SetFlag(EDITOR_FLAG.NAME_PROMPT)
 end
 
-function Creator:Import(placeholderName, placeholderAge)
-    if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
-        return
-    end
+function Creator:Import()
+    local pedType = Character:GetPedType()
+    local pedModel = Character:GetModel()
+    local placeholderName = Character:GenerateName()
+    local placeholderAge = Character:GenerateAge()
 
-    NuiHelper:Open(placeholderName, placeholderAge)
-
+    NuiHelper:Open(pedType, pedModel, placeholderName, placeholderAge)
     self:SetFlag(EDITOR_FLAG.IMPORT_PROMPT)
 end
 
@@ -248,6 +248,7 @@ end
 function Creator:UpdateStateInMenu()
     if IsUiappRunningByHash(`character_creator`) == 1 then
         CloseUiappByHash(`character_creator`)
+        SignalBus:emit("character_creator_closed")
     end
 
     if self:IsFlagSet(EDITOR_FLAG.END_REQUESTED) then
@@ -437,6 +438,7 @@ function Creator:UpdateStateTeardown()
 
     if IsUiappRunningByHash(`character_creator`) == 1 then
         CloseUiappByHash(`character_creator`)
+        SignalBus:emit("character_creator_closed")
     end
 
     if IsUiappRunningByHash(`shop_menu`) == 1 then
@@ -473,6 +475,7 @@ function Creator:UpdateStateQuickSwitch()
 
     if IsUiappRunningByHash(`character_creator`) == 1 then
         CloseUiappByHash(`character_creator`)
+        SignalBus:emit("character_creator_closed")
     end
 
     if CanLaunchUiappByHash(`character_creator`) ~= 1 then
@@ -501,6 +504,7 @@ function Creator:UpdateStateQuickSettings()
 
     if IsUiappRunningByHash(`character_creator`) == 1 then
         CloseUiappByHash(`character_creator`)
+        SignalBus:emit("character_creator_closed")
     end
 
     if CanLaunchUiappByHash(`shop_menu`) ~= 1 then
@@ -594,19 +598,23 @@ function Creator:InitBodyRequests()
             local build = CreatorPresets:GetBodyBuild(buildItem.index)
             local body = CreatorPresets:GetBodyShopItems(skintoneItem.skintone, build)
 
-            local upperHandle = RequestMetaPedComponent(pedType, body.upper, 0, 1, 1)
-            self.bodyRequests[#self.bodyRequests + 1] = {
-                hash = body.upper,
-                handle = upperHandle,
-                loaded = false,
-            }
+            if body.upper then
+                local upperHandle = RequestMetaPedComponent(pedType, body.upper, 0, 1, 1)
+                self.bodyRequests[#self.bodyRequests + 1] = {
+                    hash = body.upper,
+                    handle = upperHandle,
+                    loaded = false,
+                }
+            end
 
-            local lowerHandle = RequestMetaPedComponent(pedType, body.lower, 0, 1, 1)
-            self.bodyRequests[#self.bodyRequests + 1] = {
-                hash = body.lower,
-                handle = lowerHandle,
-                loaded = false,
-            }
+            if body.lower then
+                local lowerHandle = RequestMetaPedComponent(pedType, body.lower, 0, 1, 1)
+                self.bodyRequests[#self.bodyRequests + 1] = {
+                    hash = body.lower,
+                    handle = lowerHandle,
+                    loaded = false,
+                }
+            end
         end
     end
 end
@@ -667,7 +675,7 @@ function Creator:ClearFlag(flag)
     self.flags = (self.flags or 0) & (~flag)
 end
 
-SignalBus:on("character_pasted", function()
+SignalBus:on("character_paste_closed", function()
     Creator:ClearFlag(EDITOR_FLAG.IMPORT_PROMPT)
 end)
 

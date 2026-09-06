@@ -33,6 +33,8 @@ local INTRO_FLAGS = {
     CHARACTER_RESET_PROMPT       = 1 << 30,
     BLOCK_QUICK_SWITCH           = 1 << 31,
     HEAD_RANDOMIZE_PROMPT        = 1 << 32,
+    IMPORT_REQUESTED             = 1 << 33,
+    IMPORT_OPENED                = 1 << 34,
 }
 
 ---@type INTRO_FLAGS | EnumRegistry

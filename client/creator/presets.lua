@@ -136,7 +136,8 @@ function CreatorPresets:GetBodyShopItems(skintone, build)
     _setConfigNode()
 
     if not CreatorXml:GetNode(EDITOR_XML_QUERY.BODY_BODY_BUILD_NODE, skintone, build) then
-        error(string.format("No body shop items found for skintone %d and build %d", skintone, build), 2)
+        Utils:Warn("No body shop items found for skintone", tostring(skintone), "and build", tostring(build), "- likely missing XML")
+        return {}
     end
 
     local outfit = CreatorXml:GetHash(EDITOR_XML_QUERY.BODY_BUILD__META_OUTFIT)

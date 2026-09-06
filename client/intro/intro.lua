@@ -625,7 +625,6 @@ function Intro:MaintainIntro()
     end
 
     DisableAllControlActions(0)
-    EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
 
     if IsAnimSceneInSection(self.animScene, "s_start_idle", true) == 1 then
         if not self:IsFlagSet(INTRO_FLAG.PED_PRESET_SELECTED) then
@@ -634,7 +633,7 @@ function Intro:MaintainIntro()
                 target = EDITOR_CONFIG.FEMALE
             end
 
-            self:SetActivePedPreset(target, true)
+            self:SetActivePedPreset(target)
             Utils:Debug("MAINTAIN_INTRO - active editor ped ", EDITOR_CONFIG:ToString(self.selectedPreset))
         end
 
@@ -682,6 +681,7 @@ function Intro:MaintainSelectGender()
         return
     end
 
+    SetControlContext(4, `GameMenu`)
     DisableAllControlActions(0)
 
     if not self:FadeInScreen(2000) then
@@ -697,16 +697,34 @@ function Intro:MaintainSelectGender()
         self:ClearFlag(INTRO_FLAG.RESET_CHARACTER)
     end
 
+    if self:IsFlagSet(INTRO_FLAG.IMPORT_REQUESTED) then
+        if not self:IsFlagSet(INTRO_FLAG.IMPORT_OPENED) then
+            if not CreatorXml:Initialize() then
+                Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator xml to initialize")
+                return
+            end
+
+            if not CreatorPresets:Init(self.selectedPreset) then
+                Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator presets to initialize")
+                return
+            end
+
+            Creator:Import()
+            self:SetFlag(INTRO_FLAG.IMPORT_OPENED)
+        end
+
+        return
+    end
+
     if not self:IsFlagSet(INTRO_FLAG.IDLE_DIALOG_PLAYED) and GetGameTimer() - self.stateChangeTime > 1000 * 30 then
         self:CreateConversation("CHAR_IDLE")
         self:SetFlag(INTRO_FLAG.IDLE_DIALOG_PLAYED)
     end
 
-    EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
-    EnableControlAction(0, `INPUT_STICKY_FEED_ACCEPT`, true)
-    EnableControlAction(0, `INPUT_STICKY_FEED_CANCEL`, true)
-    EnableControlAction(0, `INPUT_STICKY_FEED_X`, true)
-    EnableControlAction(0, `INPUT_STICKY_FEED_Y`, true)
+    EnableControlAction(0, `INPUT_STICKY_FEED_ACCEPT`, false)
+    EnableControlAction(0, `INPUT_STICKY_FEED_CANCEL`, false)
+    EnableControlAction(0, `INPUT_STICKY_FEED_X`, false)
+    EnableControlAction(0, `INPUT_STICKY_FEED_Y`, false)
 
     if not self.objectiveShown then
         self:CreateObjective("Choose a character")
@@ -732,30 +750,38 @@ function Intro:MaintainSelectGender()
     local presetCamera = self.presetCameras[self.selectedPreset] or 0
     if IsCamInterpolating(presetCamera) then
         DisableAllControlActions(0)
-        EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
         self:RegisterCharacterPrompts(false)
 
         return
     end
 
     if self.selectedPreset == 0 then
-        EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, true)
+        EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, false)
+        DisableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, false)
+        DisableControlAction(0, `INPUT_GAME_MENU_RS`, false)
+        DisableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, false)
     elseif self.selectedPreset == EDITOR_CONFIG.MALE then
-        EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_RS`, true)
+        DisableControlAction(0, `INPUT_GAME_MENU_LEFT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_RS`, false)
 
         if self:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED) then
-            EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, true)
+            EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, false)
+        else
+            DisableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, false)
         end
     elseif self.selectedPreset == EDITOR_CONFIG.FEMALE then
-        EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_RS`, true)
+        EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, false)
+        DisableControlAction(0, `INPUT_GAME_MENU_RIGHT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_RS`, false)
 
         if self:IsFlagSet(INTRO_FLAG.FEMALE_PED_RANDOMIZED) then
-            EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, true)
+            EnableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, false)
+        else
+            DisableControlAction(0, `INPUT_GAME_MENU_EXTRA_OPTION`, false)
         end
     end
 
@@ -763,17 +789,18 @@ function Intro:MaintainSelectGender()
 
     if IsControlJustReleased(0, `INPUT_GAME_MENU_LEFT`) then
         self:PlaySound("gender_left", "RDRO_Character_Creator_Sounds")
-        self:SetActivePedPreset(EDITOR_CONFIG.MALE, false)
+        self:SetActivePedPreset(EDITOR_CONFIG.MALE)
     elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) then
         self:PlaySound("gender_right", "RDRO_Character_Creator_Sounds")
-        self:SetActivePedPreset(EDITOR_CONFIG.FEMALE, false)
+        self:SetActivePedPreset(EDITOR_CONFIG.FEMALE)
     elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
         UiPromptRestartModes(self.prompts.reset)
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
     elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
-        self:ImportCharacter()
+        self:DestroyPrompts()
+        self:SetFlag(INTRO_FLAG.IMPORT_REQUESTED)
     elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:DestroyPrompts()
@@ -792,7 +819,6 @@ function Intro:MaintainTransitionToCustomize()
     local genderModel = self.selectedPreset == EDITOR_CONFIG.MALE and "Male_MP" or "Female_MP"
 
     DisableAllControlActions(0)
-    EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
     UiFeedClearChannel(3, true, false)
 
     if self.toEditState == INTRO_TO_EDIT_STATE.INIT then
@@ -876,7 +902,6 @@ function Intro:MaintainTransitionBackToIntro()
     self:ResetEditorSettings()
 
     DisableAllControlActions(0)
-    EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
 
     if self.backStartState == INTRO_BACK_START_STATE.INIT then
         if not self:AnimSceneLoading(false) then
@@ -1002,7 +1027,7 @@ function Intro:MaintainCustomizePed()
         self.editorLastTime = GetGameTimer()
     end
 
-    if IsUiappRunningByHash("character_creator") == 1 and IsUiappTransitioningByHash("character_creator") ~= 1 then
+    if IsUiappRunningByHash("character_creator") == 1 and GetUiappCurrentActivityByHash("character_creator") ~= `CHARACTER_CREATOR` then
         self:RegisterEditorPrompts(true)
 
         if self.prompts.settings and UiPromptGetProgress(self.prompts.settings) == 1.0 then
@@ -1057,7 +1082,6 @@ function Intro:MaintainTransitionToMugshot()
     self:ResetEditorSettings()
 
     DisableAllControlActions(0)
-    EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
 
     if self.toPhotoState > INTRO_TO_PHOTO_STATE.INIT then
         SetPedCanPlayAmbientAnims(presetPed, false)
@@ -1156,7 +1180,6 @@ function Intro:MaintainTransitionBackToCustomize()
     local presetPed = self.presetPeds[self.selectedPreset] or 0
 
     DisableAllControlActions(0)
-    EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
 
     if self.backEditState == INTRO_BACK_EDIT_STATE.INIT then
         if not self:AnimSceneLoading(false) then
@@ -1253,7 +1276,7 @@ function Intro:MaintainTransitionBackToCustomize()
 end
 
 function Intro:MaintainMugshot()
-    SetControlContext(4, `GAMEMENU`)
+    SetControlContext(4, `GameMenu`)
     DisableAllControlActions(0)
 
     if not self:IsFlagSet(INTRO_FLAG.PED_IN_PHOTO_SEAT) then
@@ -1298,14 +1321,13 @@ function Intro:MaintainMugshot()
     AddTextEntry("MUGSHOT_TITLE_PROMPT", string.format("Enter a title for your mugshot (Max %d characters)", maxTitleLength))
 
     if self.mugshotState == INTRO_MUGSHOT_STATE.PROMPT then
-        EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_CANCEL`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, true)
-        EnableControlAction(0, `INPUT_FRONTEND_PAUSE`, true)
-        EnableControlAction(0, `INPUT_SHOP_CHANGE_CURRENCY`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_OPTION`, true)
-        EnableControlAction(0, `INPUT_GAME_MENU_RS`, true)
+        EnableControlAction(0, `INPUT_GAME_MENU_ACCEPT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_CANCEL`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_LEFT`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_RIGHT`, false)
+        EnableControlAction(0, `INPUT_SHOP_CHANGE_CURRENCY`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_OPTION`, false)
+        EnableControlAction(0, `INPUT_GAME_MENU_RS`, false)
 
         local held = IsControlPressed(0, `INPUT_SHOP_CHANGE_CURRENCY`) == 1
         self:RegisterMugshotPrompts(true, held)
@@ -1435,6 +1457,7 @@ function Intro:MaintainMugshot()
         end
 
         CloseUiappByHash(`character_creator`)
+        SignalBus:emit("character_creator_closed")
 
         Citizen.InvokeNative(Natives.GraphicsReleasePostfx, self.photoPostfx)
         TogglePausedRenderphases(true)
@@ -1579,19 +1602,20 @@ end
 
 function Intro:SetupEditor()
     Character:Reset()
+    Character:SetPed(self.presetPeds[self.selectedPreset])
 
     -- Reset clothing level so each new editing session starts fully clothed.
     self.clothingLevel = CLOTHING_SETTING.DEFAULT
 
     if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) and self.rerollImportData then
-        Character:ImportRaw(self.rerollImportData)
+        Character:Import(self.rerollImportData, true)
         self.presetData[self.selectedPreset] = self.rerollImportData
         self.rerollImportData = nil
     else
-        Character:ImportRaw(self.presetData[self.selectedPreset] or {})
+        local presetData = self.presetData[self.selectedPreset] or {}
+        Character:Import(presetData, true)
     end
 
-    Character:SetPed(self.presetPeds[self.selectedPreset])
     Creator:Start()
 end
 
@@ -2035,8 +2059,8 @@ function Intro:ResetCharacter()
 
     Utils:Debug("RESET_CHARACTER - resetting character")
     Character:Reset()
-    Character:ApplyName(name)
     Character:SetPed(ped)
+    Character:ApplyName(name)
     Character:ApplyAll()
 
     self.presetData[self.selectedPreset] = Character:Export()
@@ -2056,10 +2080,6 @@ function Intro:ResetCharacter()
 
     Utils:Debug("RESET_CHARACTER - character reset")
     return true
-end
-
-function Intro:ImportCharacter()
-    Creator:Import(Character:GenerateName(), Character:GenerateAge())
 end
 
 function Intro:ExportCharacter()
@@ -2127,12 +2147,7 @@ function Intro:FadeInScreen(duration)
     return true
 end
 
-function Intro:SetActivePedPreset(target, force)
-    if self.selectedPreset == target then
-        if not force then return end
-        Utils:Debug("NET_CHAR_CREATOR_SET_ACTIVE_PED_PRESET - forcing re-activation of active ped preset")
-    end
-
+function Intro:SetActivePedPreset(target)
     local targetCamera = self.presetCameras[target] or 0
     if DoesCamExist(targetCamera) ~= 1 then
         targetCamera = CreateCamera(`DEFAULT_SCRIPTED_CAMERA`, false)
@@ -2174,6 +2189,15 @@ function Intro:SetActivePedPreset(target, force)
 
     self.selectedPreset = target
     self.presetCameras[target] = targetCamera
+
+    local presetPed = self.presetPeds[self.selectedPreset] or 0
+    if presetPed == 0 or DoesEntityExist(presetPed) ~= 1 then
+        Utils:Warn("Preset ped does not exist or is invalid for preset", EDITOR_CONFIG:ToString(self.selectedPreset))
+        return
+    end
+
+    Character:Reset()
+    Character:SetPed(presetPed)
 end
 
 function Intro:MoveEditCamera(viewId)
@@ -2351,38 +2375,45 @@ function Intro:RegisterCharacterPrompts(toggle)
     end
 
     self:RegisterPrompts({
-        -- TODO: Does not show for some reason
         import = {
             controls = { "INPUT_GAME_MENU_RS" },
             text = "Import",
-            visible = true,
+            visible = toggle,
             enabled = toggle,
         },
-        -- End TODO
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
-            visible = enableReset,
+            visible = enableReset and toggle,
             enabled = enableReset and toggle,
             hold = "MEDIUM_TIMED_EVENT",
         },
         confirm = {
             controls = { "INPUT_GAME_MENU_ACCEPT" },
             text = "Confirm",
-            visible = true,
+            visible = toggle,
             enabled = toggle,
+        },
+        gender = {
+            controls = { "INPUT_GAME_MENU_LEFT", "INPUT_GAME_MENU_RIGHT" },
+            text = "Character",
+            visible = toggle,
+            enabled = toggle,
+            priority = 3,
         },
         genderLeft = {
             controls = { "INPUT_GAME_MENU_LEFT" },
             text = "Character",
-            visible = true,
+            visible = toggle,
             enabled = toggle,
+            priority = 2,
         },
         genderRight = {
             controls = { "INPUT_GAME_MENU_RIGHT" },
             text = "Character",
-            visible = true,
+            visible = toggle,
             enabled = toggle,
+            priority = 2,
         },
     })
 end
@@ -2404,27 +2435,27 @@ function Intro:RegisterEditorPrompts(toggle)
         settings = {
             controls = { "INPUT_GAME_MENU_TAB_LEFT_SECONDARY" },
             text = "Settings",
-            visible = true,
+            visible = toggle,
             enabled = toggle,
             hold = "SHORT_TIMED_EVENT",
         },
         switch = {
             controls = { "INPUT_GAME_MENU_LS" },
             text = switchText,
-            visible = true,
+            visible = toggle,
             enabled = canSwitch and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
         randomize = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Randomize",
-            visible = canRandomize,
+            visible = canRandomize and toggle,
             enabled = canRandomize and toggle,
         },
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
-            visible = not canRandomize and canReset,
+            visible = not canRandomize and canReset and toggle,
             enabled = not canRandomize and canReset and enableReset and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
@@ -2446,37 +2477,37 @@ function Intro:RegisterMugshotPrompts(toggle, held)
         options = {
             controls = { "INPUT_SHOP_CHANGE_CURRENCY" },
             text = "Options",
-            visible = true,
+            visible = toggle,
             enabled = toggle,
         },
         export = {
             controls = { "INPUT_GAME_MENU_RS" },
             text = "Export",
-            visible = not held,
+            visible = not held and toggle,
             enabled = toggle,
         },
         time = {
             controls = { "INPUT_GAME_MENU_LEFT", "INPUT_GAME_MENU_RIGHT" },
             text = string.format("Extra Time (%ds)", seconds),
-            visible = held,
+            visible = held and toggle,
             enabled = toggle,
         },
         title = {
             controls = { "INPUT_GAME_MENU_OPTION" },
             text = "Change Title",
-            visible = held,
+            visible = held and toggle,
             enabled = toggle and showUi,
         },
         confirm = {
             controls = { "INPUT_GAME_MENU_ACCEPT" },
             text = confirmText,
-            visible = true,
+            visible = toggle,
             enabled = toggle,
         },
         cancel = {
             controls = { "INPUT_GAME_MENU_CANCEL" },
             text = "Back",
-            visible = not held,
+            visible = not held and toggle,
             enabled = toggle,
         },
     })
@@ -2493,6 +2524,10 @@ function Intro:RegisterPrompts(prompts)
 
             for _, control in ipairs(prompt.controls) do
                 UiPromptSetControlAction(handle, control)
+            end
+
+            if prompt.priority then
+                UiPromptSetPriority(handle, prompt.priority)
             end
 
             if prompt.hold then
@@ -2703,6 +2738,18 @@ SignalBus:on("camera_updated", function(data)
     Intro:MoveEditCamera(viewId)
 end)
 
+SignalBus:on("character_pasted", function(data)
+    if Intro.state ~= INTRO_STATE.SELECT_GENDER then return end
+    local preset = Character:IsMale() and EDITOR_CONFIG.MALE or EDITOR_CONFIG.FEMALE
+    Utils:Debug("Received character paste data for", EDITOR_CONFIG:ToString(preset))
+    Intro.presetData[preset] = data
+end)
+
+SignalBus:on("character_paste_closed", function()
+    Intro:ClearFlag(INTRO_FLAG.IMPORT_REQUESTED)
+    Intro:ClearFlag(INTRO_FLAG.IMPORT_OPENED)
+end)
+
 SignalBus:on("timecycle_changed", function(name)
     ClearTimecycleModifier()
     SetTimecycleModifier(name)
@@ -2730,6 +2777,10 @@ SignalBus:on("alert_back", function(id)
     if id ~= Intro.alertHandle then return end
     Intro:ClearFlag(INTRO_FLAG.REROLL_CANCEL_ALERT_CREATED)
     Intro:SetFlag(INTRO_FLAG.REROLL_CANCEL_ALERT_CANCEL)
+end)
+
+SignalBus:on("character_creator_closed", function()
+    Intro:DestroyPrompts()
 end)
 
 AddEventHandler("onResourceStop", function(resourceName)

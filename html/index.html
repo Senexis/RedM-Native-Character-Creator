@@ -165,17 +165,19 @@
       <div class="modal">
         <h3>Import Character</h3>
         <p>
-          Use <kbd>Ctrl</kbd> + <kbd>V</kbd> to paste your character data into the box below.
-          The order of the values does not matter.
-          <span style="color: #fef390;">This will overwrite your current character.</span>
+          Use <kbd>Ctrl</kbd> + <kbd>V</kbd> to paste your character data into
+          the box below. The order of the values does not matter.
+          <span style="color: #fef390"
+            >This will overwrite your current character.</span
+          >
           You may edit your character after importing.
         </p>
         <textarea id="jsonInput" placeholder=""></textarea>
         <div id="validationMsg" class="validation-msg"></div>
         <p class="small">
-          Certain values may be modified to fit configured limits.
-          We recommend reviewing your character afterwards.
-          Manually editing the values prior to importing may result in unexpected behavior.
+          Certain values may be modified to fit configured limits. We recommend
+          reviewing your character afterwards. Manually editing the values prior
+          to importing may result in unexpected behavior.
         </p>
         <div class="buttons">
           <button class="btn-cancel" id="cancelBtn">
@@ -193,16 +195,22 @@
     </div>
 
     <script>
-      const modalWrapper = document.getElementById("modalWrapper");
-      const jsonInput = document.getElementById("jsonInput");
-      const validationMsg = document.getElementById("validationMsg");
-      const submitBtn = document.getElementById("submitBtn");
-      const cancelBtn = document.getElementById("cancelBtn");
+      const modalOverlay = document.getElementById("modalWrapper");
+      const characterInput = document.getElementById("jsonInput");
+      const validationMessage = document.getElementById("validationMsg");
+      const importButton = document.getElementById("submitBtn");
+      const cancelButton = document.getElementById("cancelBtn");
 
-      let parsedData = null;
-      let isOpen = false;
+      let parsedCharacterData = null;
+      let isModalOpen = false;
+      let currentPedType = null;
+      let currentPedModel = null;
 
-      function sendToClient(eventName, data) {
+      // ---------------------------------------------------------------------
+      // NUI messaging
+      // ---------------------------------------------------------------------
+
+      function notifyClient(eventName, data) {
         fetch(`https://${GetParentResourceName()}/${eventName}`, {
           method: "POST",
           headers: { "Content-Type": "application/json; charset=UTF-8" },
@@ -210,46 +218,181 @@
         });
       }
 
-      function copyTextToClipboard(text) {
+      // ---------------------------------------------------------------------
+      // Clipboard helpers
+      // ---------------------------------------------------------------------
+
+      function copyToClipboard(text) {
         if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+          navigator.clipboard.writeText(text).catch(() => copyToClipboardFallback(text));
         } else {
-          fallbackCopy(text);
+          copyToClipboardFallback(text);
         }
       }
 
-      function fallbackCopy(text) {
-        const el = document.createElement("textarea");
-        el.value = text;
-        el.setAttribute("readonly", "");
-        el.style.position = "fixed";
-        el.style.top = "0";
-        el.style.left = "-9999px";
-        document.body.appendChild(el);
-        el.focus();
-        el.select();
+      function copyToClipboardFallback(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.top = "0";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
         document.execCommand("copy");
-        document.body.removeChild(el);
+        document.body.removeChild(textarea);
       }
 
-      function validateCharacterSchema(data) {
-        if (typeof data !== "object" || data === null || Array.isArray(data)) {
-          throw new Error("Invalid JSON");
+      // ---------------------------------------------------------------------
+      // Generic validation helpers
+      // ---------------------------------------------------------------------
+
+      function isPlainObject(value) {
+        return typeof value === "object" && value !== null && !Array.isArray(value);
+      }
+
+      function isFiniteNumber(value) {
+        return typeof value === "number" && Number.isFinite(value);
+      }
+
+      function requireField(data, field) {
+        if (!(field in data)) {
+          throw new Error(`Your character is missing "${field}".`);
+        }
+      }
+
+      function requireNumber(data, field, { min, max } = {}) {
+        requireField(data, field);
+        const value = data[field];
+
+        if (!isFiniteNumber(value)) {
+          throw new Error(`"${field}" must be a valid number.`);
+        }
+        if (min !== undefined && value < min) {
+          throw new Error(`"${field}" must be at least ${min}.`);
+        }
+        if (max !== undefined && value > max) {
+          throw new Error(`"${field}" must be at most ${max}.`);
+        }
+      }
+
+      function requireNonNegativeNumber(data, field) {
+        requireNumber(data, field, { min: 0 });
+      }
+
+      function requireBoolean(data, field) {
+        requireField(data, field);
+
+        if (typeof data[field] !== "boolean") {
+          throw new Error(`"${field}" must be either true or false.`);
+        }
+      }
+
+      function requireString(data, field, { maxLength } = {}) {
+        requireField(data, field);
+        const value = data[field];
+
+        if (typeof value !== "string") {
+          throw new Error(`"${field}" must be text.`);
+        }
+        if (maxLength !== undefined && value.length > maxLength) {
+          throw new Error(`"${field}" cannot be longer than ${maxLength} characters.`);
+        }
+      }
+
+      function requireNumberArray(data, field, { min } = {}) {
+        requireField(data, field);
+        const value = data[field];
+
+        if (!Array.isArray(value)) {
+          throw new Error(`"${field}" must be a list.`);
         }
 
-        // Validate the character's name
-        if (!("name" in data))
-          throw new Error("Missing required field: 'name'");
-        if (typeof data.name !== "string") {
-          throw new Error(
-            `Field 'name' must be a string, got ${typeof data.name}`,
-          );
-        }
-        if (data.name.length > 50) {
-          throw new Error("Field 'name' cannot exceed 50 characters");
+        value.forEach((item, index) => {
+          if (!isFiniteNumber(item)) {
+            throw new Error(`"${field}[${index}]" must be a valid number.`);
+          }
+          if (min !== undefined && item < min) {
+            throw new Error(`"${field}[${index}]" must be at least ${min}.`);
+          }
+        });
+      }
+
+      function requireNumberMap(data, field, { min, max } = {}) {
+        requireField(data, field);
+        const value = data[field];
+
+        if (!isPlainObject(value)) {
+          throw new Error(`"${field}" must be a set of key/value pairs.`);
         }
 
-        // Validate top-level primitive number fields
+        for (const [key, val] of Object.entries(value)) {
+          if (!isFiniteNumber(val)) {
+            throw new Error(`"${field}.${key}" must be a valid number.`);
+          }
+          if (min !== undefined && val < min) {
+            throw new Error(`"${field}.${key}" must be at least ${min}.`);
+          }
+          if (max !== undefined && val > max) {
+            throw new Error(`"${field}.${key}" must be at most ${max}.`);
+          }
+        }
+      }
+
+      function requireLayerList(data, field) {
+        requireField(data, field);
+        const layers = data[field];
+
+        if (!Array.isArray(layers)) {
+          throw new Error(`"${field}" must be a list.`);
+        }
+
+        layers.forEach((layer, index) => {
+          const label = `${field}[${index}]`;
+
+          if (!isPlainObject(layer)) {
+            throw new Error(`"${label}" must be an object.`);
+          }
+          if (!("id" in layer) || !isFiniteNumber(layer.id) || layer.id < 0) {
+            throw new Error(`"${label}.id" must be a non-negative number.`);
+          }
+          if (!("alpha" in layer) || !isFiniteNumber(layer.alpha) || layer.alpha < 0 || layer.alpha > 1) {
+            throw new Error(`"${label}.alpha" must be a number between 0.0 and 1.0.`);
+          }
+        });
+      }
+
+      // ---------------------------------------------------------------------
+      // Character schema validation
+      // ---------------------------------------------------------------------
+
+      function validateCharacterData(data) {
+        if (!isPlainObject(data)) {
+          throw new Error("This doesn't look like valid character data.");
+        }
+
+        // Version
+        if (!("version" in data)) {
+          throw new Error('This character is created with an incompatible version. Please contact staff with your character data and the gender of the character for assistance.');
+        }
+        requireNumber(data, "version", { min: 1 });
+
+        // Ped type / model must match the current character
+        requireNumber(data, "pedType");
+        if (data.pedType != currentPedType) {
+          throw new Error("This character is for a different gender or ped type.");
+        }
+
+        requireNumber(data, "pedModel");
+        if (data.pedModel != currentPedModel) {
+          throw new Error("This character is for a different model.");
+        }
+
+        // Name
+        requireString(data, "name", { maxLength: 50 });
+
+        // Simple numeric fields
         const numberFields = [
           "age",
           "height",
@@ -275,235 +418,111 @@
         ];
 
         for (const field of numberFields) {
-          if (!(field in data)) {
-            throw new Error(`Missing required field: '${field}'`);
-          }
-          if (typeof data[field] !== "number" || isNaN(data[field])) {
-            throw new Error(
-              `Field '${field}' must be a number, got ${typeof data[field]}`,
-            );
-          }
-          if (!isFinite(data[field])) {
-            throw new Error(
-              `Field '${field}' must be a finite number, got ${data[field]}`,
-            );
-          }
-          if (data[field] < 0) {
-            throw new Error(
-              `Field '${field}' must be a non-negative number, got ${data[field]}`,
-            );
-          }
+          requireNonNegativeNumber(data, field);
         }
 
-        // Validate boolean fields
-        if (!("ignoreHeritageLimits" in data)) {
-          throw new Error("Missing required field: 'ignoreHeritageLimits'");
-        }
-        if (typeof data.ignoreHeritageLimits !== "boolean") {
-          throw new Error(
-            `Field 'ignoreHeritageLimits' must be a boolean, got ${typeof data.ignoreHeritageLimits}`,
-          );
-        }
+        // Boolean fields
+        requireBoolean(data, "ignoreHeritageLimits");
+        requireBoolean(data, "ignoreOverlayLimits");
 
-        if (!("ignoreOverlayLimits" in data)) {
-          throw new Error("Missing required field: 'ignoreOverlayLimits'");
-        }
-        if (typeof data.ignoreOverlayLimits !== "boolean") {
-          throw new Error(
-            `Field 'ignoreOverlayLimits' must be a boolean, got ${typeof data.ignoreOverlayLimits}`,
-          );
-        }
-
-        // Validate 'presets' (array of numbers)
-        if (!("presets" in data)) {
-          throw new Error("Missing required field: 'presets'");
-        }
-        if (!Array.isArray(data.presets)) {
-          throw new Error(
-            `Field 'presets' must be an array, got ${typeof data.presets}`,
-          );
-        }
-        data.presets.forEach((item, index) => {
-          if (typeof item !== "number" || isNaN(item)) {
-            throw new Error(`'presets[${index}]' must be a number`);
-          }
-          if (item < 0)
-            throw new Error(
-              `'presets[${index}]' must be a non-negative number`,
-            );
-        });
-
-        // Validate 'expressions' (dictionary: dynamic keys -> number values)
-        if (!("expressions" in data)) {
-          throw new Error("Missing required field: 'expressions'");
-        }
-        if (
-          typeof data.expressions !== "object" ||
-          data.expressions === null ||
-          Array.isArray(data.expressions)
-        ) {
-          throw new Error("Field 'expressions' must be an object map");
-        }
-        for (const [key, val] of Object.entries(data.expressions)) {
-          if (typeof val !== "number" || isNaN(val)) {
-            throw new Error(
-              `'expressions.${key}' must be a number, got ${typeof val}`,
-            );
-          } else if (val < -1.0 || val > 1.0) {
-            throw new Error(
-              `'expressions.${key}' must be between -1.0 and 1.0, got ${val}`,
-            );
-          }
-        }
-
-        // Validate 'layerColors' (dictionary: dynamic keys -> number values)
-        if (!("layerColors" in data)) {
-          throw new Error("Missing required field: 'layerColors'");
-        }
-        if (
-          typeof data.layerColors !== "object" ||
-          data.layerColors === null ||
-          Array.isArray(data.layerColors)
-        ) {
-          throw new Error("Field 'layerColors' must be an object map");
-        }
-        for (const [key, val] of Object.entries(data.layerColors)) {
-          if (typeof val !== "number" || isNaN(val)) {
-            throw new Error(
-              `'layerColors.${key}' must be a number, got ${typeof val}`,
-            );
-          }
-          if (val < 0)
-            throw new Error(
-              `'layerColors.${key}' must be a non-negative number`,
-            );
-        }
-
-        // Validate 'layers' (array of objects with { alpha: number, id: number })
-        if (!("layers" in data)) {
-          throw new Error("Missing required field: 'layers'");
-        }
-        if (!Array.isArray(data.layers)) {
-          throw new Error(
-            `Field 'layers' must be an array, got ${typeof data.layers}`,
-          );
-        }
-        data.layers.forEach((layer, index) => {
-          if (
-            typeof layer !== "object" ||
-            layer === null ||
-            Array.isArray(layer)
-          ) {
-            throw new Error(`'layers[${index}]' must be an object`);
-          }
-          if (!("id" in layer)) {
-            throw new Error(
-              `'layers[${index}]' is missing required property 'id'`,
-            );
-          }
-          if (typeof layer.id !== "number" || isNaN(layer.id)) {
-            throw new Error(
-              `'layers[${index}].id' must be a number, got ${typeof layer.id}`,
-            );
-          }
-          if (layer.id < 0)
-            throw new Error(
-              `'layers[${index}].id' must be a non-negative number`,
-            );
-          if (!("alpha" in layer)) {
-            throw new Error(
-              `'layers[${index}]' is missing required property 'alpha'`,
-            );
-          }
-          if (typeof layer.alpha !== "number" || isNaN(layer.alpha)) {
-            throw new Error(
-              `'layers[${index}].alpha' must be a number, got ${typeof layer.alpha}`,
-            );
-          }
-          if (layer.alpha < 0.0 || layer.alpha > 1.0)
-            throw new Error(
-              `'layers[${index}].alpha' must be between 0.0 and 1.0`,
-            );
-        });
+        // Collections
+        requireNumberArray(data, "presets", { min: 0 });
+        requireNumberMap(data, "expressions", { min: -1.0, max: 1.0 });
+        requireNumberMap(data, "layerColors", { min: 0 });
+        requireLayerList(data, "layers");
       }
 
-      function validateJSON() {
-        const value = jsonInput.value.trim();
-        jsonInput.value = value;
+      // ---------------------------------------------------------------------
+      // UI handling
+      // ---------------------------------------------------------------------
+
+      function refreshValidationState() {
+        const value = characterInput.value.trim();
+        characterInput.value = value;
 
         if (value === "") {
-          jsonInput.className = "";
-          validationMsg.className = "validation-msg";
-          validationMsg.textContent = "Please paste your character data above";
-          submitBtn.disabled = true;
-          parsedData = null;
+          characterInput.className = "";
+          validationMessage.className = "validation-msg";
+          validationMessage.textContent = "Please paste your character data above";
+          importButton.disabled = true;
+          parsedCharacterData = null;
           return;
         }
 
         try {
           let data;
+
           try {
             data = JSON.parse(value);
           } catch {
-            throw new Error("Invalid JSON");
+            throw new Error("That doesn't look like valid character data.");
           }
 
-          validateCharacterSchema(data);
+          validateCharacterData(data);
 
-          parsedData = data;
-          jsonInput.className = "valid";
-          validationMsg.className = "validation-msg success";
-          validationMsg.textContent = "This character data is valid";
-          submitBtn.disabled = false;
+          parsedCharacterData = data;
+          characterInput.className = "valid";
+          validationMessage.className = "validation-msg success";
+          validationMessage.textContent = "This character data is valid";
+          importButton.disabled = false;
         } catch (err) {
-          jsonInput.className = "invalid";
-          validationMsg.className = "validation-msg error";
-          validationMsg.textContent = `This character data is invalid: ${err.message}`;
-          submitBtn.disabled = true;
-          parsedData = null;
+          characterInput.className = "invalid";
+          validationMessage.className = "validation-msg error";
+          validationMessage.textContent = `This character data is invalid: ${err.message}`;
+          importButton.disabled = true;
+          parsedCharacterData = null;
         }
       }
 
-      function submitData() {
-        if (!isOpen || !parsedData) return;
-        isOpen = false;
-        modalWrapper.style.display = "none";
-        sendToClient("character_pasted", {
-          data: parsedData,
-        });
+      function confirmCharacterImport() {
+        if (!isModalOpen || !parsedCharacterData) return;
+
+        isModalOpen = false;
+        modalOverlay.style.display = "none";
+        notifyClient("character_pasted", { data: parsedCharacterData });
       }
 
-      function closeModal() {
-        if (!isOpen) return;
-        isOpen = false;
-        modalWrapper.style.display = "none";
-        sendToClient("character_paste_closed", {});
+      function closeCharacterImportModal() {
+        if (!isModalOpen) return;
+
+        isModalOpen = false;
+        modalOverlay.style.display = "none";
+        notifyClient("character_paste_closed", {});
       }
 
-      jsonInput.addEventListener("input", validateJSON);
+      // ---------------------------------------------------------------------
+      // Event listeners
+      // ---------------------------------------------------------------------
+
+      characterInput.addEventListener("input", refreshValidationState);
+      importButton.addEventListener("click", confirmCharacterImport);
+      cancelButton.addEventListener("click", closeCharacterImportModal);
 
       window.addEventListener("message", async function (event) {
-        const item = event.data;
+        const message = event.data;
 
         // Copy TO clipboard
-        if (item.type === "copy") {
-          copyTextToClipboard(item.text);
+        if (message.type === "copy") {
+          copyToClipboard(message.text);
         }
 
         // Open paste modal
-        if (item.type === "open_character_paste") {
-          isOpen = true;
-          modalWrapper.style.display = "flex";
-          jsonInput.value = "";
-          jsonInput.placeholder = `{"name": "${item.placeholderName}", "age": ${item.placeholderAge}, ...}`;
-          validateJSON();
-          jsonInput.focus();
+        if (message.type === "open_character_paste") {
+          isModalOpen = true;
+          currentPedModel = message.pedModel || 0;
+          currentPedType = message.pedType || 0;
+
+          modalOverlay.style.display = "flex";
+          characterInput.value = "";
+          characterInput.placeholder = `{"name": "${message.placeholderName}", "age": ${message.placeholderAge}, ...}`;
+          refreshValidationState();
+          characterInput.focus();
 
           try {
             const clipboardText = await navigator.clipboard.readText();
             if (clipboardText) {
-              jsonInput.value = clipboardText;
-              validateJSON();
+              characterInput.value = clipboardText;
+              refreshValidationState();
             }
           } catch (e) {
             // User will manually paste
@@ -511,27 +530,24 @@
         }
 
         // Control triggers from Lua
-        if (item.type === "trigger_accept") {
-          submitData();
+        if (message.type === "trigger_accept") {
+          confirmCharacterImport();
         }
 
-        if (item.type === "trigger_cancel") {
-          closeModal();
+        if (message.type === "trigger_cancel") {
+          closeCharacterImportModal();
         }
 
-        if (item.type === "using_keyboard") {
+        if (message.type === "using_keyboard") {
           document.body.classList.add("using-keyboard");
           document.body.classList.remove("using-controller");
         }
 
-        if (item.type === "using_controller") {
+        if (message.type === "using_controller") {
           document.body.classList.add("using-controller");
           document.body.classList.remove("using-keyboard");
         }
       });
-
-      submitBtn.addEventListener("click", submitData);
-      cancelBtn.addEventListener("click", closeModal);
     </script>
   </body>
 </html>

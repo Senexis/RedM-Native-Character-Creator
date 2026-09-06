@@ -2,12 +2,20 @@ NuiHelper = {
     importOpen = false
 }
 
-function NuiHelper:Open(placeholderName, placeholderAge)
+function NuiHelper:Open(pedType, pedModel, placeholderName, placeholderAge)
+    if self.importOpen then return end
+
     self.importOpen = true
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(true)
 
-    SendNUIMessage({ type = 'open_character_paste', placeholderName = placeholderName, placeholderAge = placeholderAge })
+    SendNUIMessage({
+        type = 'open_character_paste',
+        pedType = pedType,
+        pedModel = pedModel,
+        placeholderName = placeholderName,
+        placeholderAge = placeholderAge
+    })
 
     self:StartThread()
 end
@@ -52,6 +60,8 @@ function NuiHelper:StartThread()
 end
 
 function NuiHelper:OnPasted(data)
+    if not self.importOpen then return end
+
     NuiHelper:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
 
     self.importOpen = false
@@ -59,15 +69,21 @@ function NuiHelper:OnPasted(data)
     SetNuiFocus(false, false)
 
     Utils:Debug("Successfully received JSON:", json.encode(data.data))
+
+    SignalBus:emit("character_paste_closed")
     SignalBus:emit("character_pasted", data.data)
 end
 
 function NuiHelper:OnClose()
+    if not self.importOpen then return end
+
     self:PlaySound("BACK", "RDRO_Character_Creator_Sounds")
 
     self.importOpen = false
     SetNuiFocusKeepInput(false)
     SetNuiFocus(false, false)
+
+    SignalBus:emit("character_paste_closed")
 end
 
 RegisterNUICallback('character_pasted', function(data, cb)

@@ -161,7 +161,7 @@ function CreatorMenu:GetMenu()
                     Info = {
                         Label = "Import",
                         Action = function()
-                            Intro:ImportCharacter()
+                            Creator:Import()
                         end,
                     }
                 },

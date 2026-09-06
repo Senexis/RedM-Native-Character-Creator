@@ -1,3 +1,5 @@
+local CHARACTER_VERSION <const> = 1
+
 local function GetDefaultData()
     return {
         -- Private
@@ -167,25 +169,16 @@ function Character:Reset()
     end
 end
 
-function Character:ImportRaw(data)
-    for k, v in pairs(data) do
-        if self[k] ~= nil then
-            if type(v) == "table" then
-                self[k] = Utils:CopyData(v)
-            else
-                self[k] = v
-            end
-        end
-    end
-end
-
-function Character:Import(data)
+function Character:Import(data, skipApply)
     if type(data) ~= "table" then
-        Utils:Warn("Failed to import character data, expected table but got", type(data))
+        Utils:Error("Failed to import character data, expected table but got", type(data))
         return
     end
 
     local MAPPER <const> = {
+        ["version"] = true,
+        ["pedType"] = true,
+        ["pedModel"] = true,
         ["ignoreHeritageLimits"] = true,
         ["ignoreOverlayLimits"] = true,
         ["name"] = self.ApplyName,
@@ -219,6 +212,7 @@ function Character:Import(data)
     for key, _ in pairs(data) do
         if not MAPPER[key] then
             Utils:Warn("Unknown character data key", tostring(key), "skipping...")
+            data[key] = nil
         end
     end
 
@@ -226,7 +220,9 @@ function Character:Import(data)
         local value = data[key]
         Utils:Debug("Applying character data for key", tostring(key), "with value", type(value), tostring(value))
 
-        if key == "ignoreHeritageLimits" then
+        if key == "version" or key == "pedType" or key == "pedModel" then
+            -- These are validation values, do nothing
+        elseif key == "ignoreHeritageLimits" then
             self.ignoreHeritageLimits = (value == true)
             if self.ignoreHeritageLimits then
                 Utils:Warn("Ignore heritage limits enabled, proceeding without restrictions")
@@ -313,11 +309,13 @@ function Character:Import(data)
         elseif type(func) == "function" then
             func(self, value)
         else
-            Utils:Warn("Missing logic for key", tostring(key), "received value", type(value), tostring(value))
+            Utils:Error("Missing logic for key", tostring(key), "received value", type(value), tostring(value))
         end
     end
 
-    self:ApplyAll()
+    if not skipApply then
+        self:ApplyAll()
+    end
 end
 
 function Character:Export()
@@ -329,6 +327,10 @@ function Character:Export()
             copy[k] = nil
         end
     end
+
+    copy.version = CHARACTER_VERSION
+    copy.pedType = self:GetPedType()
+    copy.pedModel = self:GetModel()
 
     return copy
 end
@@ -444,19 +446,24 @@ function Character:IsHuman()
     return IsPedHuman(ped) == 1
 end
 
+function Character:GetModel()
+    if not self:Exists() then return 0 end
+    local ped = self:GetPed()
+    return GetEntityModel(ped)
+end
+
 function Character:IsMale()
     if not self:Exists() then return false end
     if not self:IsHuman() then return false end
 
-    local ped = self:GetPed()
-
-    local model = GetEntityModel(ped)
+    local model = self:GetModel()
     if model == `MP_MALE` then
         return true
     elseif model == `MP_FEMALE` then
         return false
     end
 
+    local ped = self:GetPed()
     return IsPedMale(ped)
 end
 
@@ -542,7 +549,8 @@ function Character:GetShopItemInfo(item)
     )
 
     if result ~= 1 then
-        error(string.format("Failed to find shop item info for %s", item), 2)
+        Utils:Debug("No shop item info available for", tostring(item), "with ped type", tostring(pedType))
+        return nil
     end
 
     return {
@@ -620,6 +628,7 @@ function Character:ApplyAll()
     self:ApplyVoice()
 
     self:ApplyOverlays(true)
+    self:ApplyBodyItems(nil, true)
 end
 
 function Character:ApplyName(value)
@@ -877,6 +886,16 @@ function Character:ApplyHead(apply)
     if not head then return end
 
     local info = self:GetShopItemInfo(head.id)
+    if not info then
+        if apply then
+            Utils:Error("Cannot apply head due to missing shop item info for", tostring(head.id))
+            return
+        end
+
+        Utils:Debug("Not applying, using empty info for", tostring(head.id), "- likely missing XML")
+        info = {}
+    end
+
     local shouldOverride = false
 
     local drawable = info.drawable or 0
@@ -1001,7 +1020,7 @@ function Character:ApplySkintone(value, apply)
     end
 
     self:ApplyHead(apply)
-    self:ApplyBodyItems()
+    self:ApplyBodyItems(nil, apply)
 
     SignalBus:emit("skintone_changed", value)
 end
@@ -1023,7 +1042,7 @@ function Character:ApplyBody(value)
     self:ApplyBodyExpressions(value)
 end
 
-function Character:ApplyBodyItems(value)
+function Character:ApplyBodyItems(value, apply)
     if value ~= nil then
         self.bodyType = value
         self:SetModified()
@@ -1033,8 +1052,10 @@ function Character:ApplyBodyItems(value)
     local presetBodyBuild = CreatorPresets:GetBodyBuild(bodyBuild)
     local shopItems = CreatorPresets:GetBodyShopItems(self.skintone, presetBodyBuild)
 
-    self:ApplyShopItem(shopItems.upper)
-    self:ApplyShopItem(shopItems.lower)
+    if not apply then return end
+
+    if shopItems.upper then self:ApplyShopItem(shopItems.upper) end
+    if shopItems.lower then self:ApplyShopItem(shopItems.lower) end
 
     self:RequestUpdate()
 end
@@ -1550,7 +1571,7 @@ end
 function Character:RandomizeSkintone()
     local skintones = CreatorPresets:GetSkintones()
     local skintone = GetRandomIntInRange(0, #skintones)
-    self:ApplySkintone(skintone, false)
+    self:ApplySkintone(skintone, true)
     SignalBus:emit("skintone_randomized", self.skintone)
 end
 
@@ -2047,7 +2068,7 @@ SignalBus:on("action_selected", function(actionId, itemId)
 end)
 
 SignalBus:on("character_pasted", function(data)
-    Character:Import(data)
+    Character:Import(data, false)
 end)
 
 CreateThread(function()
