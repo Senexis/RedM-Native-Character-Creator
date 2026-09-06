@@ -2743,6 +2743,12 @@ SignalBus:on("character_pasted", function(data)
     local preset = Character:IsMale() and EDITOR_CONFIG.MALE or EDITOR_CONFIG.FEMALE
     Utils:Debug("Received character paste data for", EDITOR_CONFIG:ToString(preset))
     Intro.presetData[preset] = data
+
+    if Character:IsMale() then
+        Intro:ClearFlag(INTRO_FLAG.MALE_PED_RANDOMIZED)
+    else
+        Intro:ClearFlag(INTRO_FLAG.FEMALE_PED_RANDOMIZED)
+    end
 end)
 
 SignalBus:on("character_paste_closed", function()

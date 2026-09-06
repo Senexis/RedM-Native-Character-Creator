@@ -116,12 +116,15 @@ function Creator:Rename()
 end
 
 function Creator:Import()
-    local pedType = Character:GetPedType()
-    local pedModel = Character:GetModel()
-    local placeholderName = Character:GenerateName()
-    local placeholderAge = Character:GenerateAge()
+    NuiHelper:Open({
+        version = CHARACTER_VERSION,
+        maxNameLength = CreatorConfig.MaxNameLength or 50,
+        pedType = Character:GetPedType(),
+        pedModel = Character:GetModel(),
+        placeholderName = Character:GenerateName(),
+        placeholderAge = Character:GenerateAge()
+    })
 
-    NuiHelper:Open(pedType, pedModel, placeholderName, placeholderAge)
     self:SetFlag(EDITOR_FLAG.IMPORT_PROMPT)
 end
 

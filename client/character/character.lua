@@ -1,4 +1,5 @@
 local CHARACTER_VERSION <const> = 1
+_G.CHARACTER_VERSION = CHARACTER_VERSION
 
 local function GetDefaultData()
     return {

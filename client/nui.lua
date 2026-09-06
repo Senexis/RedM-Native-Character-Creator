@@ -2,20 +2,15 @@ NuiHelper = {
     importOpen = false
 }
 
-function NuiHelper:Open(pedType, pedModel, placeholderName, placeholderAge)
+function NuiHelper:Open(data)
     if self.importOpen then return end
 
     self.importOpen = true
     SetNuiFocus(true, true)
     SetNuiFocusKeepInput(true)
 
-    SendNUIMessage({
-        type = 'open_character_paste',
-        pedType = pedType,
-        pedModel = pedModel,
-        placeholderName = placeholderName,
-        placeholderAge = placeholderAge
-    })
+    data.type = 'open_character_paste'
+    SendNUIMessage(data)
 
     self:StartThread()
 end
