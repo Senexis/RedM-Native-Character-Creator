@@ -180,12 +180,12 @@
           to importing may result in unexpected behavior.
         </p>
         <div class="buttons">
-          <button class="btn-cancel" id="cancelBtn">
+          <button class="btn-cancel" id="cancelBtn" tabindex="-1" onmousedown="event.preventDefault()">
             Back
             <kbd class="pc">Esc</kbd>
             <kbd class="controller">B</kbd>
           </button>
-          <button class="btn-submit" id="submitBtn" disabled>
+          <button class="btn-submit" id="submitBtn" tabindex="-1" onmousedown="event.preventDefault()" disabled>
             Import
             <kbd class="pc">Enter</kbd>
             <kbd class="controller">A</kbd>
@@ -383,23 +383,6 @@
           throw new Error("This doesn't look like valid character data.");
         }
 
-        // Version
-        if (!("version" in data)) {
-          throw new Error('This character is created with an incompatible version. Please contact staff with your character data and the gender of the character for assistance.');
-        }
-        requireNumber(data, "version", { min: 1, max: currentVersion });
-
-        // Ped type / model must match the current character
-        requireNumber(data, "pedType", { min: 0, max: 3 });
-        if (data.pedType != currentPedType) {
-          throw new Error("This character is for a different gender.");
-        }
-
-        requireNumber(data, "pedModel");
-        if (data.pedModel != currentPedModel) {
-          throw new Error("This character is for a different model.");
-        }
-
         // Name
         requireString(data, "name", { min: 1, max: currentMaxNameLength });
 
@@ -441,6 +424,23 @@
         requireNumberMap(data, "expressions", { min: -1.0, max: 1.0 });
         requireNumberMap(data, "layerColors", { min: 0 });
         requireLayerList(data, "layers");
+
+        // Version
+        if (!("version" in data)) {
+          throw new Error('This character is created with an incompatible version. Please contact staff with your character data and the gender of the character for assistance.');
+        }
+        requireNumber(data, "version", { min: 1, max: currentVersion });
+
+        // Ped type / model must match the current character
+        requireNumber(data, "pedType", { min: 0, max: 3 });
+        if (data.pedType != currentPedType) {
+          throw new Error("This character is for a different gender.");
+        }
+
+        requireNumber(data, "pedModel");
+        if (data.pedModel != currentPedModel) {
+          throw new Error("This character is for a different model.");
+        }
       }
 
       // ---------------------------------------------------------------------
