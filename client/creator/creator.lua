@@ -678,6 +678,10 @@ function Creator:ClearFlag(flag)
     self.flags = (self.flags or 0) & (~flag)
 end
 
+SignalBus:on("character_paste_opened", function()
+    Creator:SetFlag(EDITOR_FLAG.IMPORT_PROMPT)
+end)
+
 SignalBus:on("character_paste_closed", function()
     Creator:ClearFlag(EDITOR_FLAG.IMPORT_PROMPT)
 end)

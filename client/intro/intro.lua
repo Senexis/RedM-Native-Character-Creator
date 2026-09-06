@@ -2751,6 +2751,11 @@ SignalBus:on("character_pasted", function(data)
     end
 end)
 
+SignalBus:on("character_paste_opened", function()
+    Intro:SetFlag(INTRO_FLAG.IMPORT_REQUESTED)
+    Intro:SetFlag(INTRO_FLAG.IMPORT_OPENED)
+end)
+
 SignalBus:on("character_paste_closed", function()
     Intro:ClearFlag(INTRO_FLAG.IMPORT_REQUESTED)
     Intro:ClearFlag(INTRO_FLAG.IMPORT_OPENED)

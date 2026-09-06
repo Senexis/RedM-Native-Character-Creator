@@ -13,6 +13,8 @@ function NuiHelper:Open(data)
     SendNUIMessage(data)
 
     self:StartThread()
+
+    SignalBus:emit("character_paste_opened")
 end
 
 function NuiHelper:Copy(data)
