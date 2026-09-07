@@ -108,8 +108,12 @@ function CreatorMenu:GetMenu()
 
     local defaultLabel = rerolling and "Edit Character" or "Create Character"
     local defaultDescription = rerolling and "Make changes to your character's appearance." or "Create a new character to play as. If you like the starting appearance, you may choose to skip."
-    local confirmDisabled = rerolling and "~e~You have not made changes to your character." or "~e~Create a character first."
     local exitLabel = rerolling and "Exit" or "Back"
+
+    local confirmDisabled = rerolling and "~e~You have not made changes to your character." or "~e~Create a character first."
+    if not hasName then
+        confirmDisabled = "~e~Name your character first."
+    end
 
     local skipPrompt = {
         Visible = not rerolling and not hasCreated,
@@ -174,7 +178,7 @@ function CreatorMenu:GetMenu()
                 Disabled = not hasName,
                 Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
                 Data = {
-                    DisabledFooter = "~e~Set a name first.",
+                    DisabledFooter = "~e~Name your character first.",
                     ItemDescription = defaultDescription,
                     Equipped = not rerolling and hasCreated,
                     ItemInfo1 = nameDisplay,
@@ -196,7 +200,7 @@ function CreatorMenu:GetMenu()
                 Disabled = not hasName,
                 Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
                 Data = {
-                    DisabledFooter = "~e~Set a name first.",
+                    DisabledFooter = "~e~Name your character first.",
                     ItemDescription = "Make various advanced adjustments to your character to fine-tune their appearance.",
                     Equipped = not rerolling and hasCreated,
                     ItemInfo1 = nameDisplay,
