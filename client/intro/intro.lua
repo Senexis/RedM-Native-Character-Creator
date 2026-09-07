@@ -2692,7 +2692,9 @@ SignalBus:on("item_focused", function(itemId)
 end)
 
 SignalBus:on("new_page", function(pageId)
-    if Character:IsMale() and pageId == UI_PAGE_ID.MAKEUP then
+    if pageId == UI_PAGE_ID.HAIR then
+        Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
+    elseif Character:IsMale() and pageId == UI_PAGE_ID.MAKEUP then
         Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
     else
         Intro:ClearFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
