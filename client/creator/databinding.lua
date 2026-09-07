@@ -569,6 +569,15 @@ function CreatorDatabinding:FilloutUiData()
         -- Chest Sag and Glutes are not available for male characters
         self:WriteBool(id.JAW__JAW_DEPTH__VISIBLE, Character:IsFemale())
         self:WriteBool(id.JAW__CHIN_DEPTH__VISIBLE, Character:IsFemale())
+
+        -- Hair options should just be enabled since they are remapped
+        self:WriteBool(id.ROOT__BEARD__VISIBLE, true)
+
+        -- Never show the facial hair hide buttons on advanced
+        self:WriteBool(id.ROOT__FACE__FACIAL_HAIR_WORN, false)
+
+        -- We're remapping hair match to toggling clothes
+        self:WriteBool(id.ROOT__HAIR_MATCH__ENABLED, true)
     end
 
     CreatorDatabinding:ApplyFromCharacter()
@@ -586,12 +595,9 @@ function CreatorDatabinding:ApplyFromCharacter()
         self:WriteInt(id.APPEARANCE__BODY_BUILD__VALUE, Character.bodyType)
         self:WriteInt(id.APPEARANCE__EYE_COLOR__VALUE, Character.eyeColor)
         self:WriteInt(id.APPEARANCE__TEETH__VALUE, Character.teeth)
-
         self:WriteInt(id.HAIR__HAIR_STYLE__VALUE, Character.hair)
         self:WriteInt(id.HAIR__BEARD_STYLE__VALUE, Character.beard)
-
         self:WriteInt(id.LIFESTYLE__EYE_REDNESS__VALUE, Character.weariness)
-
         self:WriteInt(id.WHISTLE__STYLE__VALUE, Character.whistleStyle)
         self:WriteInt(id.WHISTLE__PITCH__VALUE, Character.whistlePitch)
         self:WriteInt(id.WHISTLE__CLARITY__VALUE, Character.whistleClarity)
@@ -603,16 +609,16 @@ function CreatorDatabinding:ApplyFromCharacter()
     else
         self:WriteInt(id.APPEARANCE__BODY_BUILD__VALUE, Character.height)
         self:WriteInt(id.APPEARANCE__EYEBROWS__VALUE, Character.weight)
-
         self:WriteInt(id.MAKEUP__FOUNDATION__VALUE, Character.headDrawable)
         self:WriteInt(id.MAKEUP__BLUSHER__VALUE, Character.headAlbedo)
         self:WriteInt(id.MAKEUP__EYESHADOW__VALUE, Character.headNormal)
         self:WriteInt(id.MAKEUP__EYELINER__VALUE, Character.headMaterial)
         self:WriteInt(id.MAKEUP__LIPSTICK_COLOR__VALUE, Character.skintone)
-
+        self:WriteInt(id.HAIR__BEARD_COLOR__VALUE, Character.skintone)
         self:WriteInt(id.WHISTLE__STYLE__VALUE, Character.voice)
 
         CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.MAKEUP__LIPSTICK_COLOR, Character.skintone)
+        CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.HAIR__BEARD_COLOR, Character.skintone)
     end
 
     for expressionZone, databinding in pairs(PED_EXPRESSION_ZONE:Pluck("Databinding", "Id")) do

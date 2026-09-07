@@ -49,6 +49,10 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_HEAD_NORMAL_TOOLTIP", "Changing the shape may require adjustments to the chosen head's details.")
     AddTextEntry("NATIVE_CREATOR_HEAD_MATERIAL_TOOLTIP", "Facial overlays may override or reduce the effect of the head's finish.")
     AddTextEntry("NATIVE_CREATOR_HEAD_SKIN_TONE_TOOLTIP", "Changing your character's skin tone may make changes to the head's complexion.")
+    AddTextEntry("NATIVE_CREATOR_BODY_TOOLTIP", "Change your character's body.")
+    AddTextEntry("NATIVE_CREATOR_BODY_NORMAL_TOOLTIP", "Select your character's body details.")
+    AddTextEntry("NATIVE_CREATOR_BODY_MATERIAL_TOOLTIP", "Select your character's body finish.")
+    AddTextEntry("NATIVE_CREATOR_BODY_SKIN_TONE_TOOLTIP", "Select your character's skin tone.")
 
     AddTextEntry("NATIVE_CREATOR_PRESET_DEFAULT", "Standard")
 
@@ -128,6 +132,7 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_TORSO_HEADING", "TORSO")
     AddTextEntry("NATIVE_CREATOR_FACE_HEADING", "FACE")
     AddTextEntry("NATIVE_CREATOR_NECK_HEADING", "NECK")
+    AddTextEntry("NATIVE_CREATOR_BODY_HEADING", "BODY")
     AddTextEntry("NATIVE_CREATOR_LIFESTYLE_2_HEADING", "LIFESTYLE")
     AddTextEntry("NATIVE_CREATOR_HEAD_HEADING", "HEAD")
 
@@ -142,6 +147,8 @@ function CreatorRenderer:CreateNewText()
 end
 
 function CreatorRenderer:SetTextDefault()
+    AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Match Hair Colors")
+
     AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Whistle")
@@ -194,9 +201,17 @@ function CreatorRenderer:SetTextDefault()
     AddTextEntry("CHAR_CREATOR_EYESHADOW", "Eyeshadow")
     AddTextEntry("CHAR_CREATOR_EYELINER", "Eyeliner")
     AddTextEntry("CHAR_CREATOR_LIPSTICK_COLOR", "Lipstick Color")
+
+    AddTextEntry("CHAR_CREATOR_HAIR_LABEL", "Hair")
+
+    AddTextEntry("CHAR_CREATOR_HAIR_STYLE_LABEL", "Hair")
+    AddTextEntry("CHAR_CREATOR_BEARD_STYLE_LABEL", "Facial Hair")
+    AddTextEntry("CHAR_CREATOR_BEARD_COLOR_LABEL", "Facial Hair Color")
 end
 
 function CreatorRenderer:SetTextAdvanced()
+    AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Toggle Clothing")
+
     AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Voice")
@@ -249,6 +264,12 @@ function CreatorRenderer:SetTextAdvanced()
     AddTextEntry("CHAR_CREATOR_EYESHADOW", "Details")
     AddTextEntry("CHAR_CREATOR_EYELINER", "Finish")
     AddTextEntry("CHAR_CREATOR_LIPSTICK_COLOR", "Skin Tone")
+
+    AddTextEntry("CHAR_CREATOR_HAIR_LABEL", "Body")
+
+    AddTextEntry("CHAR_CREATOR_HAIR_STYLE_LABEL", "Details")
+    AddTextEntry("CHAR_CREATOR_BEARD_STYLE_LABEL", "Finish")
+    AddTextEntry("CHAR_CREATOR_BEARD_COLOR_LABEL", "Skin Tone")
 end
 
 function CreatorRenderer:UpdateHeaderLabel(header)
@@ -550,7 +571,11 @@ function CreatorRenderer:GetSwatchTextures(itemId)
     elseif itemId == UI_ITEM_ID.HAIR__HAIR_COLOR then
         entries = self.swatches.entries.HAIR_COLOR or {}
     elseif itemId == UI_ITEM_ID.HAIR__BEARD_COLOR then
-        entries = self.swatches.entries.BEARD_COLOR or {}
+        if Creator:IsDefaultMode() then
+            entries = self.swatches.entries.BEARD_COLOR or {}
+        else
+            entries = self.swatches.entries.SKIN_TONE or {}
+        end
     elseif itemId == UI_ITEM_ID.MAKEUP__EYESHADOW_COLOR then
         entries = self.swatches.entries.EYESHADOW_COLOR or {}
     elseif itemId == UI_ITEM_ID.MAKEUP__LIPSTICK_COLOR then

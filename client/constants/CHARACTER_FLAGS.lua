@@ -10,6 +10,8 @@ local CHARACTER_FLAGS = {
     UPDATE_HEIGHT   = 1 << 4,
     UPDATE_OVERLAYS = 1 << 5,
     OVERLAY_DIRTY   = 1 << 6,
+    BEARD_HIDDEN    = 1 << 7,
+    CLOTHING_HIDDEN = 1 << 8,
 }
 
 ---@type CHARACTER_FLAGS | EnumRegistry

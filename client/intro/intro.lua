@@ -35,6 +35,7 @@ local function GetDefaultData()
         sheriffPed = 0,
         presetPeds = {},
         presetData = {},
+        presetOutfits = {},
 
         selectedPreset = 0,
 
@@ -62,8 +63,6 @@ local function GetDefaultData()
         mugshotShowUi = true,
         photoPostfx = 0,
 
-        clothingLevel = CLOTHING_SETTING.DEFAULT,
-        savedOutfitItems = {},
     }
 end
 
@@ -107,9 +106,22 @@ function Intro:Start()
 end
 
 function Intro:Reroll(data)
-    if data then
-        self.rerollImportData = data
+    if DoesEntityExist(PlayerPedId()) ~= 1 then
+        self:Error("You may not use the Character Creator to edit your character at this time.", 1)
+        return
     end
+
+    if IsPedHuman(PlayerPedId()) ~= 1 then
+        self:Error("Character Creator does not support the character you're currently using.", 2)
+        return
+    end
+
+    if not data or type(data) ~= "table" then
+        self:Error("Failed to launch the Character Creator due to missing or invalid character data.", 3)
+        return
+    end
+
+    self.rerollImportData = data
     self:SetFlag(INTRO_FLAG.IS_REROLLING)
     self:SetState(INTRO_STATE.INIT)
 end
@@ -412,14 +424,6 @@ function Intro:MaintainCreateMocapPeds()
 end
 
 function Intro:MaintainCreatePedPresets()
-    if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
-        if IsPedModel(self.playerPedId, `MP_MALE`) then
-            ClonePedToTarget(self.playerPedId, self.presetPeds[EDITOR_CONFIG.MALE])
-        else
-            ClonePedToTarget(self.playerPedId, self.presetPeds[EDITOR_CONFIG.FEMALE])
-        end
-    end
-
     if not self:CreatePedPreset(EDITOR_CONFIG.MALE) then
         if GetGameTimer() - self.stateChangeTime > TIMEOUT_GENERIC then
             self:Error("Failed to create the male character. Please try again.", 0501)
@@ -439,12 +443,6 @@ function Intro:MaintainCreatePedPresets()
     end
 
     if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
-        if IsPedModel(self.playerPedId, `MP_MALE`) then
-            ClonePedToTarget(self.playerPedId, self.presetPeds[EDITOR_CONFIG.MALE])
-        else
-            ClonePedToTarget(self.playerPedId, self.presetPeds[EDITOR_CONFIG.FEMALE])
-        end
-
         self:SetState(INTRO_STATE.INIT_CAM)
     else
         self:SetState(INTRO_STATE.APPLY_CLOTHES)
@@ -467,23 +465,15 @@ function Intro:MaintainApplyClothes()
 
     local maleOutfitIndex = GetRandomIntInRange(1, #maleOutfits + 1)
     local maleOutfitClothes = maleOutfits[maleOutfitIndex] or {}
+    self.presetOutfits[EDITOR_CONFIG.MALE] = maleOutfitClothes
 
-    for _, item in ipairs(maleOutfitClothes) do
-        ApplyShopItemToPed(malePed, item, false, true, false)
-    end
-
-    self.savedOutfitItems[EDITOR_CONFIG.MALE] = maleOutfitClothes
-    Utils:Debug("MAINTAIN_APPLY_CLOTHES - applied clothes to male ped")
+    Utils:Debug("MAINTAIN_APPLY_CLOTHES - generated clothes for male ped")
 
     local femaleOutfitIndex = GetRandomIntInRange(1, #femaleOutfits + 1)
     local femaleOutfitClothes = femaleOutfits[femaleOutfitIndex] or {}
+    self.presetOutfits[EDITOR_CONFIG.FEMALE] = femaleOutfitClothes
 
-    for _, item in ipairs(femaleOutfitClothes) do
-        ApplyShopItemToPed(femalePed, item, false, true, false)
-    end
-
-    self.savedOutfitItems[EDITOR_CONFIG.FEMALE] = femaleOutfitClothes
-    Utils:Debug("MAINTAIN_APPLY_CLOTHES - applied clothes to female ped")
+    Utils:Debug("MAINTAIN_APPLY_CLOTHES - generated clothes for female ped")
 
     self:SetState(INTRO_STATE.APPLY_RANDOMIZATION)
 end
@@ -521,9 +511,14 @@ function Intro:MaintainApplyRandomization()
         Character:SetPed(malePed)
         Character:RandomizeAll()
 
-        self.presetData[EDITOR_CONFIG.MALE] = Character:Export()
-        Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - male character randomized")
+        Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - randomized male character preset")
 
+        local maleOutfit = self.presetOutfits[EDITOR_CONFIG.MALE]
+        Character:ApplyClothingItems(maleOutfit, true)
+
+        Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - applied male character outfit")
+
+        self.presetData[EDITOR_CONFIG.MALE] = Character:Export()
         self:SetFlag(INTRO_FLAG.MALE_PED_RANDOMIZED)
 
         return
@@ -545,9 +540,14 @@ function Intro:MaintainApplyRandomization()
         Character:SetPed(femalePed)
         Character:RandomizeAll()
 
-        self.presetData[EDITOR_CONFIG.FEMALE] = Character:Export()
-        Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - female character randomized")
+        Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - randomized female character preset")
 
+        local femaleOutfit = self.presetOutfits[EDITOR_CONFIG.FEMALE]
+        Character:ApplyClothingItems(femaleOutfit, true)
+
+        Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - applied female character outfit")
+
+        self.presetData[EDITOR_CONFIG.FEMALE] = Character:Export()
         self:SetFlag(INTRO_FLAG.FEMALE_PED_RANDOMIZED)
 
         return
@@ -669,9 +669,30 @@ function Intro:MaintainSelectGender()
     if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
         Utils:Debug("MAINTAIN_SELECT_GENDER - REROLL - Skipping this because you are in a reroll.. ")
 
-        self.selectedPreset = EDITOR_CONFIG.MALE
-        if IsPedModel(self.playerPedId, `MP_FEMALE`) then
-            self.selectedPreset = EDITOR_CONFIG.FEMALE
+        if IsPedHuman(self.playerPedId) == 1 then
+            if IsPedMale(self.playerPedId) == 1 then
+                self.selectedPreset = EDITOR_CONFIG.MALE
+            else
+                self.selectedPreset = EDITOR_CONFIG.FEMALE
+            end
+        else
+            self:Error("Character Creator does not support the character you're currently using.", 1001)
+            return
+        end
+
+        if GetGameTimer() - self.stateChangeTime > TIMEOUT_GENERIC then
+            self:Error("Failed to load character data.", 1002)
+            return
+        end
+
+        if not CreatorXml:Initialize() then
+            Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator xml to initialize")
+            return
+        end
+
+        if not CreatorPresets:Init(self.selectedPreset) then
+            Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator presets to initialize")
+            return
         end
 
         Utils:Debug("MAINTAIN_SELECT_GENDER - REROLL - character editor started, transition to customize")
@@ -1604,11 +1625,8 @@ function Intro:SetupEditor()
     Character:Reset()
     Character:SetPed(self.presetPeds[self.selectedPreset])
 
-    -- Reset clothing level so each new editing session starts fully clothed.
-    self.clothingLevel = CLOTHING_SETTING.DEFAULT
-
     if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) and self.rerollImportData then
-        Character:Import(self.rerollImportData, true)
+        Character:Import(self.rerollImportData, false)
         self.presetData[self.selectedPreset] = self.rerollImportData
         self.rerollImportData = nil
     else
@@ -1617,21 +1635,6 @@ function Intro:SetupEditor()
     end
 
     Creator:Start()
-end
-
-function Intro:SetClothingLevel(level)
-    local presetPed = self.presetPeds[self.selectedPreset] or 0
-    if presetPed == 0 or DoesEntityExist(presetPed) ~= 1 then return end
-
-    self.clothingLevel = level
-
-    -- Always restore to the original state first to get a clean baseline,
-    -- then strip the appropriate layers for the chosen level.
-    Character:ApplyDefaultClothing()
-
-    if level ~= CLOTHING_SETTING.DEFAULT then
-        Character:ApplyClothingLevel(level)
-    end
 end
 
 function Intro:SetAnimationLevel(level)
@@ -2689,9 +2692,7 @@ SignalBus:on("item_focused", function(itemId)
 end)
 
 SignalBus:on("new_page", function(pageId)
-    if pageId == UI_PAGE_ID.HAIR then
-        Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
-    elseif Character:IsMale() and pageId == UI_PAGE_ID.MAKEUP then
+    if Character:IsMale() and pageId == UI_PAGE_ID.MAKEUP then
         Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
     else
         Intro:ClearFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)

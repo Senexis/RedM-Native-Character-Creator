@@ -350,6 +350,7 @@ UI_ITEM_ID:AddModeAttribute("Camera", {
         [UI_ITEM_IDS.APPEARANCE__JAW]        = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
         [UI_ITEM_IDS.APPEARANCE__EARS]       = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_ITEM_IDS.APPEARANCE__CHEEKS]     = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
+        -- [UI_ITEM_IDS.APPEARANCE__HAIR]       = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
         [UI_ITEM_IDS.APPEARANCE__LIFESTYLE]  = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_ITEM_IDS.APPEARANCE__MAKEUP]     = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
     }
@@ -441,6 +442,7 @@ UI_ITEM_ID:AddModeAttribute("Ui", {
         [UI_ITEM_IDS.APPEARANCE__CHEEKS]       = { Footer = "CHAR_CREATOR_GENERAL_CUSTOMIZATION_TOOLTIP", Image = "character_creator_cranial_proportions" },
         [UI_ITEM_IDS.APPEARANCE__LIFESTYLE]    = { Footer = "CHAR_CREATOR_TOOLTIP_LIFESTYLE", Image = "character_creator_lifestyle" },
         [UI_ITEM_IDS.APPEARANCE__MAKEUP]       = { Footer = "NATIVE_CREATOR_HEAD_TOOLTIP", Image = "character_creator_head" },
+        -- [UI_ITEM_IDS.APPEARANCE__HAIR]         = { Footer = "NATIVE_CREATOR_BODY_TOOLTIP", Image = "character_creator_build" },
         [UI_ITEM_IDS.APPEARANCE__BODY_BUILD]   = { Footer = "NATIVE_CREATOR_HEIGHT_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.EYES__BROW_SHAPE]         = { Footer = "NATIVE_CREATOR_SHOULDERS_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.EYES__BROW_DEPTH]         = { Footer = "NATIVE_CREATOR_SHOULDERS_TOOLTIP", Image = nil },
@@ -470,6 +472,9 @@ UI_ITEM_ID:AddModeAttribute("Ui", {
         [UI_ITEM_IDS.MAKEUP__EYESHADOW]        = { Footer = "NATIVE_CREATOR_HEAD_NORMAL_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.MAKEUP__EYELINER]         = { Footer = "NATIVE_CREATOR_HEAD_MATERIAL_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.MAKEUP__LIPSTICK_COLOR]   = { Footer = "NATIVE_CREATOR_HEAD_SKIN_TONE_TOOLTIP", Image = nil },
+        [UI_ITEM_IDS.HAIR__HAIR_STYLE]         = { Footer = "NATIVE_CREATOR_BODY_NORMAL_TOOLTIP", Image = nil },
+        [UI_ITEM_IDS.HAIR__BEARD_STYLE]        = { Footer = "NATIVE_CREATOR_BODY_MATERIAL_TOOLTIP", Image = nil },
+        [UI_ITEM_IDS.HAIR__BEARD_COLOR]        = { Footer = "NATIVE_CREATOR_BODY_SKIN_TONE_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.WHISTLE__STYLE]           = { Footer = "NATIVE_CREATOR_VOICE_STYLE_TOOLTIP", Image = nil },
     }
 })
@@ -501,6 +506,7 @@ UI_ITEM_ID:AddModeAttribute("Action", {
         [UI_ITEM_IDS.MAKEUP__EYESHADOW]      = CHARACTER_ACTION.APPLY_HEAD_NORMAL,
         [UI_ITEM_IDS.MAKEUP__EYELINER]       = CHARACTER_ACTION.APPLY_HEAD_MATERIAL,
         [UI_ITEM_IDS.MAKEUP__LIPSTICK_COLOR] = CHARACTER_ACTION.APPLY_SKINTONE,
+        [UI_ITEM_IDS.HAIR__BEARD_COLOR]      = CHARACTER_ACTION.APPLY_SKINTONE,
         [UI_ITEM_IDS.WHISTLE__STYLE]         = CHARACTER_ACTION.APPLY_VOICE,
     }
 })
@@ -625,6 +631,7 @@ UI_ITEM_ID:AddModeAttribute("SwatchLabel", {
         [UI_ITEM_IDS.MAKEUP__LIPSTICK_COLOR]  = "CHAR_CREATOR_LIPSTICK_COLOR",
     },
     [CREATOR_MODE.ADVANCED] = {
+        [UI_ITEM_IDS.HAIR__BEARD_COLOR]      = "CHAR_CREATOR_SKIN_TONE",
         [UI_ITEM_IDS.MAKEUP__LIPSTICK_COLOR] = "CHAR_CREATOR_SKIN_TONE",
     }
 })

@@ -6,6 +6,7 @@ local function GetDefaultData()
         -- Private
         _flags = 0,
         _ped = 0,
+        _clothingLevel = CHARACTER_CLOTHING_LEVEL.DEFAULT,
 
         -- Exported
         name = "",
@@ -14,6 +15,8 @@ local function GetDefaultData()
         weight = CreatorConfig.DefaultWeight or 10,
         weariness = CreatorConfig.MinWeariness or 0.0,
         voice = 0,
+
+        clothingItems = {},
 
         whistleStyle = 0,
         whistlePitch = 50,
@@ -177,49 +180,63 @@ function Character:Import(data, skipApply)
     end
 
     local MAPPER <const> = {
-        ["version"] = true,
-        ["pedType"] = true,
-        ["pedModel"] = true,
-        ["ignoreHeritageLimits"] = true,
-        ["ignoreOverlayLimits"] = true,
-        ["name"] = self.ApplyName,
-        ["age"] = self.ApplyAgeAlpha,
-        ["height"] = self.ApplyHeight,
-        ["weight"] = self.ApplyWeight,
-        ["weariness"] = self.ApplyWeariness,
-        ["voice"] = self.ApplyVoice,
-        ["whistleStyle"] = self.ApplyWhistleStyle,
-        ["whistlePitch"] = self.ApplyWhistlePitch,
-        ["whistleClarity"] = self.ApplyWhistleClarity,
-        ["heritage"] = self.ApplyHeritage,
-        ["skintone"] = self.ApplySkintone,
-        ["bodyType"] = self.ApplyBody,
-        ["eyeColor"] = self.ApplyEyeColor,
-        ["teeth"] = self.ApplyTeeth,
-        ["headDrawable"] = self.ApplyHeadDrawable,
-        ["headAlbedo"] = self.ApplyHeadAlbedo,
-        ["headNormal"] = self.ApplyHeadNormal,
-        ["headMaterial"] = self.ApplyHeadMaterial,
-        ["hair"] = self.ApplyHairStyle,
-        ["hairColor"] = self.ApplyHairColor,
-        ["beard"] = self.ApplyBeardStyle,
-        ["beardColor"] = self.ApplyBeardColor,
-        ["presets"] = true,
-        ["expressions"] = true,
-        ["layers"] = true,
-        ["layerColors"] = true,
+        { "version",              true },
+        { "pedType",              true },
+        { "pedModel",             true },
+        { "ignoreHeritageLimits", true },
+        { "ignoreOverlayLimits",  true },
+        { "heritage",             self.ApplyHeritage },
+        { "name",                 self.ApplyName },
+        { "age",                  self.ApplyAgeAlpha },
+        { "height",               self.ApplyHeight },
+        { "weight",               self.ApplyWeight },
+        { "weariness",            self.ApplyWeariness },
+        { "voice",                self.ApplyVoice },
+        { "clothingItems",        self.ApplyClothingItems },
+        { "whistleStyle",         self.ApplyWhistleStyle },
+        { "whistlePitch",         self.ApplyWhistlePitch },
+        { "whistleClarity",       self.ApplyWhistleClarity },
+        { "skintone",             self.ApplySkintone },
+        { "bodyType",             self.ApplyBody },
+        { "eyeColor",             self.ApplyEyeColor },
+        { "teeth",                self.ApplyTeeth },
+        { "headDrawable",         self.ApplyHeadDrawable },
+        { "headAlbedo",           self.ApplyHeadAlbedo },
+        { "headNormal",           self.ApplyHeadNormal },
+        { "headMaterial",         self.ApplyHeadMaterial },
+        { "hair",                 self.ApplyHairStyle },
+        { "hairColor",            self.ApplyHairColor },
+        { "beard",                self.ApplyBeardStyle },
+        { "beardColor",           self.ApplyBeardColor },
+        { "presets",              true },
+        { "expressions",          true },
+        { "layers",               true },
+        { "layerColors",          true },
     }
 
+    local MAPPER_KEYS = {}
+    for _, config in ipairs(MAPPER) do
+        local key = config[1]
+        MAPPER_KEYS[key] = true
+    end
+
     for key, _ in pairs(data) do
-        if not MAPPER[key] then
+        if not MAPPER_KEYS[key] then
             Utils:Warn("Unknown character data key", tostring(key), "skipping...")
             data[key] = nil
         end
     end
 
-    for key, func in pairs(MAPPER) do
+    for _, config in ipairs(MAPPER) do
+        local key = config[1]
+        local func = config[2]
         local value = data[key]
-        Utils:Debug("Applying character data for key", tostring(key), "with value", type(value), tostring(value))
+
+        if type(value) == "table" then
+            Utils:Debug("Applying character data for key", tostring(key), "with value", type(value), json.encode(value))
+        else
+            Utils:Debug("Applying character data for key", tostring(key), "with value", type(value), tostring(value))
+        end
 
         if key == "version" or key == "pedType" or key == "pedModel" then
             -- These are validation values, do nothing
@@ -305,7 +322,7 @@ function Character:Import(data, skipApply)
                     end
                 end
             else
-                Utils:Warn("Invalid layerColors format. Expected a table, got", type(value), tostring(value))
+                Utils:Warn("Invalid layerColors format. Expected a table, got", type(value))
             end
         elseif type(func) == "function" then
             func(self, value)
@@ -465,7 +482,7 @@ function Character:IsMale()
     end
 
     local ped = self:GetPed()
-    return IsPedMale(ped)
+    return IsPedMale(ped) == 1
 end
 
 function Character:IsFemale()
@@ -608,28 +625,29 @@ function Character:RequestUpdate()
 end
 
 function Character:ApplyAll()
-    self:ApplyHeritage()
-    self:ApplySkintone()
+    self:ApplyClothingLevel(nil, true, true)
 
-    self:ApplyEyeColor()
-    self:ApplyTeeth()
-    self:ApplyHairStyle()
-    self:ApplyHairColor()
-    self:ApplyBeardStyle()
-    self:ApplyBeardColor()
-    self:ApplyWeariness()
+    self:ApplyHeritage(nil)
+    self:ApplySkintone(nil, true)
 
-    self:ApplyWhistleStyle()
-    self:ApplyWhistlePitch()
-    self:ApplyWhistleClarity()
+    self:ApplyEyeColor(nil)
+    self:ApplyTeeth(nil)
+    self:ApplyHairStyle(nil)
+    self:ApplyHairColor(nil, true)
+    self:ApplyBeardStyle(nil)
+    self:ApplyBeardColor(nil, true)
+    self:ApplyWeariness(nil)
+
+    self:ApplyWhistleStyle(nil)
+    self:ApplyWhistlePitch(nil)
+    self:ApplyWhistleClarity(nil)
 
     -- Advanced
-    self:ApplyHeight()
-    self:ApplyWeight()
-    self:ApplyVoice()
+    self:ApplyHeight(nil, true)
+    self:ApplyWeight(nil)
+    self:ApplyVoice(nil)
 
     self:ApplyOverlays(true)
-    self:ApplyBodyItems(nil, true)
 end
 
 function Character:ApplyName(value)
@@ -1142,6 +1160,8 @@ function Character:ApplyHairColor(value, apply)
     if apply then
         CharacterOverlay:RequestUpdate()
     end
+
+    SignalBus:emit("hair_color_applied", self.hairColor)
 end
 
 function Character:WearingHair()
@@ -1254,6 +1274,18 @@ function Character:ApplyBeardColor(value, apply)
 
     if apply then
         CharacterOverlay:RequestUpdate()
+    end
+
+    SignalBus:emit("beard_color_applied", self.beardColor)
+end
+
+function Character:MatchHairColor(matchBeard, apply)
+    if self:IsFemale() then return end
+
+    if matchBeard then
+        self:ApplyHairColor(self.beardColor, apply)
+    else
+        self:ApplyBeardColor(self.hairColor, apply)
     end
 end
 
@@ -1646,6 +1678,29 @@ function Character:RandomizeBeardColor()
     SignalBus:emit("beard_color_randomized", self.beardColor)
 end
 
+function Character:ShowBeard()
+    if self:IsFemale() then return end
+    if not self:IsFlagSet(CHARACTER_FLAG.BEARD_HIDDEN) then return end
+    Character:ApplyBeard()
+    self:ClearFlag(CHARACTER_FLAG.BEARD_HIDDEN)
+end
+
+function Character:HideBeard()
+    if self:IsFemale() then return end
+    if self:IsFlagSet(CHARACTER_FLAG.BEARD_HIDDEN) then return end
+    Character:RemoveBeard()
+    self:SetFlag(CHARACTER_FLAG.BEARD_HIDDEN)
+end
+
+function Character:ToggleBeard()
+    if self:IsFemale() then return end
+    if self:IsFlagSet(CHARACTER_FLAG.BEARD_HIDDEN) then
+        self:ShowBeard()
+    else
+        self:HideBeard()
+    end
+end
+
 function Character:RandomizeWeariness()
     local weariness = GetRandomFloatInRange(0.0, 1.0)
     weariness = math.floor(weariness * 10000 + 0.5) / 10000
@@ -1882,55 +1937,88 @@ function Character:RandomizeVoice(preview)
     if preview then self:Vocalize() end
 end
 
-function Character:ApplyClothingLevel(level)
+function Character:ApplyClothingItems(outfit, apply)
+    Utils:Debug("SET_OUTFIT - setting outfit to", json.encode(outfit))
+    self.clothingItems = outfit or {}
+
+    if apply then
+        self:ApplyClothingLevel(nil, true, true)
+    end
+end
+
+function Character:ApplyClothingLevel(value, force, apply)
+    if not force then
+        if value ~= nil and value == self._clothingLevel then
+            Utils:Debug("APPLY_CLOTHING_LEVEL - same clothing level", CHARACTER_CLOTHING_LEVEL:ToString(value), "skipping")
+            return
+        end
+
+        if value ~= nil then
+            Utils:Debug("APPLY_CLOTHING_LEVEL - updating clothing level from", CHARACTER_CLOTHING_LEVEL:ToString(self._clothingLevel), "to", CHARACTER_CLOTHING_LEVEL:ToString(value))
+            self._clothingLevel = value
+        end
+    end
+
+    -- Exit early because we don't need to actually do anything if not applying
+    if not apply then return end
+
+    -- Always restore to the original state first to get a clean baseline
+    self:ApplyDefaultClothing()
+
     local ped = self:GetPed()
 
     for _, tag in ipairs(COMPONENT_TAG:Values()) do
         local hiddenTags = COMPONENT_TAG:GetHiddenTags(tag)
         if hiddenTags then
             for _, setting in ipairs(hiddenTags) do
-                if setting == level then
+                if setting == self._clothingLevel then
                     local hash = COMPONENT_TAG:GetHash(tag)
-                    if hash then
-                        RemoveTagFromMetaPed(ped, hash, 0)
-                    end
+                    if hash then RemoveTagFromMetaPed(ped, hash, 0) end
                     break
                 end
             end
         end
     end
 
-    self:ApplyBodyItems()
     self:RequestUpdate()
+
+    Utils:Debug("APPLY_CLOTHING_LEVEL - finished applying clothing level", CHARACTER_CLOTHING_LEVEL:ToString(self._clothingLevel))
 end
 
 function Character:ApplyDefaultClothing()
-    if Intro:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
-        if IsPedModel(Intro.playerPedId, `MP_MALE`) == 1 then
-            ClonePedToTarget(Intro.playerPedId, Intro.presetPeds[EDITOR_CONFIG.MALE])
-        else
-            ClonePedToTarget(Intro.playerPedId, Intro.presetPeds[EDITOR_CONFIG.FEMALE])
-        end
-    else
-        local ped = self:GetPed()
+    local ped = self:GetPed()
 
-        -- For the intro case the exact outfit items applied during MaintainApplyClothes
-        -- were saved in savedOutfitItems, so we strip all clothing and re-apply them.
-        for _, tag in ipairs(COMPONENT_TAG:Values()) do
-            if COMPONENT_TAG:GetHiddenTags(tag) then
-                local hash = COMPONENT_TAG:GetHash(tag)
-                if hash then RemoveTagFromMetaPed(ped, hash, 0) end
-            end
-        end
-
-        local items = Intro.savedOutfitItems[Intro.selectedPreset] or {}
-        for _, item in ipairs(items) do
-            ApplyShopItemToPed(ped, item, false, true, false)
+    for _, tag in ipairs(COMPONENT_TAG:Values()) do
+        if COMPONENT_TAG:GetHiddenTags(tag) then
+            local hash = COMPONENT_TAG:GetHash(tag)
+            if hash then RemoveTagFromMetaPed(ped, hash, 0) end
         end
     end
 
-    self:ApplyAll()
-    self:RequestUpdate()
+    for _, item in ipairs(self.clothingItems) do
+        Utils:Debug("APPLY_DEFAULT_CLOTHING - applying outfit item", tostring(item))
+        ApplyShopItemToPed(ped, item, false, true, false)
+    end
+end
+
+function Character:ShowClothing()
+    if not self:IsFlagSet(CHARACTER_FLAG.CLOTHING_HIDDEN) then return end
+    self:ApplyClothingLevel(self._clothingLevel, true, true)
+    self:ClearFlag(CHARACTER_FLAG.CLOTHING_HIDDEN)
+end
+
+function Character:HideClothing()
+    if self:IsFlagSet(CHARACTER_FLAG.CLOTHING_HIDDEN) then return end
+    self:ApplyClothingLevel(CHARACTER_CLOTHING_LEVEL.NUDE, true, true)
+    self:SetFlag(CHARACTER_FLAG.CLOTHING_HIDDEN)
+end
+
+function Character:ToggleClothing()
+    if self:IsFlagSet(CHARACTER_FLAG.CLOTHING_HIDDEN) then
+        self:ShowClothing()
+    else
+        self:HideClothing()
+    end
 end
 
 SignalBus:on("grid_x_changed", function(itemId, value)
@@ -2033,13 +2121,32 @@ SignalBus:on("adjustable_changed", function(itemId, value)
     end
 end)
 
+SignalBus:on("new_page", function()
+    Character:ShowBeard()
+    Character:ShowClothing()
+end)
+
 SignalBus:on("action_selected", function(actionId, itemId)
     local action = UI_ACTION_ID:GetAction(actionId)
     if not action then
         return
     end
 
-    if action == CHARACTER_ACTION.PLAY_WHISTLE_SOUND then
+    if action == CHARACTER_ACTION.MATCH_HAIR_COLOR then
+        if itemId == UI_ITEM_ID.HAIR__BEARD_COLOR then
+            Character:MatchHairColor(true, true)
+        else
+            Character:MatchHairColor(false, true)
+        end
+    elseif action == CHARACTER_ACTION.TOGGLE_BEARD then
+        Character:ToggleBeard()
+    elseif action == CHARACTER_ACTION.SHOW_BEARD then
+        Character:ShowBeard()
+    elseif action == CHARACTER_ACTION.TOGGLE_CLOTHING then
+        Character:ToggleClothing()
+    elseif action == CHARACTER_ACTION.SHOW_CLOTHING then
+        Character:ShowClothing()
+    elseif action == CHARACTER_ACTION.PLAY_WHISTLE_SOUND then
         Character:Whistle()
     elseif action == CHARACTER_ACTION.RANDOMIZE_ITEM then
         if itemId == UI_ITEM_ID.APPEARANCE__RANDOMIZE then

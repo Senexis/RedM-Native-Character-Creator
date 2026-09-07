@@ -5,17 +5,8 @@ CreatorEvents = {
     isZooming = false,
     currentGridXValue = 0.0,
     currentGridYValue = 0.0,
-    shouldHideBeard = false,
     pageCamera = nil,
 }
-
-function CreatorEvents:OnToggleBeard()
-    if self.shouldHideBeard == true then
-        Character:RemoveBeard()
-    else
-        Character:ApplyBeard()
-    end
-end
 
 function CreatorEvents:Maintain()
     -- Zooming isn't handled through events anymore
@@ -187,37 +178,13 @@ function CreatorEvents:OnItemSelected(parameter)
     if not actionId or actionId == UI_ACTION_ID.INVALID then return end
 
     local itemId = UI_ITEM_ID:GetIdFromHash(self.currentFocusedItem)
+    if not itemId or itemId == UI_ITEM_ID.INVALID then return end
 
-    if actionId == UI_ACTION_ID.TOGGLE_FACIAL_HAIR then
-        if self.shouldHideBeard == true then
-            self.shouldHideBeard = false
-        else
-            self.shouldHideBeard = true
-        end
-        self:OnToggleBeard()
-    elseif actionId == UI_ACTION_ID.RESET_FACIAL_HAIR then
-        self.shouldHideBeard = false
-        self:OnToggleBeard()
-    elseif actionId == UI_ACTION_ID.MATCH_HAIR_COLOR then
-        if itemId == UI_ITEM_ID.HAIR__BEARD_COLOR then
-            local beardColor = Character.beardColor
-            Character:ApplyHairColor(beardColor)
+    -- Handled in the state loop, no need to emit anything
+    if actionId == UI_ACTION_ID.ROTATE then return end
 
-            local value = CreatorDatabinding:ReadInt(DATABINDING_ID.HAIR__BEARD_COLOR__VALUE)
-            CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.HAIR__HAIR_COLOR, value)
-        else
-            local hairColor = Character.hairColor
-            Character:ApplyBeardColor(hairColor)
-
-            local value = CreatorDatabinding:ReadInt(DATABINDING_ID.HAIR__HAIR_COLOR__VALUE)
-            CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.HAIR__BEARD_COLOR, value)
-        end
-
-        CharacterOverlay:RequestUpdate()
-    elseif actionId == UI_ACTION_ID.CONFIRM_EDIT or actionId == UI_ACTION_ID.CANCEL_EDIT then
+    if actionId == UI_ACTION_ID.CONFIRM_EDIT or actionId == UI_ACTION_ID.CANCEL_EDIT then
         Creator:CloseEditor()
-    elseif actionId == UI_ACTION_ID.ROTATE then
-        -- Handled in the state loop, no need to emit anything
     else
         SignalBus:emit("action_selected", actionId, itemId)
     end
@@ -240,11 +207,6 @@ function CreatorEvents:OnNewPage(parameter)
     CreatorRenderer:UpdateHeaderLabel(uiData.Header)
     CreatorRenderer:UpdateSubheaderOverride(pageId)
     CreatorRenderer:UpdateSubheaderLabel(uiData.Subheader)
-
-    if self.shouldHideBeard == true then
-        self.shouldHideBeard = false
-        self:OnToggleBeard()
-    end
 
     local camera = UI_PAGE_ID:GetCamera(pageId)
     self.pageCamera = camera or { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE }
@@ -281,6 +243,7 @@ SignalBus:on("skintone_changed", function()
 end)
 
 SignalBus:on("hair_applied", function()
+    if not Creator:IsDefaultMode() then return end
     if Character:IsFemale() then
         CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__HAIR_MATCH__ENABLED, false)
     else
@@ -289,6 +252,7 @@ SignalBus:on("hair_applied", function()
 end)
 
 SignalBus:on("hair_removed", function()
+    if not Creator:IsDefaultMode() then return end
     if Character:IsFemale() then
         CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__HAIR_MATCH__ENABLED, false)
     else
@@ -297,6 +261,7 @@ SignalBus:on("hair_removed", function()
 end)
 
 SignalBus:on("beard_applied", function()
+    if not Creator:IsDefaultMode() then return end
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__HAIR_MATCH__ENABLED, true)
     CreatorDatabinding:WriteBool(DATABINDING_ID.HAIR__BEARD_COLOR__ENABLED, true)
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__FACE__FACIAL_HAIR_HIDDEN, false)
@@ -304,10 +269,23 @@ SignalBus:on("beard_applied", function()
 end)
 
 SignalBus:on("beard_removed", function()
+    if not Creator:IsDefaultMode() then return end
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__HAIR_MATCH__ENABLED, Character:WearingHair())
     CreatorDatabinding:WriteBool(DATABINDING_ID.HAIR__BEARD_COLOR__ENABLED, false)
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__FACE__FACIAL_HAIR_HIDDEN, false)
     CreatorDatabinding:WriteBool(DATABINDING_ID.ROOT__FACE__FACIAL_HAIR_WORN, false)
+end)
+
+SignalBus:on("hair_color_applied", function(value)
+    if not Creator:IsDefaultMode() then return end
+    CreatorDatabinding:WriteInt(DATABINDING_ID.HAIR__HAIR_COLOR__VALUE, value)
+    CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.HAIR__HAIR_COLOR, value)
+end)
+
+SignalBus:on("beard_color_applied", function(value)
+    if not Creator:IsDefaultMode() then return end
+    CreatorDatabinding:WriteInt(DATABINDING_ID.HAIR__BEARD_COLOR__VALUE, value)
+    CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.HAIR__BEARD_COLOR, value)
 end)
 
 SignalBus:on("overlay_applied", function(layer)
@@ -354,16 +332,19 @@ SignalBus:on("overlay_removed", function(layer)
 end)
 
 SignalBus:on("whistle_randomized", function(style, pitch, clarity)
+    if not Creator:IsDefaultMode() then return end
     CreatorDatabinding:WriteInt(DATABINDING_ID.WHISTLE__STYLE__VALUE, style)
     CreatorDatabinding:WriteInt(DATABINDING_ID.WHISTLE__PITCH__VALUE, pitch)
     CreatorDatabinding:WriteInt(DATABINDING_ID.WHISTLE__CLARITY__VALUE, clarity)
 end)
 
 SignalBus:on("age_randomized", function(age)
+    if not Creator:IsDefaultMode() then return end
     CreatorDatabinding:WriteInt(DATABINDING_ID.APPEARANCE__AGE__VALUE, age)
 end)
 
 SignalBus:on("custom_head_randomized", function(drawable, albedo, normal, material)
+    if not Creator:IsAdvancedMode() then return end
     CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__FOUNDATION__VALUE, drawable)
     CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__BLUSHER__VALUE, albedo)
     CreatorDatabinding:WriteInt(DATABINDING_ID.MAKEUP__EYESHADOW__VALUE, normal)
@@ -371,6 +352,7 @@ SignalBus:on("custom_head_randomized", function(drawable, albedo, normal, materi
 end)
 
 SignalBus:on("voice_randomized", function(style)
+    if not Creator:IsAdvancedMode() then return end
     CreatorDatabinding:WriteInt(DATABINDING_ID.WHISTLE__STYLE__VALUE, style)
 end)
 

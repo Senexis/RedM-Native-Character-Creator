@@ -108,6 +108,7 @@ function CreatorMenu:GetMenu()
 
     local defaultLabel = rerolling and "Edit Character" or "Create Character"
     local defaultDescription = rerolling and "Make changes to your character's appearance." or "Create a new character to play as. If you like the starting appearance, you may choose to skip."
+    local confirmDisabled = rerolling and "~e~You have not made changes to your character." or "~e~Create a character first."
     local exitLabel = rerolling and "Exit" or "Back"
 
     local skipPrompt = {
@@ -141,7 +142,7 @@ function CreatorMenu:GetMenu()
                 Label = "Name",
                 Footer = "Press ~INPUT_GAME_MENU_RS~ to import a character.",
                 Data = {
-                    ItemDescription = "Name your character. You may choose a randomized name to get started.",
+                    ItemDescription = "Name your character. You may choose a randomized name to get inspired.",
                     Equipped = not rerolling and hasName,
                     ItemInfo1 = nameDisplay,
                 },
@@ -296,19 +297,19 @@ function CreatorMenu:GetMenu()
                         Data = {
                             ItemDescription = "Toggle character creation clothing.",
                             StepperOptions = {
-                                [CLOTHING_SETTING.DEFAULT] = "Default",
-                                [CLOTHING_SETTING.HATLESS] = "Hatless",
-                                [CLOTHING_SETTING.TOPLESS] = "Topless",
-                                [CLOTHING_SETTING.NUDE]    = "Nude"
+                                [CHARACTER_CLOTHING_LEVEL.DEFAULT] = "Default",
+                                [CHARACTER_CLOTHING_LEVEL.HATLESS] = "Hatless",
+                                [CHARACTER_CLOTHING_LEVEL.TOPLESS] = "Topless",
+                                [CHARACTER_CLOTHING_LEVEL.NUDE]    = "Nude"
                             },
-                            StepperValue = self.settingClothing or CLOTHING_SETTING.DEFAULT,
+                            StepperValue = self.settingClothing or CHARACTER_CLOTHING_LEVEL.DEFAULT,
                             StepperVisible = true,
                         },
                         Prompts = {
                             Adjust = {
                                 Action = function(event)
-                                    local value = event.Data.StepperValue or CLOTHING_SETTING.DEFAULT
-                                    Intro:SetClothingLevel(value)
+                                    local value = event.Data.StepperValue or CHARACTER_CLOTHING_LEVEL.DEFAULT
+                                    Character:ApplyClothingLevel(value, false, true)
                                     self.settingClothing = value
                                 end,
                             },
@@ -423,7 +424,7 @@ function CreatorMenu:GetMenu()
                 Disabled = not hasName or not hasCreated,
                 Footer = "Press ~INPUT_GAME_MENU_RS~ to export your character.",
                 Data = {
-                    DisabledFooter = "~e~Create a character first.",
+                    DisabledFooter = confirmDisabled,
                     ItemDescription = "Take a picture of your character and confirm your appearance.",
                     ItemInfo1 = nameDisplay,
                 },

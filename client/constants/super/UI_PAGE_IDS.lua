@@ -105,6 +105,7 @@ UI_PAGE_ID:AddModeAttribute("Camera", {
         [UI_PAGE_IDS.JAW]        = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
         [UI_PAGE_IDS.EARS]       = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
         [UI_PAGE_IDS.CHEEKS]     = { Default = EDITOR_VIEW.FACE, Zoomed = EDITOR_VIEW.FACE_CLOSE },
+        [UI_PAGE_IDS.HAIR]       = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
         [UI_PAGE_IDS.LIFESTYLE]  = { Default = EDITOR_VIEW.FACE_CLOSE, Zoomed = EDITOR_VIEW.INVALID },
         [UI_PAGE_IDS.MAKEUP]     = { Default = EDITOR_VIEW.FACE_CLOSE, Zoomed = EDITOR_VIEW.INVALID },
         [UI_PAGE_IDS.WHISTLE]    = { Default = EDITOR_VIEW.FULL_BODY, Zoomed = EDITOR_VIEW.FULL_BODY_CLOSE },
@@ -137,6 +138,7 @@ UI_PAGE_ID:AddModeAttribute("Ui", {
         [UI_PAGE_IDS.JAW]        = { Header = "NATIVE_CREATOR_TORSO_HEADING", Subheader = nil },     -- Note: Subheader uses preset name
         [UI_PAGE_IDS.EARS]       = { Header = "NATIVE_CREATOR_FACE_HEADING", Subheader = nil },      -- Note: Subheader uses preset name
         [UI_PAGE_IDS.CHEEKS]     = { Header = "NATIVE_CREATOR_NECK_HEADING", Subheader = nil },      -- Note: Subheader uses preset name
+        [UI_PAGE_IDS.HAIR]       = { Header = "NATIVE_CREATOR_BODY_HEADING", Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
         [UI_PAGE_IDS.LIFESTYLE]  = { Header = 0x35F8C892, Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
         [UI_PAGE_IDS.MAKEUP]     = { Header = "NATIVE_CREATOR_HEAD_HEADING", Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },
         [UI_PAGE_IDS.WHISTLE]    = { Header = "NATIVE_CREATOR_VOICE_HEADING", Subheader = "NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING" },

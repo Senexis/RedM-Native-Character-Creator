@@ -309,6 +309,27 @@
         }
       }
 
+      function requireHashArray(data, field) {
+        requireField(data, field);
+        const value = data[field];
+
+        if (!Array.isArray(value)) {
+          throw new Error(`"${field}" must be a list.`);
+        }
+
+        value.forEach((item, index) => {
+          if (typeof item !== "string" && !isFiniteNumber(item)) {
+            throw new Error(`"${field}[${index}]" must be a hash.`);
+          }
+          if (typeof item === "string" && item.length === 0) {
+            throw new Error(`"${field}[${index}]" cannot be an empty hash.`);
+          }
+          if (typeof item === "number" && item === 0) {
+            throw new Error(`"${field}[${index}]" cannot be an empty hash.`);
+          }
+        });
+      }
+
       function requireNumberArray(data, field, { min, max } = {}) {
         requireField(data, field);
         const value = data[field];
@@ -420,6 +441,7 @@
         requireBoolean(data, "ignoreOverlayLimits");
 
         // Collections
+        requireHashArray(data, "clothingItems");
         requireNumberArray(data, "presets", { min: 0 });
         requireNumberMap(data, "expressions", { min: -1.0, max: 1.0 });
         requireNumberMap(data, "layerColors", { min: 0 });

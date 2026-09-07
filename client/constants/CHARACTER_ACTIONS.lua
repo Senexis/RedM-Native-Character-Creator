@@ -32,6 +32,11 @@ local CHARACTER_ACTIONS = {
     RANDOMIZE_ITEM          = 25,
     PLAY_VOCALIZATION       = 26,
     RANDOMIZE_ADVANCED_ITEM = 27,
+    MATCH_HAIR_COLOR        = 28,
+    TOGGLE_BEARD            = 29,
+    SHOW_BEARD              = 30,
+    TOGGLE_CLOTHING         = 31,
+    SHOW_CLOTHING           = 32,
 }
 
 ---@type CHARACTER_ACTIONS | EnumRegistry
