@@ -1071,7 +1071,7 @@ function Intro:MaintainCustomizePed()
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSettings()
-        elseif IntroConfig.UsesMainMenu() and self.prompts.switch and UiPromptGetProgress(self.prompts.switch) == 1.0 then
+        elseif UsesMainMenu() and self.prompts.switch and UiPromptGetProgress(self.prompts.switch) == 1.0 then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSwitch()
@@ -2480,8 +2480,8 @@ function Intro:RegisterEditorPrompts(toggle)
             controls = { "INPUT_GAME_MENU_LS" },
             text = switchText,
             -- only when the main menu is used; basic/advanced locks the mode
-            visible = IntroConfig.UsesMainMenu() and toggle,
-            enabled = IntroConfig.UsesMainMenu() and canSwitch and toggle,
+            visible = UsesMainMenu() and toggle,
+            enabled = UsesMainMenu() and canSwitch and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
         randomize = {

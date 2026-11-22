@@ -108,14 +108,18 @@ function Creator:Rename()
         return
     end
 
-    -- Name entry via SC keyboard does not work offline / on RedM for this UI path.
-    if not IntroConfig.UsesMainMenu() then
+    if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) then
         return
     end
 
     local maxNameLength = CreatorConfig.MaxNameLength or 50
+    local defaultName = Character.name
+    if not defaultName or defaultName == "" then
+        defaultName = GetPlayerName(PlayerId()) or ""
+    end
+
     NextOnscreenKeyboardResultWillDisplayUsingTheseFonts(256)
-    DisplayOnscreenKeyboard(4, "NAME_TITLE_PROMPT", "", Character.name or "", "", "", "", maxNameLength)
+    DisplayOnscreenKeyboard(4, "NAME_TITLE_PROMPT", "", defaultName, "", "", "", maxNameLength)
 
     self:SetFlag(EDITOR_FLAG.NAME_PROMPT)
 end
@@ -250,7 +254,7 @@ function Creator:UpdateStateSetup()
 
     Character:ApplyAll()
 
-    local startMode = IntroConfig.GetStartMode()
+    local startMode = GetStartMode()
     if startMode == CREATOR_MODE.DEFAULT or startMode == CREATOR_MODE.ADVANCED then
         self:OpenEditor(startMode, false)
         self:SetState(EDITOR_STATE.TRANSITION_TO_EDITOR)
@@ -337,7 +341,7 @@ function Creator:UpdateStateInEditor()
     end
 
     if not self:IsFlagSet(EDITOR_FLAG.EDITOR_ACTIVE) then
-        if IntroConfig.UsesMainMenu() then
+        if UsesMainMenu() then
             self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
         else
             -- back from basic/advanced should return to gender select

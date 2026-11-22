@@ -184,11 +184,11 @@ function CreatorEvents:OnItemSelected(parameter)
     if actionId == UI_ACTION_ID.ROTATE then return end
 
     if actionId == UI_ACTION_ID.CONFIRM_EDIT or actionId == UI_ACTION_ID.CANCEL_EDIT then
-        if not IntroConfig.UsesMainMenu() then
+        if not UsesMainMenu() then
             if actionId == UI_ACTION_ID.CONFIRM_EDIT then
                 if not Character.name or Character.name == "" then
-                    Character:ApplyName(GetPlayerName(PlayerId()) or "")
-                    CreatorDatabinding:WriteString(DATABINDING_ID.MAIN__NAME__VALUE, Character.name or "")
+                    Creator:Rename()
+                    return
                 end
                 Creator:Finish(true)
             else
@@ -199,7 +199,9 @@ function CreatorEvents:OnItemSelected(parameter)
             Creator:CloseEditor()
         end
     elseif actionId == UI_ACTION_ID.ENTER_NAME then
-        -- Locked: SC name keyboard does not work on this path (same as RDO offline).
+        if not UsesMainMenu() then
+            Creator:Rename()
+        end
     else
         SignalBus:emit("action_selected", actionId, itemId)
     end

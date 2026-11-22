@@ -26,8 +26,7 @@ IntroConfig.EnableExport = false
 
 -- Which screen to open after gender select:
 -- "main"     = Name / Create / Advanced / Confirm menu
--- "basic"    = basic character creator (skips the main menu)
--- "advanced" = advanced character creator (skips the main menu)
+-- "basic"    = basic character creator (skips the main menu; Name uses the same rename keyboard)
 IntroConfig.StartMenu = "main"
 
 -- Minimum and maximum cooldown time (in seconds) between idle fidget animations

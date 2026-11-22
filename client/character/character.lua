@@ -22,6 +22,10 @@ local function GetDefaultData()
         whistlePitch = 50,
         whistleClarity = 50,
 
+        attributeHealth = (CreatorConfig.Attributes and CreatorConfig.Attributes.Health and CreatorConfig.Attributes.Health.Default) or 5,
+        attributeStamina = (CreatorConfig.Attributes and CreatorConfig.Attributes.Stamina and CreatorConfig.Attributes.Stamina.Default) or 5,
+        attributeDeadeye = (CreatorConfig.Attributes and CreatorConfig.Attributes.Deadeye and CreatorConfig.Attributes.Deadeye.Default) or 5,
+
         heritage = 0,
         skintone = 0,
         bodyType = 0,
@@ -196,6 +200,9 @@ function Character:Import(data, skipApply)
         { "whistleStyle",         self.ApplyWhistleStyle },
         { "whistlePitch",         self.ApplyWhistlePitch },
         { "whistleClarity",       self.ApplyWhistleClarity },
+        { "attributeHealth",      self.ApplyAttributeHealth },
+        { "attributeStamina",     self.ApplyAttributeStamina },
+        { "attributeDeadeye",     self.ApplyAttributeDeadeye },
         { "skintone",             self.ApplySkintone },
         { "bodyType",             self.ApplyBody },
         { "eyeColor",             self.ApplyEyeColor },
@@ -1564,6 +1571,114 @@ function Character:ApplyWhistleClarity(value)
     SetWhistleConfigForPed(ped, "Ped.WhistleClarity", self.whistleClarity * 0.01)
 end
 
+local function GetAttributeConfig(name)
+    local attrs = CreatorConfig.Attributes or {}
+    return attrs[name] or { Default = 5, Min = 5, Max = 10 }
+end
+
+function Character:GetAttributePointsTotal()
+    return CreatorConfig.AttributePoints or 2
+end
+
+function Character:GetAttributePointsUsed()
+    local healthCfg = GetAttributeConfig("Health")
+    local staminaCfg = GetAttributeConfig("Stamina")
+    local deadeyeCfg = GetAttributeConfig("Deadeye")
+
+    local health = (self.attributeHealth or healthCfg.Default) - (healthCfg.Min or 5)
+    local stamina = (self.attributeStamina or staminaCfg.Default) - (staminaCfg.Min or 5)
+    local deadeye = (self.attributeDeadeye or deadeyeCfg.Default) - (deadeyeCfg.Min or 5)
+
+    return math.max(health, 0) + math.max(stamina, 0) + math.max(deadeye, 0)
+end
+
+function Character:GetAttributePointsLeft()
+    return math.max(self:GetAttributePointsTotal() - self:GetAttributePointsUsed(), 0)
+end
+
+function Character:ClampAttributeValue(name, value)
+    local cfg = GetAttributeConfig(name)
+    local min = cfg.Min or 5
+    local absoluteMax = cfg.Max or 10
+    if value == nil then value = cfg.Default or min end
+    if value < min then value = min end
+    if value > absoluteMax then value = absoluteMax end
+    return value
+end
+
+function Character:ApplyAttributeByName(name, field, value)
+    if value == nil then return end
+
+    local cfg = GetAttributeConfig(name)
+    local min = cfg.Min or 5
+    local healthCfg = GetAttributeConfig("Health")
+    local staminaCfg = GetAttributeConfig("Stamina")
+    local deadeyeCfg = GetAttributeConfig("Deadeye")
+
+    local otherUsed = 0
+    if field ~= "attributeHealth" then
+        otherUsed = otherUsed + math.max((self.attributeHealth or healthCfg.Default) - (healthCfg.Min or 5), 0)
+    end
+    if field ~= "attributeStamina" then
+        otherUsed = otherUsed + math.max((self.attributeStamina or staminaCfg.Default) - (staminaCfg.Min or 5), 0)
+    end
+    if field ~= "attributeDeadeye" then
+        otherUsed = otherUsed + math.max((self.attributeDeadeye or deadeyeCfg.Default) - (deadeyeCfg.Min or 5), 0)
+    end
+
+    local maxAllowed = min + math.max(self:GetAttributePointsTotal() - otherUsed, 0)
+    if value > maxAllowed then value = maxAllowed end
+
+    self[field] = self:ClampAttributeValue(name, value)
+    self:SetModified()
+end
+
+function Character:ApplyAttributeHealth(value)
+    self:ApplyAttributeByName("Health", "attributeHealth", value)
+end
+
+function Character:ApplyAttributeStamina(value)
+    self:ApplyAttributeByName("Stamina", "attributeStamina", value)
+end
+
+function Character:ApplyAttributeDeadeye(value)
+    self:ApplyAttributeByName("Deadeye", "attributeDeadeye", value)
+end
+
+function Character:SyncAttributesToUi()
+    if not CreatorDatabinding or not CreatorDatabinding.WriteInt then return end
+
+    local healthCfg = GetAttributeConfig("Health")
+    local staminaCfg = GetAttributeConfig("Stamina")
+    local deadeyeCfg = GetAttributeConfig("Deadeye")
+
+    local health = self:ClampAttributeValue("Health", self.attributeHealth)
+    local stamina = self:ClampAttributeValue("Stamina", self.attributeStamina)
+    local deadeye = self:ClampAttributeValue("Deadeye", self.attributeDeadeye)
+
+    self.attributeHealth = health
+    self.attributeStamina = stamina
+    self.attributeDeadeye = deadeye
+
+    local left = self:GetAttributePointsLeft()
+    local absoluteMax = math.max(healthCfg.Max or 10, staminaCfg.Max or 10, deadeyeCfg.Max or 10)
+
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__HEALTH__VALUE, health)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__HEALTH__MINIMUM, healthCfg.Min or 5)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__HEALTH__MAXIMUM, math.min(absoluteMax, health + left))
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__HEALTH__TOTAL_TANKS, absoluteMax)
+
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__STAMINA__VALUE, stamina)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__STAMINA__MINIMUM, staminaCfg.Min or 5)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__STAMINA__MAXIMUM, math.min(absoluteMax, stamina + left))
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__STAMINA__TOTAL_TANKS, absoluteMax)
+
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__DEADEYE__VALUE, deadeye)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__DEADEYE__MINIMUM, deadeyeCfg.Min or 5)
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__DEADEYE__MAXIMUM, math.min(absoluteMax, deadeye + left))
+    CreatorDatabinding:WriteInt(DATABINDING_ID.ATTRIBUTES__DEADEYE__TOTAL_TANKS, absoluteMax)
+end
+
 function Character:Whistle()
     local ped = self:GetPed()
     TaskWhistleAnim(ped, `WhistleHorseLong`, `unspecified`)
@@ -2148,11 +2263,17 @@ SignalBus:on("adjustable_changed", function(itemId, value)
     elseif action == CHARACTER_ACTION.APPLY_WHISTLE_CLARITY then
         Character:ApplyWhistleClarity(value)
     elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_HEALTH then
-        -- TODO: Attributes support
+        Character:ApplyAttributeHealth(value)
+        Character:SyncAttributesToUi()
+        CreatorRenderer:UpdateAttributeFooter()
     elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_STAMINA then
-        -- TODO: Attributes support
+        Character:ApplyAttributeStamina(value)
+        Character:SyncAttributesToUi()
+        CreatorRenderer:UpdateAttributeFooter()
     elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_DEADEYE then
-        -- TODO: Attributes support
+        Character:ApplyAttributeDeadeye(value)
+        Character:SyncAttributesToUi()
+        CreatorRenderer:UpdateAttributeFooter()
     elseif action == CHARACTER_ACTION.APPLY_HEIGHT then
         Character:ApplyHeight(value)
     elseif action == CHARACTER_ACTION.APPLY_WEIGHT then

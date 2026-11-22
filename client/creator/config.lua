@@ -12,10 +12,12 @@ CreatorConfig.MaxWeariness = 0.5
 CreatorConfig.SkipWhistle = false
 CreatorConfig.SkipAttributePoints = false
 
+
+CreatorConfig.AttributePoints = 2
 CreatorConfig.Attributes = {
-    Health  = { Default = 1, Min = 1, Max = 10 },
-    Stamina = { Default = 1, Min = 1, Max = 10 },
-    Deadeye = { Default = 1, Min = 1, Max = 10 }
+    Health  = { Default = 5, Min = 5, Max = 10 },
+    Stamina = { Default = 5, Min = 5, Max = 10 },
+    Deadeye = { Default = 5, Min = 5, Max = 10 },
 }
 
 -- The height corresponds to the key of the CreatorConfig.Heights table minus 1 (2 is the third entry)
