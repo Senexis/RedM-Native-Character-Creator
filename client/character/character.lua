@@ -855,6 +855,55 @@ function Character:SetExpression(expressionId, gameValue, update)
     end
 end
 
+-- Grid/fine-tune: apply morph every tick, but throttle the heavy UpdatePedVariation refresh.
+function Character:ApplyGridExpression(expressionId, value)
+    self:ApplyExpressionValue(expressionId, value, false)
+
+    local ped = self:GetPed()
+    if ped ~= 0 then
+        Citizen.InvokeNative(Natives.SetActiveMetaPedComponentsUpdated, ped, true)
+    end
+
+    self:ThrottleGridRefresh(50)
+end
+
+function Character:ApplyGridOverlayAlpha(layer, value)
+    self:ApplyOverlayAlpha(layer, value, false)
+    self:ThrottleGridRefresh(100)
+end
+
+function Character:ThrottleGridRefresh(intervalMs)
+    intervalMs = intervalMs or 50
+    self._gridRefreshWanted = true
+    if self._gridRefreshPending then return end
+
+    self._gridRefreshPending = true
+    CreateThread(function()
+        local last = self._gridRefreshLast or 0
+        local waitMs = math.max(0, intervalMs - (GetGameTimer() - last))
+        if waitMs > 0 then Wait(waitMs) end
+
+        while self._gridRefreshWanted do
+            self._gridRefreshWanted = false
+            self._gridRefreshLast = GetGameTimer()
+            self:RequestUpdate()
+            if self._gridRefreshWanted then
+                Wait(intervalMs)
+            end
+        end
+
+        self._gridRefreshPending = false
+    end)
+end
+
+function Character:FlushGridRefresh()
+    if not self._gridRefreshPending and not self._gridRefreshWanted then return end
+    self._gridRefreshWanted = false
+    self._gridRefreshPending = false
+    self._gridRefreshLast = GetGameTimer()
+    self:RequestUpdate()
+end
+
 function Character:GetHeadShopItem()
     return CreatorPresets:GetHeadShopItemForSkintone(self.skintone)
 end
@@ -2028,9 +2077,9 @@ SignalBus:on("grid_x_changed", function(itemId, value)
     if itemId == UI_ITEM_ID.LIFESTYLE__EYE_REDNESS then
         Character:ApplyWeariness(value)
     elseif expressions and expressions.ExpressionX then
-        Character:ApplyExpressionValue(expressions.ExpressionX, value, true)
+        Character:ApplyGridExpression(expressions.ExpressionX, value)
     elseif overlayLayer then
-        Character:ApplyOverlayAlpha(overlayLayer, value, true)
+        Character:ApplyGridOverlayAlpha(overlayLayer, value)
     end
 end)
 
@@ -2041,9 +2090,9 @@ SignalBus:on("grid_y_changed", function(itemId, value)
     if itemId == UI_ITEM_ID.LIFESTYLE__EYE_REDNESS then
         Character:ApplyWeariness(value)
     elseif expressions and expressions.ExpressionY then
-        Character:ApplyExpressionValue(expressions.ExpressionY, value, true)
+        Character:ApplyGridExpression(expressions.ExpressionY, value)
     elseif overlayLayer then
-        Character:ApplyOverlayAlpha(overlayLayer, value, true)
+        Character:ApplyGridOverlayAlpha(overlayLayer, value)
     end
 end)
 
