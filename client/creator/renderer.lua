@@ -22,7 +22,7 @@ function CreatorRenderer:UpdateText()
 end
 
 function CreatorRenderer:CreateNewText()
-    AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Go back to the previous menu.")
+    AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", IntroConfig.UsesMainMenu() and "Go back to the previous menu." or "Confirm your character.")
 
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_DEFAULT", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Excludes advanced options.")
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_ADVANCED", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Includes most advanced options.")
@@ -30,7 +30,7 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_ADVANCED_MENU_HEADING", "Advanced Menu")
     AddTextEntry("NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING", "Advanced Options")
 
-    AddTextEntry("NATIVE_CREATOR_ERROR_NAME_DISABLED", "~e~Go back to change your name.")
+    AddTextEntry("NATIVE_CREATOR_ERROR_NAME_DISABLED", IntroConfig.UsesMainMenu() and "~e~Go back to change your name." or "~e~Name cannot be changed here.")
 
     AddTextEntry("NATIVE_CREATOR_HAIR_COLOR_TOOLTIP", "Change your character's hair and eyebrows color.")
     AddTextEntry("NATIVE_CREATOR_HEIGHT_TOOLTIP", "Adjust the height of your character.")
@@ -149,7 +149,7 @@ end
 function CreatorRenderer:SetTextDefault()
     AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Match Hair Colors")
 
-    AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
+    AddTextEntry("CHAR_CREATOR_CONFIRM", IntroConfig.UsesMainMenu() and "Back" or "Confirm")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Whistle")
     AddTextEntry("CHAR_CREATOR_WHISTLE_STYLE", "Style")
@@ -212,7 +212,7 @@ end
 function CreatorRenderer:SetTextAdvanced()
     AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Toggle Clothing")
 
-    AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
+    AddTextEntry("CHAR_CREATOR_CONFIRM", IntroConfig.UsesMainMenu() and "Back" or "Confirm")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Voice")
     AddTextEntry("CHAR_CREATOR_WHISTLE_STYLE", "Style")

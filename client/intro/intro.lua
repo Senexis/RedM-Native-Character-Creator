@@ -2,6 +2,20 @@ local TIMEOUT_INIT = 1000 * 60
 local TIMEOUT_LOAD = 1000 * 60
 local TIMEOUT_GENERIC = 1000 * 30
 
+function GetStartMode()
+    local value = string.lower(tostring(IntroConfig.StartMenu or "main"))
+    if value == "basic" or value == "default" then
+        return CREATOR_MODE.DEFAULT
+    elseif value == "advanced" then
+        return CREATOR_MODE.ADVANCED
+    end
+    return CREATOR_MODE.MENU
+end
+
+function UsesMainMenu()
+    return GetStartMode() == CREATOR_MODE.MENU
+end
+
 local INTRO_IPLS <const> = {
     `MP001_MP_LOBBY_CHARMILO`,
     `MP001_MP_LOBBY_CHARMILO_EXT`,
@@ -814,11 +828,11 @@ function Intro:MaintainSelectGender()
     elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) then
         self:PlaySound("gender_right", "RDRO_Character_Creator_Sounds")
         self:SetActivePedPreset(EDITOR_CONFIG.FEMALE)
-    elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
+    elseif IntroConfig.EnableStartFresh and self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
         UiPromptRestartModes(self.prompts.reset)
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
-    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
+    elseif IntroConfig.EnableImport and IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:DestroyPrompts()
         self:SetFlag(INTRO_FLAG.IMPORT_REQUESTED)
@@ -847,7 +861,9 @@ function Intro:MaintainTransitionToCustomize()
             return
         end
 
-        self:SetupEditor()
+        if not self:SetupEditor() then
+            return
+        end
 
         SetAnimSceneEntity(self.animScene, "Male_MP", self.presetPeds[EDITOR_CONFIG.MALE], 0)
         SetAnimSceneEntity(self.animScene, "Female_MP", self.presetPeds[EDITOR_CONFIG.FEMALE], 0)
@@ -1051,18 +1067,18 @@ function Intro:MaintainCustomizePed()
     if IsUiappRunningByHash("character_creator") == 1 and GetUiappCurrentActivityByHash("character_creator") ~= `CHARACTER_CREATOR` then
         self:RegisterEditorPrompts(true)
 
-        if self.prompts.settings and UiPromptGetProgress(self.prompts.settings) == 1.0 then
+        if IntroConfig.EnableSettings and self.prompts.settings and UiPromptGetProgress(self.prompts.settings) == 1.0 then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSettings()
-        elseif self.prompts.switch and UiPromptGetProgress(self.prompts.switch) == 1.0 then
+        elseif IntroConfig.UsesMainMenu() and self.prompts.switch and UiPromptGetProgress(self.prompts.switch) == 1.0 then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSwitch()
         elseif self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT) and IsControlJustReleased(2, `INPUT_GAME_MENU_EXTRA_OPTION`) then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             Character:RandomizeCustomHead(true)
-        elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
+        elseif IntroConfig.EnableStartFresh and self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
             UiPromptRestartModes(self.prompts.reset)
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
@@ -1207,7 +1223,9 @@ function Intro:MaintainTransitionBackToCustomize()
             return
         end
 
-        Intro:SetupEditor()
+        if not Intro:SetupEditor() then
+            return
+        end
 
         SetAnimSceneEntity(self.animScene, "Male_MP", self.presetPeds[EDITOR_CONFIG.MALE], 0)
         SetAnimSceneEntity(self.animScene, "Female_MP", self.presetPeds[EDITOR_CONFIG.FEMALE], 0)
@@ -1350,7 +1368,9 @@ function Intro:MaintainMugshot()
         EnableControlAction(0, `INPUT_GAME_MENU_OPTION`, false)
         EnableControlAction(0, `INPUT_GAME_MENU_RS`, false)
 
-        local held = IsControlPressed(0, `INPUT_SHOP_CHANGE_CURRENCY`) == 1
+        local detailsEnabled = IntroConfig.EnableDetails == true
+        local exportEnabled = IntroConfig.EnableExport == true
+        local held = detailsEnabled and IsControlPressed(0, `INPUT_SHOP_CHANGE_CURRENCY`) == 1
         self:RegisterMugshotPrompts(true, held)
 
         if self:IsFlagSet(INTRO_FLAG.MUGSHOT_TITLE_PROMPT) and UpdateOnscreenKeyboard() == 0 then
@@ -1383,7 +1403,7 @@ function Intro:MaintainMugshot()
             return
         end
 
-        if IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
+        if exportEnabled and IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:ExportCharacter()
         elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
@@ -1499,7 +1519,9 @@ function Intro:MaintainCancelBackToFreeroam()
     if self:IsFlagSet(INTRO_FLAG.REROLL_CANCEL_ALERT_CANCEL) then
         Utils:Debug("MAINTAIN_CANCEL_BACK_TO_FREEROAM - player canceled the exit, going back to customize")
 
-        Intro:SetupEditor()
+        if not Intro:SetupEditor() then
+            return
+        end
 
         self:ClearFlag(INTRO_FLAG.REROLL_CANCEL_ALERT_CANCEL)
         self:SetState(INTRO_STATE.CUSTOMIZE)
@@ -1622,6 +1644,17 @@ function Intro:MaintainExit()
 end
 
 function Intro:SetupEditor()
+    -- cancel tears down CreatorXml; re-load it before importing or applying appearance
+    if not CreatorXml:Initialize() then
+        Utils:Debug("SETUP_EDITOR - waiting for creator xml to initialize")
+        return false
+    end
+
+    if not CreatorPresets:Init(self.selectedPreset) then
+        Utils:Debug("SETUP_EDITOR - waiting for creator presets to initialize")
+        return false
+    end
+
     Character:Reset()
     Character:SetPed(self.presetPeds[self.selectedPreset])
 
@@ -1635,6 +1668,7 @@ function Intro:SetupEditor()
     end
 
     Creator:Start()
+    return true
 end
 
 function Intro:SetAnimationLevel(level)
@@ -2381,14 +2415,14 @@ function Intro:RegisterCharacterPrompts(toggle)
         import = {
             controls = { "INPUT_GAME_MENU_RS" },
             text = "Import",
-            visible = toggle,
-            enabled = toggle,
+            visible = IntroConfig.EnableImport and toggle,
+            enabled = IntroConfig.EnableImport and toggle,
         },
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
-            visible = enableReset and toggle,
-            enabled = enableReset and toggle,
+            visible = IntroConfig.EnableStartFresh and enableReset and toggle,
+            enabled = IntroConfig.EnableStartFresh and enableReset and toggle,
             hold = "MEDIUM_TIMED_EVENT",
         },
         confirm = {
@@ -2438,15 +2472,16 @@ function Intro:RegisterEditorPrompts(toggle)
         settings = {
             controls = { "INPUT_GAME_MENU_TAB_LEFT_SECONDARY" },
             text = "Settings",
-            visible = toggle,
-            enabled = toggle,
+            visible = IntroConfig.EnableSettings and toggle,
+            enabled = IntroConfig.EnableSettings and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
         switch = {
             controls = { "INPUT_GAME_MENU_LS" },
             text = switchText,
-            visible = toggle,
-            enabled = canSwitch and toggle,
+            -- only when the main menu is used; basic/advanced locks the mode
+            visible = IntroConfig.UsesMainMenu() and toggle,
+            enabled = IntroConfig.UsesMainMenu() and canSwitch and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
         randomize = {
@@ -2458,8 +2493,8 @@ function Intro:RegisterEditorPrompts(toggle)
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
-            visible = not canRandomize and canReset and toggle,
-            enabled = not canRandomize and canReset and enableReset and toggle,
+            visible = IntroConfig.EnableStartFresh and not canRandomize and canReset and toggle,
+            enabled = IntroConfig.EnableStartFresh and not canRandomize and canReset and enableReset and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
     })
@@ -2468,11 +2503,14 @@ end
 function Intro:RegisterMugshotPrompts(toggle, held)
     local seconds = self.mugshotTimer or 3
     local showUi = self.mugshotShowUi == true
+    local detailsEnabled = IntroConfig.EnableDetails == true
+    local exportEnabled = IntroConfig.EnableExport == true
+    held = held and detailsEnabled
 
     local confirmText = "Confirm"
     if held and showUi then
         confirmText = "Hide Details"
-    elseif held and not showUi then
+    elseif held then
         confirmText = "Show Details"
     end
 
@@ -2480,14 +2518,14 @@ function Intro:RegisterMugshotPrompts(toggle, held)
         options = {
             controls = { "INPUT_SHOP_CHANGE_CURRENCY" },
             text = "Options",
-            visible = toggle,
-            enabled = toggle,
+            visible = detailsEnabled and toggle,
+            enabled = detailsEnabled and toggle,
         },
         export = {
             controls = { "INPUT_GAME_MENU_RS" },
             text = "Export",
-            visible = not held and toggle,
-            enabled = toggle,
+            visible = exportEnabled and not held and toggle,
+            enabled = exportEnabled and toggle,
         },
         time = {
             controls = { "INPUT_GAME_MENU_LEFT", "INPUT_GAME_MENU_RIGHT" },

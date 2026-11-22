@@ -461,8 +461,15 @@ function CreatorDatabinding:FilloutUiData()
         ::continue::
     end
 
-    -- The name toggle is permanently disabled due to it using profanity filters
+    -- Name stays locked in the creator UI (SC keyboard does not work on RedM / offline).
+    -- Basic/advanced: show an auto name; main menu path edits name in the shop menu instead.
     self:WriteBool(id.MAIN__NAME__ENABLED, false)
+    if not IntroConfig.UsesMainMenu() then
+        if not Character.name or Character.name == "" then
+            Character:ApplyName(GetPlayerName(PlayerId()) or "")
+        end
+        self:WriteString(id.MAIN__NAME__VALUE, Character.name or "")
+    end
 
     -- TODO: Attributes support
     self:WriteBool(id.MAIN__ATTRIBUTES__VISIBLE, false)
