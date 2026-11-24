@@ -184,7 +184,24 @@ function CreatorEvents:OnItemSelected(parameter)
     if actionId == UI_ACTION_ID.ROTATE then return end
 
     if actionId == UI_ACTION_ID.CONFIRM_EDIT or actionId == UI_ACTION_ID.CANCEL_EDIT then
-        Creator:CloseEditor()
+        if not UsesMainMenu() then
+            if actionId == UI_ACTION_ID.CONFIRM_EDIT then
+                if not Character.name or Character.name == "" then
+                    Creator:Rename()
+                    return
+                end
+                Creator:Finish(true)
+            else
+                -- same destination as the main menu Back prompt: gender select
+                Creator:Finish(false)
+            end
+        else
+            Creator:CloseEditor()
+        end
+    elseif actionId == UI_ACTION_ID.ENTER_NAME then
+        if not UsesMainMenu() then
+            Creator:Rename()
+        end
     else
         SignalBus:emit("action_selected", actionId, itemId)
     end

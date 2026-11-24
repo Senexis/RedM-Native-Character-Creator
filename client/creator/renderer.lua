@@ -22,7 +22,7 @@ function CreatorRenderer:UpdateText()
 end
 
 function CreatorRenderer:CreateNewText()
-    AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Go back to the previous menu.")
+    AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", UsesMainMenu() and "Go back to the previous menu." or "Confirm your character.")
 
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_DEFAULT", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Excludes advanced options.")
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_ADVANCED", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Includes most advanced options.")
@@ -30,7 +30,7 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_ADVANCED_MENU_HEADING", "Advanced Menu")
     AddTextEntry("NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING", "Advanced Options")
 
-    AddTextEntry("NATIVE_CREATOR_ERROR_NAME_DISABLED", "~e~Go back to change your name.")
+    AddTextEntry("NATIVE_CREATOR_ERROR_NAME_DISABLED", UsesMainMenu() and "~e~Go back to change your name." or "Enter your character's name.")
 
     AddTextEntry("NATIVE_CREATOR_HAIR_COLOR_TOOLTIP", "Change your character's hair and eyebrows color.")
     AddTextEntry("NATIVE_CREATOR_HEIGHT_TOOLTIP", "Adjust the height of your character.")
@@ -149,7 +149,7 @@ end
 function CreatorRenderer:SetTextDefault()
     AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Match Hair Colors")
 
-    AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
+    AddTextEntry("CHAR_CREATOR_CONFIRM", UsesMainMenu() and "Back" or "Confirm")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Whistle")
     AddTextEntry("CHAR_CREATOR_WHISTLE_STYLE", "Style")
@@ -212,7 +212,7 @@ end
 function CreatorRenderer:SetTextAdvanced()
     AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Toggle Clothing")
 
-    AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
+    AddTextEntry("CHAR_CREATOR_CONFIRM", UsesMainMenu() and "Back" or "Confirm")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Voice")
     AddTextEntry("CHAR_CREATOR_WHISTLE_STYLE", "Style")
@@ -326,6 +326,18 @@ function CreatorRenderer:UpdateDetailImage(image)
     end
 end
 
+function CreatorRenderer:UpdateAttributeFooter()
+    local left = Character:GetAttributePointsLeft()
+    local template = GetLabelText("CHAR_CREATOR_ATTRIBUTES_POOL_AMOUNT")
+    if not template or template == "" or template == "CHAR_CREATOR_ATTRIBUTES_POOL_AMOUNT" then
+        template = "Attribute Points: ~1~"
+    end
+
+    local text = template:gsub("~1~", tostring(left))
+    CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__FOOTER__LABEL, text)
+    CreatorDatabinding:WriteHash(DATABINDING_ID.ROOT__FOOTER__COLOR, left == 0 and `COLOR_RED` or `COLOR_WHITE`)
+end
+
 function CreatorRenderer:UpdateItemFooter(itemId)
     local databinding = UI_ITEM_ID:GetDatabinding(itemId)
     if not databinding then return end
@@ -335,10 +347,16 @@ function CreatorRenderer:UpdateItemFooter(itemId)
 
     CreatorRenderer:UpdateDetailImage(uiData.Image)
 
-    if UI_ITEM_ID:GetOverlayLayer(itemId) or UI_ITEM_ID:GetOverlayColor(itemId) then
+    if itemId == UI_ITEM_ID.ATTRIBUTES__HEALTH
+        or itemId == UI_ITEM_ID.ATTRIBUTES__STAMINA
+        or itemId == UI_ITEM_ID.ATTRIBUTES__DEADEYE then
+        Character:SyncAttributesToUi()
+        CreatorRenderer:UpdateAttributeFooter()
+    elseif UI_ITEM_ID:GetOverlayLayer(itemId) or UI_ITEM_ID:GetOverlayColor(itemId) then
         CreatorRenderer:UpdateOverlayFooterLabel(uiData.Footer)
     else
         CreatorRenderer:UpdateFooterLabel(uiData.Footer)
+        CreatorDatabinding:WriteHash(DATABINDING_ID.ROOT__FOOTER__COLOR, `COLOR_WHITE`)
     end
 end
 
@@ -449,6 +467,10 @@ function CreatorRenderer:UpdateGrid(itemId)
 end
 
 function CreatorRenderer:HideGrid(itemId)
+    if Character and Character.FlushGridRefresh then
+        Character:FlushGridRefresh()
+    end
+
     local databinding = UI_ITEM_ID:GetDatabinding(itemId)
     if not databinding then return end
 

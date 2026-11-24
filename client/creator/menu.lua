@@ -15,7 +15,7 @@ CreatorMenu = {
 function CreatorMenu:Open(rerolling, toSettings)
     self.rerolling = rerolling or false
 
-    local target = toSettings and SETTINGS_ID or MENU_ID
+    local target = (toSettings and IntroConfig.EnableSettings) and SETTINGS_ID or MENU_ID
     ShopApi.Open(target)
 end
 
@@ -129,94 +129,86 @@ function CreatorMenu:GetMenu()
         skipPrompt = {}
     end
 
-    return {
-        Title = "CHARACTER",
-        Subtitle = "Main Menu",
-        Scene = "ITEM_LIST_DESCRIPTION",
-        Prompts = {
-            Back = {
-                Visible = true,
-                Label = exitLabel,
+    local items = {
+        {
+            Id = "ACTION_NAME",
+            Type = "TEXT",
+            Label = "Name",
+            Footer = IntroConfig.EnableImport and "Press ~INPUT_GAME_MENU_RS~ to import a character." or nil,
+            Data = {
+                ItemDescription = "Name your character. You may choose a randomized name to get inspired.",
+                Equipped = not rerolling and hasName,
+                ItemInfo1 = nameDisplay,
+            },
+            Prompts = {
+                Select = {
+                    Action = function()
+                        Creator:Rename()
+                    end,
+                },
+                Toggle = {
+                    Label = "Randomize",
+                    Action = function()
+                        Character:RandomizeName()
+                        self:Refresh()
+                    end,
+                },
+                Info = IntroConfig.EnableImport and {
+                    Label = "Import",
+                    Action = function()
+                        Creator:Import()
+                    end,
+                } or nil,
+            },
+        },
+        {
+            Id = "ACTION_DEFAULT",
+            Type = "TEXT",
+            Label = defaultLabel,
+            Disabled = not hasName,
+            Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
+            Data = {
+                DisabledFooter = "~e~Name your character first.",
+                ItemDescription = defaultDescription,
+                Equipped = not rerolling and hasCreated,
+                ItemInfo1 = nameDisplay,
+            },
+            Prompts = {
+                Select = {
+                    Action = function()
+                        self:Hide()
+                        Creator:OpenEditor(CREATOR_MODE.DEFAULT, false)
+                    end,
+                },
+                Toggle = skipPrompt
             }
         },
-        Items = {
-            {
-                Id = "ACTION_NAME",
-                Type = "TEXT",
-                Label = "Name",
-                Footer = "Press ~INPUT_GAME_MENU_RS~ to import a character.",
-                Data = {
-                    ItemDescription = "Name your character. You may choose a randomized name to get inspired.",
-                    Equipped = not rerolling and hasName,
-                    ItemInfo1 = nameDisplay,
-                },
-                Prompts = {
-                    Select = {
-                        Action = function()
-                            Creator:Rename()
-                        end,
-                    },
-                    Toggle = {
-                        Label = "Randomize",
-                        Action = function()
-                            Character:RandomizeName()
-                            self:Refresh()
-                        end,
-                    },
-                    Info = {
-                        Label = "Import",
-                        Action = function()
-                            Creator:Import()
-                        end,
-                    }
-                },
+        {
+            Id = "ACTION_ADVANCED",
+            Type = "TEXT",
+            Label = "Advanced Options",
+            Disabled = not hasName,
+            Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
+            Data = {
+                DisabledFooter = "~e~Name your character first.",
+                ItemDescription = "Make various advanced adjustments to your character to fine-tune their appearance.",
+                Equipped = not rerolling and hasCreated,
+                ItemInfo1 = nameDisplay,
             },
-            {
-                Id = "ACTION_DEFAULT",
-                Type = "TEXT",
-                Label = defaultLabel,
-                Disabled = not hasName,
-                Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
-                Data = {
-                    DisabledFooter = "~e~Name your character first.",
-                    ItemDescription = defaultDescription,
-                    Equipped = not rerolling and hasCreated,
-                    ItemInfo1 = nameDisplay,
+            Prompts = {
+                Select = {
+                    Action = function()
+                        self:Hide()
+                        Creator:OpenEditor(CREATOR_MODE.ADVANCED, false)
+                    end,
                 },
-                Prompts = {
-                    Select = {
-                        Action = function()
-                            self:Hide()
-                            Creator:OpenEditor(CREATOR_MODE.DEFAULT, false)
-                        end,
-                    },
-                    Toggle = skipPrompt
-                }
-            },
-            {
-                Id = "ACTION_ADVANCED",
-                Type = "TEXT",
-                Label = "Advanced Options",
-                Disabled = not hasName,
-                Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
-                Data = {
-                    DisabledFooter = "~e~Name your character first.",
-                    ItemDescription = "Make various advanced adjustments to your character to fine-tune their appearance.",
-                    Equipped = not rerolling and hasCreated,
-                    ItemInfo1 = nameDisplay,
-                },
-                Prompts = {
-                    Select = {
-                        Action = function()
-                            self:Hide()
-                            Creator:OpenEditor(CREATOR_MODE.ADVANCED, false)
-                        end,
-                    },
-                    Toggle = skipPrompt
-                }
+                Toggle = skipPrompt
+            }
+        },
+    }
 
-            },
-            {
+    if IntroConfig.EnableSettings then
+        items[#items + 1] = {
                 Id = SETTINGS_ID,
                 Type = "TEXT",
                 Label = "Settings",
@@ -420,34 +412,47 @@ function CreatorMenu:GetMenu()
                         },
                     },
                 }
-            },
-            {
-                Id = "ACTION_CONFIRM",
-                Type = "TEXT",
-                Label = "Confirm",
-                Disabled = not hasName or not hasCreated,
-                Footer = "Press ~INPUT_GAME_MENU_RS~ to export your character.",
-                Data = {
-                    DisabledFooter = confirmDisabled,
-                    ItemDescription = "Take a picture of your character and confirm your appearance.",
-                    ItemInfo1 = nameDisplay,
-                },
-                Prompts = {
-                    Select = {
-                        Action = function()
-                            self:Close()
-                            Creator:Finish(true)
-                        end,
-                    },
-                    Info = {
-                        Label = "Export",
-                        Action = function()
-                            Intro:ExportCharacter()
-                        end,
-                    }
-                },
-            },
+            }
+    end
+
+    items[#items + 1] = {
+        Id = "ACTION_CONFIRM",
+        Type = "TEXT",
+        Label = "Confirm",
+        Disabled = not hasName or not hasCreated,
+        Footer = IntroConfig.EnableExport and "Press ~INPUT_GAME_MENU_RS~ to export your character." or nil,
+        Data = {
+            DisabledFooter = confirmDisabled,
+            ItemDescription = "Take a picture of your character and confirm your appearance.",
+            ItemInfo1 = nameDisplay,
         },
+        Prompts = {
+            Select = {
+                Action = function()
+                    self:Close()
+                    Creator:Finish(true)
+                end,
+            },
+            Info = IntroConfig.EnableExport and {
+                Label = "Export",
+                Action = function()
+                    Intro:ExportCharacter()
+                end,
+            } or nil,
+        },
+    }
+
+    return {
+        Title = "CHARACTER",
+        Subtitle = "Main Menu",
+        Scene = "ITEM_LIST_DESCRIPTION",
+        Prompts = {
+            Back = {
+                Visible = true,
+                Label = exitLabel,
+            }
+        },
+        Items = items,
     }
 end
 

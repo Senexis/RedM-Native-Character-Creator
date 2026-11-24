@@ -108,9 +108,18 @@ function Creator:Rename()
         return
     end
 
+    if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) then
+        return
+    end
+
     local maxNameLength = CreatorConfig.MaxNameLength or 50
+    local defaultName = Character.name
+    if not defaultName or defaultName == "" then
+        defaultName = GetPlayerName(PlayerId()) or ""
+    end
+
     NextOnscreenKeyboardResultWillDisplayUsingTheseFonts(256)
-    DisplayOnscreenKeyboard(4, "NAME_TITLE_PROMPT", "", Character.name or "", "", "", "", maxNameLength)
+    DisplayOnscreenKeyboard(4, "NAME_TITLE_PROMPT", "", defaultName, "", "", "", maxNameLength)
 
     self:SetFlag(EDITOR_FLAG.NAME_PROMPT)
 end
@@ -245,7 +254,13 @@ function Creator:UpdateStateSetup()
 
     Character:ApplyAll()
 
-    self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
+    local startMode = GetStartMode()
+    if startMode == CREATOR_MODE.DEFAULT or startMode == CREATOR_MODE.ADVANCED then
+        self:OpenEditor(startMode, false)
+        self:SetState(EDITOR_STATE.TRANSITION_TO_EDITOR)
+    else
+        self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
+    end
 end
 
 function Creator:UpdateStateInMenu()
@@ -293,7 +308,18 @@ function Creator:UpdateStateInMenu()
 end
 
 function Creator:UpdateStateInEditor()
-    CancelOnscreenKeyboard()
+    if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) then
+        local status = UpdateOnscreenKeyboard()
+        if status == 1 then
+            Character:ApplyName(GetOnscreenKeyboardResult())
+            CreatorDatabinding:WriteString(DATABINDING_ID.MAIN__NAME__VALUE, Character.name or "")
+            self:ClearFlag(EDITOR_FLAG.NAME_PROMPT)
+        elseif status == 2 or status == 3 then
+            self:ClearFlag(EDITOR_FLAG.NAME_PROMPT)
+        end
+    else
+        CancelOnscreenKeyboard()
+    end
 
     if IsUiappRunningByHash(`shop_menu`) == 1 then
         CloseUiappByHash(`shop_menu`)
@@ -315,7 +341,13 @@ function Creator:UpdateStateInEditor()
     end
 
     if not self:IsFlagSet(EDITOR_FLAG.EDITOR_ACTIVE) then
-        self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
+        if UsesMainMenu() then
+            self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
+        else
+            -- back from basic/advanced should return to gender select
+            self:Finish(false)
+            self:SetState(EDITOR_STATE.TEARDOWN)
+        end
         return
     end
 

@@ -461,11 +461,18 @@ function CreatorDatabinding:FilloutUiData()
         ::continue::
     end
 
-    -- The name toggle is permanently disabled due to it using profanity filters
-    self:WriteBool(id.MAIN__NAME__ENABLED, false)
+    -- Main menu edits name in the shop list; basic/advanced edits it here (same Rename keyboard).
+    self:WriteBool(id.MAIN__NAME__ENABLED, not UsesMainMenu())
+    if not UsesMainMenu() then
+        self:WriteString(id.MAIN__NAME__VALUE, Character.name or "")
+    end
 
-    -- TODO: Attributes support
-    self:WriteBool(id.MAIN__ATTRIBUTES__VISIBLE, false)
+    local showAttributes = CreatorConfig.SkipAttributePoints ~= true
+    self:WriteBool(id.MAIN__ATTRIBUTES__VISIBLE, showAttributes)
+    self:WriteBool(id.MAIN__ATTRIBUTES__ENABLED, showAttributes)
+    if showAttributes and Character and Character.SyncAttributesToUi then
+        Character:SyncAttributesToUi()
+    end
 
     -- Fill all the stepper options
     if Creator:IsDefaultMode() then

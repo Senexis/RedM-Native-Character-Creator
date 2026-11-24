@@ -7,7 +7,27 @@ IntroConfig.UseCutscene = true
 IntroConfig.UseDialog = true
 
 -- Whether to skip specifically the character customization dialog
-IntroConfig.UseCustomizeDialog = false
+IntroConfig.UseCustomizeDialog = true
+
+-- Whether to show the "Settings" prompt in the Character Creator
+IntroConfig.EnableSettings = false
+
+-- Whether to show the "Start Fresh" prompt (gender select and creator)
+IntroConfig.EnableStartFresh = false
+
+-- Whether to show the "Import" prompt on the gender select screen
+IntroConfig.EnableImport = false
+
+-- Whether to show the mugshot "Options" prompt (hold for Details / Extra Time / Title)
+IntroConfig.EnableDetails = false
+
+-- Whether to show the "Export" prompt (main menu Confirm item and mugshot)
+IntroConfig.EnableExport = false
+
+-- Which screen to open after gender select:
+-- "main"     = Name / Create / Advanced / Confirm menu
+-- "basic"    = basic character creator (skips the main menu; Name uses the same rename keyboard)
+IntroConfig.StartMenu = "main"
 
 -- Minimum and maximum cooldown time (in seconds) between idle fidget animations
 IntroConfig.FidgetCooldownMin = 30
