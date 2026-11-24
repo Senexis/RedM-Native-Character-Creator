@@ -648,7 +648,7 @@ function Intro:MaintainIntro()
         self:SetState(INTRO_STATE.SELECT_GENDER)
     end
 
-    if not self:IsFlagSet(INTRO_FLAG.PED_PRESET_SELECTED) and HasAnimEventFired(self.sheriffPed, 0x378A4083) then
+    if not self:IsFlagSet(INTRO_FLAG.PED_PRESET_SELECTED) and HasAnimEventFired(self.sheriffPed, "CAM_CUT") then
         Utils:Debug("MAINTAIN_INTRO - CCAS - sheriff has finished his intro animation, starting idle")
 
         local position = self.config.initCamPosition
@@ -866,7 +866,7 @@ function Intro:MaintainTransitionToCustomize()
 
         self:SetState(INTRO_TO_EDIT_STATE.CAM, "TO_EDIT")
     elseif self.toEditState == INTRO_TO_EDIT_STATE.CAM then
-        if HasAnimEventFired(presetPed, 0x378A4083) ~= 1 then
+        if HasAnimEventFired(presetPed, "CAM_CUT") ~= 1 then
             if GetGameTimer() - self.subStateChangeTime > TIMEOUT_GENERIC then
                 self:Error("Failed to transition. Please try again.", 1101)
             end
@@ -948,7 +948,7 @@ function Intro:MaintainTransitionBackToIntro()
 
         self:SetState(INTRO_BACK_START_STATE.CAM, "BACK_START")
     elseif self.backStartState == INTRO_BACK_START_STATE.CAM then
-        if HasAnimEventFired(presetPed, 0x378A4083) ~= 1 then
+        if HasAnimEventFired(presetPed, "CAM_CUT") ~= 1 then
             if GetGameTimer() - self.subStateChangeTime > TIMEOUT_GENERIC then
                 self:Error("Failed to transition. Please try again.", 1201)
             end
@@ -1138,7 +1138,7 @@ function Intro:MaintainTransitionToMugshot()
 
         self:SetState(INTRO_TO_PHOTO_STATE.CAM, "TO_PHOTO")
     elseif self.toPhotoState == INTRO_TO_PHOTO_STATE.CAM then
-        if HasAnimEventFired(presetPed, 0x378A4083) ~= 1 then
+        if HasAnimEventFired(presetPed, "CAM_CUT") ~= 1 then
             if GetGameTimer() - self.subStateChangeTime > TIMEOUT_GENERIC then
                 self:Error("Failed to transition. Please try again.", 1401)
             end
@@ -1226,7 +1226,7 @@ function Intro:MaintainTransitionBackToCustomize()
         Utils:Debug("NET_CHAR_CREATOR_UPDATE_MISSION_STATE__EDITOR__TRANSITION_BACK_TO_CUTOMIZE - CCAS - char going back to editing stance")
         self:SetState(INTRO_BACK_EDIT_STATE.CAM, "BACK_EDIT")
     elseif self.backEditState == INTRO_BACK_EDIT_STATE.CAM then
-        if HasAnimEventFired(presetPed, 0x378A4083) ~= 1 then
+        if HasAnimEventFired(presetPed, "CAM_CUT") ~= 1 then
             if GetGameTimer() - self.subStateChangeTime > TIMEOUT_GENERIC then
                 self:Error("Failed to transition. Please try again.", 1501)
             end
@@ -1242,7 +1242,7 @@ function Intro:MaintainTransitionBackToCustomize()
 
         self:SetState(INTRO_BACK_EDIT_STATE.WALK, "BACK_EDIT")
     elseif self.backEditState == INTRO_BACK_EDIT_STATE.WALK then
-        if HasAnimEventFired(presetPed, 0x378A4083) ~= 1 then
+        if HasAnimEventFired(presetPed, "CAM_CUT") ~= 1 then
             if GetGameTimer() - self.subStateChangeTime > TIMEOUT_GENERIC then
                 self:Error("Failed to transition. Please try again.", 1502)
             end

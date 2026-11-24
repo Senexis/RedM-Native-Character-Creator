@@ -1290,19 +1290,19 @@ function Character:MatchHairColor(matchBeard, apply)
 end
 
 function Character:WearingBeard()
-    if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_COMPLETE) then return true end
-    if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_CHOPS) then return true end
+    if self:IsPedUsingTag(COMPONENT_TAG.BEARDS) then return true end
     if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_CHIN) then return true end
     if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_MUSTACHE) then return true end
+    if self:IsPedUsingTag(COMPONENT_TAG.BEARDS_CHOPS) then return true end
     return false
 end
 
 function Character:RemoveBeard(skipEvent)
     if self:IsFemale() then return end
-    self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_COMPLETE)
-    self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_CHOPS)
+    self:RemoveTagFromPed(COMPONENT_TAG.BEARDS)
     self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_CHIN)
     self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_MUSTACHE)
+    self:RemoveTagFromPed(COMPONENT_TAG.BEARDS_CHOPS)
     if not skipEvent then SignalBus:emit("beard_removed") end
 end
 
