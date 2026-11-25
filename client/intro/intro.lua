@@ -42,9 +42,8 @@ local function GetDefaultData()
         initCamera = 0,
         presetCameras = {},
         editCamera = 0,
-        editCameraInterp = 0,
+        transitionCamera = 0,
         currentEditViewId = EDITOR_VIEW.INVALID,
-        currentEditViewData = {},
         currentEditorCameraData = {},
         portraitCamera = 0,
 
@@ -63,7 +62,33 @@ local function GetDefaultData()
         mugshotShowUi = true,
         photoPostfx = 0,
 
+        rerollPaymentTime = 0,
+        rerollPaymentResult = nil,
     }
+end
+
+local starting = false
+
+local function setWeatherSyncEnabled(enabled)
+    if GetResourceState("weathersync") ~= "started" then return end
+    exports.weathersync:setSyncEnabled(enabled)
+end
+
+-- The character is shared with CharacterApplier, so wait for it to finish
+local function startWhenCharacterApplied(callback)
+    if not CharacterApplier:IsBusy() then
+        callback()
+        return
+    end
+
+    Utils:Debug("Waiting for a character to finish applying before starting the intro")
+
+    starting = true
+    CreateThread(function()
+        while CharacterApplier:IsBusy() do Wait(100) end
+        starting = false
+        callback()
+    end)
 end
 
 local defaults = GetDefaultData()
@@ -101,11 +126,28 @@ function Intro:SetState(state, sub)
     end
 end
 
+function Intro:IsActive()
+    return starting or self.state ~= INTRO_STATE.WAITING_TO_START
+end
+
 function Intro:Start()
-    self:SetState(INTRO_STATE.INIT)
+    if self:IsActive() then
+        Utils:Warn("The Character Creator is already open")
+        return
+    end
+
+    startWhenCharacterApplied(function()
+        self:SetState(INTRO_STATE.INIT)
+    end)
 end
 
 function Intro:Reroll(data)
+    -- Checked first, an error would close the Character Creator that is already open
+    if self:IsActive() then
+        Utils:Warn("The Character Creator is already open")
+        return
+    end
+
     if DoesEntityExist(PlayerPedId()) ~= 1 then
         self:Error("You may not use the Character Creator to edit your character at this time.", 1)
         return
@@ -121,9 +163,11 @@ function Intro:Reroll(data)
         return
     end
 
-    self.rerollImportData = data
-    self:SetFlag(INTRO_FLAG.IS_REROLLING)
-    self:SetState(INTRO_STATE.INIT)
+    startWhenCharacterApplied(function()
+        self.rerollImportData = data
+        self:SetFlag(INTRO_FLAG.IS_REROLLING)
+        self:SetState(INTRO_STATE.INIT)
+    end)
 end
 
 function Intro:Maintain()
@@ -197,6 +241,7 @@ function Intro:MaintainInit()
     self.playerExitPosition = GetEntityCoords(self.playerPedId)
     self.playerExitHeading = GetEntityHeading(self.playerPedId)
 
+    setWeatherSyncEnabled(false)
     SetOverrideWeather(`SUNNY`)
     NetworkClockTimeOverride(10, 0, 0, 0, true)
     SetTimecycleModifier("Online_Character_Editor")
@@ -304,7 +349,7 @@ function Intro:MaintainLoadArea()
     if not self:IsFlagSet(INTRO_FLAG.PLAYER_POSITION_IN_INTRO) then
         Utils:Debug("MAINTAIN_LOAD_AREA - placing player at the editor position")
 
-        if IsEntityDead(self.playerPedId) then
+        if IsEntityDead(self.playerPedId) == 1 then
             Utils:Debug("MAINTAIN_LOAD_AREA - resurrecting the player's ped")
             ResurrectPed(self.playerPedId)
         end
@@ -490,13 +535,13 @@ function Intro:MaintainApplyRandomization()
         return
     end
 
-    if Character:IsFlagSet(CHARACTER_FLAG.DIRTY) then
+    if Character:IsUpdating() then
         Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - waiting for character to be ready")
         return
     end
 
     if not self:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED) then
-        if not CreatorPresets:Init(EDITOR_CONFIG.MALE) then
+        if not Character:Attach(malePed) then
             if GetGameTimer() - self.stateChangeTime > TIMEOUT_GENERIC then
                 self:Error("Failed to create the male character. Please try again.", 0702)
             end
@@ -507,8 +552,6 @@ function Intro:MaintainApplyRandomization()
 
         Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - initializing male character preset")
 
-        Character:Reset()
-        Character:SetPed(malePed)
         Character:RandomizeAll()
 
         Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - randomized male character preset")
@@ -525,7 +568,7 @@ function Intro:MaintainApplyRandomization()
     end
 
     if not self:IsFlagSet(INTRO_FLAG.FEMALE_PED_RANDOMIZED) then
-        if not CreatorPresets:Init(EDITOR_CONFIG.FEMALE) then
+        if not Character:Attach(femalePed) then
             if GetGameTimer() - self.stateChangeTime > TIMEOUT_GENERIC then
                 self:Error("Failed to create the female character. Please try again.", 0703)
             end
@@ -536,8 +579,6 @@ function Intro:MaintainApplyRandomization()
 
         Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - initializing female character preset")
 
-        Character:Reset()
-        Character:SetPed(femalePed)
         Character:RandomizeAll()
 
         Utils:Debug("MAINTAIN_APPLY_RANDOMIZATION - randomized female character preset")
@@ -565,13 +606,13 @@ function Intro:MaintainInitCam()
         Utils:Debug("MAINTAIN_INIT_CAM - creating init camera")
     end
 
-    if IsLoadingScreenVisible() then
+    if IsLoadingScreenVisible() == 1 then
         ShutdownLoadingScreen()
         Utils:Debug("MAINTAIN_INIT_CAM - shutting down the loading screen")
         return
     end
 
-    if IsAnyUiappRunning() then
+    if IsAnyUiappRunning() == 1 then
         CloseAllUiapps()
         Utils:Debug("MAINTAIN_INIT_CAM - closing all ui apps")
     end
@@ -648,7 +689,7 @@ function Intro:MaintainIntro()
         self:SetState(INTRO_STATE.SELECT_GENDER)
     end
 
-    if not self:IsFlagSet(INTRO_FLAG.PED_PRESET_SELECTED) and HasAnimEventFired(self.sheriffPed, "CAM_CUT") then
+    if not self:IsFlagSet(INTRO_FLAG.PED_PRESET_SELECTED) and HasAnimEventFired(self.sheriffPed, "CAM_CUT") == 1 then
         Utils:Debug("MAINTAIN_INTRO - CCAS - sheriff has finished his intro animation, starting idle")
 
         local position = self.config.initCamPosition
@@ -685,13 +726,9 @@ function Intro:MaintainSelectGender()
             return
         end
 
-        if not CreatorXml:Initialize() then
-            Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator xml to initialize")
-            return
-        end
-
-        if not CreatorPresets:Init(self.selectedPreset) then
-            Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator presets to initialize")
+        -- No ped is attached yet, so the config can't come from the character
+        if not CreatorXml:Initialize() or not CreatorPresets:Init(self.selectedPreset) then
+            Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator data to initialize")
             return
         end
 
@@ -720,13 +757,8 @@ function Intro:MaintainSelectGender()
 
     if self:IsFlagSet(INTRO_FLAG.IMPORT_REQUESTED) then
         if not self:IsFlagSet(INTRO_FLAG.IMPORT_OPENED) then
-            if not CreatorXml:Initialize() then
-                Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator xml to initialize")
-                return
-            end
-
-            if not CreatorPresets:Init(self.selectedPreset) then
-                Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator presets to initialize")
+            if not Character:LoadEditorData() then
+                Utils:Debug("MAINTAIN_SELECT_GENDER - waiting for creator data to initialize")
                 return
             end
 
@@ -769,7 +801,7 @@ function Intro:MaintainSelectGender()
     end
 
     local presetCamera = self.presetCameras[self.selectedPreset] or 0
-    if IsCamInterpolating(presetCamera) then
+    if IsCamInterpolating(presetCamera) == 1 then
         DisableAllControlActions(0)
         self:RegisterCharacterPrompts(false)
 
@@ -808,21 +840,21 @@ function Intro:MaintainSelectGender()
 
     self:RegisterCharacterPrompts(true)
 
-    if IsControlJustReleased(0, `INPUT_GAME_MENU_LEFT`) then
+    if IsControlJustReleased(0, `INPUT_GAME_MENU_LEFT`) == 1 then
         self:PlaySound("gender_left", "RDRO_Character_Creator_Sounds")
         self:SetActivePedPreset(EDITOR_CONFIG.MALE)
-    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) then
+    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) == 1 then
         self:PlaySound("gender_right", "RDRO_Character_Creator_Sounds")
         self:SetActivePedPreset(EDITOR_CONFIG.FEMALE)
     elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
         UiPromptRestartModes(self.prompts.reset)
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:SetFlag(INTRO_FLAG.RESET_CHARACTER)
-    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
+    elseif IntroConfig.EnableImport and IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) == 1 then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:DestroyPrompts()
         self:SetFlag(INTRO_FLAG.IMPORT_REQUESTED)
-    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
+    elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) == 1 then
         self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
         self:DestroyPrompts()
         self:DestroyObjective()
@@ -847,7 +879,9 @@ function Intro:MaintainTransitionToCustomize()
             return
         end
 
-        self:SetupEditor()
+        if not self:SetupEditor() then
+            return
+        end
 
         SetAnimSceneEntity(self.animScene, "Male_MP", self.presetPeds[EDITOR_CONFIG.MALE], 0)
         SetAnimSceneEntity(self.animScene, "Female_MP", self.presetPeds[EDITOR_CONFIG.FEMALE], 0)
@@ -860,6 +894,8 @@ function Intro:MaintainTransitionToCustomize()
 
         local playlist = self.selectedPreset == EDITOR_CONFIG.MALE and "Pl_Start_to_Edit_Male" or "Pl_Start_to_Edit_Female"
         SetAnimScenePlayList(self.animScene, playlist, true)
+
+        IntroAnimations:ResetPed(self.selectedPreset, presetPed)
 
         self:SetupMirrorInteriorGroup()
         Utils:Debug("MAINTAIN_TRANSITION_TO_CUSTOMIZE - CCAS - start to edit playlist triggered")
@@ -874,21 +910,7 @@ function Intro:MaintainTransitionToCustomize()
             return
         end
 
-        if not DoesCamExist(self.editCamera) then
-            self.editCamera = CreateCamera(`DEFAULT_SCRIPTED_CAMERA`, false)
-        end
-
-        local viewData = self.config.editorViews and self.config.editorViews[self.selectedPreset] and self.config.editorViews[self.selectedPreset][EDITOR_VIEW.FULL_BODY]
-        if viewData then
-            SetCamCoord(self.editCamera, viewData.position.x, viewData.position.y, viewData.position.z)
-            SetCamRot(self.editCamera, viewData.rotation.x, viewData.rotation.y, viewData.rotation.z, 2)
-            SetCamFov(self.editCamera, viewData.fov)
-            SetCamFocusDistance(self.editCamera, viewData.focus)
-            self.currentEditViewData = viewData
-        end
-
-        SetCamActive(self.editCamera, true)
-        RenderScriptCams(true, false, 3000, true, false, 0)
+        self:ActivateTransitionCamera()
 
         Utils:Debug("MAINTAIN_TRANSITION_TO_CUSTOMIZE - CCAS - cam set")
 
@@ -902,7 +924,7 @@ function Intro:MaintainTransitionToCustomize()
             return
         end
 
-        IntroAnimations:MaintainAnimations(self.selectedPreset, presetPed)
+        IntroAnimations:MaintainNeutral(self.selectedPreset, presetPed)
         FreezeEntityPosition(presetPed, false)
 
         StartAudioSceneset("customization", "rdro_character_creator_scenes")
@@ -910,7 +932,7 @@ function Intro:MaintainTransitionToCustomize()
 
         self:SetState(INTRO_TO_EDIT_STATE.COMPLETE, "TO_EDIT")
     elseif self.toEditState == INTRO_TO_EDIT_STATE.COMPLETE then
-        IntroAnimations:MaintainAnimations(self.selectedPreset, presetPed)
+        IntroAnimations:MaintainNeutral(self.selectedPreset, presetPed)
 
         self:SetState(INTRO_STATE.CUSTOMIZE)
         self:SetState(INTRO_TO_EDIT_STATE.INIT, "TO_EDIT")
@@ -978,7 +1000,7 @@ function Intro:MaintainTransitionBackToIntro()
         self.presetCameras[self.selectedPreset] = camera
         self:SetState(INTRO_BACK_START_STATE.COMPLETE, "BACK_START")
     elseif self.backStartState == INTRO_BACK_START_STATE.COMPLETE then
-        if IsAnimSceneInSection(self.animScene, "s_start_idle", true) then
+        if IsAnimSceneInSection(self.animScene, "s_start_idle", true) == 1 then
             self:SetState(INTRO_BACK_START_STATE.INIT, "BACK_START")
             self:SetState(INTRO_STATE.INTRO)
         end
@@ -1027,6 +1049,14 @@ function Intro:MaintainCustomizePed()
 
     IntroAnimations:MaintainAnimations(self.selectedPreset, presetPed)
 
+    -- The sticks do nothing while the camera moves
+    if DoesCamExist(self.editCamera) == 1 and IsCamInterpolating(self.editCamera) == 1 then
+        DisableControlAction(2, `INPUT_GAME_MENU_RIGHT_AXIS_X`, true)
+        DisableControlAction(2, `INPUT_GAME_MENU_RIGHT_AXIS_Y`, true)
+        DisableControlAction(2, `INPUT_FRONTEND_AXIS_X`, true)
+        DisableControlAction(2, `INPUT_FRONTEND_AXIS_Y`, true)
+    end
+
     if self.editorResult == INTRO_EDITOR_STATUS.STOPPED then
         if CanLaunchUiappByHash("shop_menu") ~= 1 then
             return
@@ -1059,9 +1089,12 @@ function Intro:MaintainCustomizePed()
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             Creator:QuickSwitch()
-        elseif self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT) and IsControlJustReleased(2, `INPUT_GAME_MENU_EXTRA_OPTION`) then
+        elseif IntroConfig.EnableRandomizeHead and self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT) and IsControlJustReleased(2, `INPUT_GAME_MENU_EXTRA_OPTION`) == 1 then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             Character:RandomizeCustomHead(true)
+        elseif IntroConfig.EnableRandomizeName and self:IsFlagSet(INTRO_FLAG.CHARACTER_RENAME_PROMPT) and IsControlJustReleased(2, `INPUT_GAME_MENU_EXTRA_OPTION`) == 1 then
+            self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
+            Character:RandomizeName()
         elseif self.prompts.reset and UiPromptGetProgress(self.prompts.reset) == 1.0 then
             UiPromptRestartModes(self.prompts.reset)
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
@@ -1074,7 +1107,6 @@ function Intro:MaintainCustomizePed()
     if self.editorResult == INTRO_EDITOR_STATUS.RUNNING then
         IntroAnimations:MaintainFidgets(self.selectedPreset, presetPed)
     elseif self.editorResult == INTRO_EDITOR_STATUS.CANCEL then
-        self.presetData[self.selectedPreset] = Character:Export()
         CancelOnscreenKeyboard()
         if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
             Utils:Debug("MAINTAIN_CUSTOMIZE - REROLL - player selected to cancel, going back to freeroam")
@@ -1086,7 +1118,6 @@ function Intro:MaintainCustomizePed()
         end
         self.editorResult = INTRO_EDITOR_STATUS.STOPPED
     elseif self.editorResult == INTRO_EDITOR_STATUS.CONFIRM then
-        self.presetData[self.selectedPreset] = Character:Export()
         CancelOnscreenKeyboard()
         ResetAnimScene(self.animScene, "")
         self:SetState(INTRO_STATE.TRANSITION_TO_MUGSHOT)
@@ -1207,7 +1238,9 @@ function Intro:MaintainTransitionBackToCustomize()
             return
         end
 
-        Intro:SetupEditor()
+        if not self:SetupEditor() then
+            return
+        end
 
         SetAnimSceneEntity(self.animScene, "Male_MP", self.presetPeds[EDITOR_CONFIG.MALE], 0)
         SetAnimSceneEntity(self.animScene, "Female_MP", self.presetPeds[EDITOR_CONFIG.FEMALE], 0)
@@ -1220,6 +1253,9 @@ function Intro:MaintainTransitionBackToCustomize()
 
         local playlist = self.selectedPreset == EDITOR_CONFIG.MALE and "Pl_Photo_to_Edit_Male" or "Pl_Photo_to_Edit_Female"
         SetAnimScenePlayList(self.animScene, playlist, true)
+
+        -- The scene leaves the character somewhere else than the last editor session did
+        IntroAnimations:ResetPed(self.selectedPreset, presetPed)
 
         SetAudioSceneset("customization", "rdro_character_creator_scenes")
 
@@ -1236,7 +1272,7 @@ function Intro:MaintainTransitionBackToCustomize()
 
         self:SetState(INTRO_BACK_EDIT_STATE.OVERLAY, "BACK_EDIT")
     elseif self.backEditState == INTRO_BACK_EDIT_STATE.OVERLAY then
-        if AnimpostfxIsRunning("CameraViewfinder") then
+        if AnimpostfxIsRunning("CameraViewfinder") == 1 then
             AnimpostfxStop("CameraViewfinder")
         end
 
@@ -1250,20 +1286,7 @@ function Intro:MaintainTransitionBackToCustomize()
             return
         end
 
-        if not DoesCamExist(self.editCamera) then
-            self.editCamera = CreateCamera(`DEFAULT_SCRIPTED_CAMERA`, false)
-        end
-
-        local viewData = self.config.editorViews and self.config.editorViews[self.selectedPreset] and self.config.editorViews[self.selectedPreset][EDITOR_VIEW.FULL_BODY]
-        if viewData then
-            SetCamCoord(self.editCamera, viewData.position.x, viewData.position.y, viewData.position.z)
-            SetCamRot(self.editCamera, viewData.rotation.x, viewData.rotation.y, viewData.rotation.z, 2)
-            SetCamFov(self.editCamera, viewData.fov)
-            SetCamFocusDistance(self.editCamera, viewData.focus)
-            self.currentEditViewData = viewData
-        end
-        SetCamActive(self.editCamera, true)
-        RenderScriptCams(true, false, 3000, true, false, 0)
+        self:ActivateTransitionCamera()
 
         self:SetState(INTRO_BACK_EDIT_STATE.ANIM_FINISH, "BACK_EDIT")
     elseif self.backEditState == INTRO_BACK_EDIT_STATE.ANIM_FINISH then
@@ -1275,12 +1298,12 @@ function Intro:MaintainTransitionBackToCustomize()
             return
         end
 
-        IntroAnimations:MaintainAnimations(self.selectedPreset)
+        IntroAnimations:MaintainNeutral(self.selectedPreset, presetPed)
         FreezeEntityPosition(presetPed, false)
 
         self:SetState(INTRO_BACK_EDIT_STATE.COMPLETE, "BACK_EDIT")
     elseif self.backEditState == INTRO_BACK_EDIT_STATE.COMPLETE then
-        IntroAnimations:MaintainAnimations(self.selectedPreset)
+        IntroAnimations:MaintainNeutral(self.selectedPreset, presetPed)
         Utils:Debug("NET_CHAR_CREATOR_UPDATE_MISSION_STATE__EDITOR__TRANSITION_TO_CUSTOMIZE - CCAS - char waiting for back edit anim scene to finish")
 
         if IsAnimSceneFinished(self.animScene, false) ~= 1 then
@@ -1350,7 +1373,16 @@ function Intro:MaintainMugshot()
         EnableControlAction(0, `INPUT_GAME_MENU_OPTION`, false)
         EnableControlAction(0, `INPUT_GAME_MENU_RS`, false)
 
-        local held = IsControlPressed(0, `INPUT_SHOP_CHANGE_CURRENCY`) == 1
+        if self.rerollPaymentTime > 0 then
+            self:RegisterMugshotPrompts(false, false)
+            self:MaintainRerollPayment()
+            return
+        end
+
+        -- With payments the currency button is used to pay with Gold instead
+        local payment = self:UsesRerollPayment()
+
+        local held = IntroConfig.EnableMugshotOptions and not payment and IsControlPressed(0, `INPUT_SHOP_CHANGE_CURRENCY`) == 1
         self:RegisterMugshotPrompts(true, held)
 
         if self:IsFlagSet(INTRO_FLAG.MUGSHOT_TITLE_PROMPT) and UpdateOnscreenKeyboard() == 0 then
@@ -1364,16 +1396,16 @@ function Intro:MaintainMugshot()
         end
 
         if held then
-            if IsControlJustReleased(0, `INPUT_GAME_MENU_LEFT`) then
+            if IsControlJustReleased(0, `INPUT_GAME_MENU_LEFT`) == 1 then
                 self:PlaySound("Amount_Decrease", "HUD_Donate_Sounds")
                 self.mugshotTimer = math.max(self.mugshotTimer - 1, 3)
-            elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) then
+            elseif IsControlJustReleased(0, `INPUT_GAME_MENU_RIGHT`) == 1 then
                 self:PlaySound("Amount_Increase", "HUD_Donate_Sounds")
                 self.mugshotTimer = math.min(self.mugshotTimer + 1, 30)
-            elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
+            elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) == 1 then
                 self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
                 self.mugshotShowUi = not self.mugshotShowUi
-            elseif self.mugshotShowUi and IsControlJustReleased(0, `INPUT_GAME_MENU_OPTION`) then
+            elseif self.mugshotShowUi and IsControlJustReleased(0, `INPUT_GAME_MENU_OPTION`) == 1 then
                 self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
                 NextOnscreenKeyboardResultWillDisplayUsingTheseFonts(256)
                 DisplayOnscreenKeyboard(4, "MUGSHOT_TITLE_PROMPT", "", self.mugshotTitle or "", "", "", "", maxTitleLength)
@@ -1383,27 +1415,17 @@ function Intro:MaintainMugshot()
             return
         end
 
-        if IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) then
+        if IntroConfig.EnableExport and not payment and IsControlJustReleased(0, `INPUT_GAME_MENU_RS`) == 1 then
             self:PlaySound("SELECT", "RDRO_Character_Creator_Sounds")
             self:ExportCharacter()
-        elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
-            -- No sound as the flash will play
-            self:DestroyPrompts()
-            self:DestroyObjective()
-
-            if self.mugshotShowUi then
-                local root = DatabindingAddDataContainerFromPath("", "CharacterCreationRoot")
-                local overlay = DatabindingAddDataContainer(root, "photoOverlay")
-
-                DatabindingAddDataBool(overlay, "showPhotoOverlay", true)
-                DatabindingAddDataString(overlay, "gamertag", Character.name or "")
-                DatabindingAddDataString(overlay, "socialClubId", self.mugshotTitle or "")
-
-                LaunchUiappByHashWithEntry(`character_creator`, `photo_overlay`)
+        elseif IsControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) == 1 then
+            local currency, amount = self:GetRerollPrice()
+            if currency then
+                self:RequestRerollPayment(currency, amount)
+            else
+                self:TakeMugshot()
             end
-
-            self:SetState(INTRO_MUGSHOT_STATE.INIT, "MUGSHOT")
-        elseif IsControlJustReleased(0, `INPUT_GAME_MENU_CANCEL`) then
+        elseif IsControlJustReleased(0, `INPUT_GAME_MENU_CANCEL`) == 1 then
             self:PlaySound("BACK", "RDRO_Character_Creator_Sounds")
             self:DestroyPrompts()
             self:DestroyObjective()
@@ -1431,7 +1453,7 @@ function Intro:MaintainMugshot()
             return
         end
 
-        if AnimpostfxIsRunning("CameraViewfinder") then
+        if AnimpostfxIsRunning("CameraViewfinder") == 1 then
             AnimpostfxStop("CameraViewfinder")
         end
 
@@ -1453,7 +1475,7 @@ function Intro:MaintainMugshot()
             self:SetState(INTRO_MUGSHOT_STATE.FADE, "MUGSHOT")
         end
     elseif self.mugshotState == INTRO_MUGSHOT_STATE.FADE then
-        if IsScreenFadedOut() then
+        if IsScreenFadedOut() == 1 then
             AnimpostfxStopStackhashPostfx(self.photoPostfx)
 
             self:SetState(INTRO_MUGSHOT_STATE.COMPLETE, "MUGSHOT")
@@ -1470,7 +1492,7 @@ function Intro:MaintainMugshot()
             return
         end
 
-        if AnimpostfxIsStackhashPlaying(self.photoPostfx) then
+        if AnimpostfxIsStackhashPlaying(self.photoPostfx) == 1 then
             AnimpostfxStopStackhashPostfx(self.photoPostfx)
             Utils:Debug("NET_CHAR_CREATOR_UPDATE_MISSION_STATE__EDITOR__MUGSHOT: fx hash stopped")
         else
@@ -1499,7 +1521,9 @@ function Intro:MaintainCancelBackToFreeroam()
     if self:IsFlagSet(INTRO_FLAG.REROLL_CANCEL_ALERT_CANCEL) then
         Utils:Debug("MAINTAIN_CANCEL_BACK_TO_FREEROAM - player canceled the exit, going back to customize")
 
-        Intro:SetupEditor()
+        if not self:SetupEditor() then
+            return
+        end
 
         self:ClearFlag(INTRO_FLAG.REROLL_CANCEL_ALERT_CANCEL)
         self:SetState(INTRO_STATE.CUSTOMIZE)
@@ -1522,6 +1546,10 @@ function Intro:MaintainExit()
     if self.alertHandle then
         UiStickyFeedClearMessage(self.alertHandle)
         self.alertHandle = 0
+    end
+
+    if self.rerollPaymentTime > 0 then
+        BusyspinnerOff()
     end
 
     CancelOnscreenKeyboard()
@@ -1570,6 +1598,7 @@ function Intro:MaintainExit()
     ClearOverrideWeather()
     ClearTimecycleModifier()
     NetworkClearClockTimeOverride()
+    setWeatherSyncEnabled(true)
 
     DisableHudContext(`HUD_CTX_CHARACTER_CREATOR`)
     DisableHudContext(`HUD_CTX_SHOP_OBJECTIVE`)
@@ -1591,11 +1620,11 @@ function Intro:MaintainExit()
         end
     end
 
-    if AnimpostfxIsRunning("CameraViewfinder") then
+    if AnimpostfxIsRunning("CameraViewfinder") == 1 then
         AnimpostfxStop("CameraViewfinder")
     end
 
-    if AnimpostfxIsStackhashPlaying(self.photoPostfx) then
+    if AnimpostfxIsStackhashPlaying(self.photoPostfx) == 1 then
         AnimpostfxStopStackhashPostfx(self.photoPostfx)
     end
 
@@ -1622,8 +1651,15 @@ function Intro:MaintainExit()
 end
 
 function Intro:SetupEditor()
-    Character:Reset()
-    Character:SetPed(self.presetPeds[self.selectedPreset])
+    -- The creator unloads its data when it closes, which is needed to import the character
+    if not Character:Attach(self.presetPeds[self.selectedPreset]) then
+        if GetGameTimer() - self.stateChangeTime > TIMEOUT_LOAD then
+            self:Error("Failed to load character data. Please try again.", 1701)
+        end
+
+        Utils:Debug("SETUP_EDITOR - waiting for creator data to initialize")
+        return false
+    end
 
     if self:IsFlagSet(INTRO_FLAG.IS_REROLLING) and self.rerollImportData then
         Character:Import(self.rerollImportData, false)
@@ -1635,6 +1671,7 @@ function Intro:SetupEditor()
     end
 
     Creator:Start()
+    return true
 end
 
 function Intro:SetAnimationLevel(level)
@@ -1659,7 +1696,7 @@ function Intro:SetRotationLevel(level)
 end
 
 function Intro:RequestIplHashSafe(hash)
-    if IsIplActiveHash(hash) then
+    if IsIplActiveHash(hash) == 1 then
         return true
     end
 
@@ -1972,7 +2009,7 @@ function Intro:MaintainPlaylistLoaded(scene, playlist)
 end
 
 function Intro:SetLockonDisabled(ped)
-    if IsPedInjured(ped) then
+    if IsPedInjured(ped) == 1 then
         return
     end
 
@@ -2017,7 +2054,7 @@ function Intro:CreatePedPreset(config)
     self:SetLockonDisabled(ped)
 
     local animation = "SCRIPT_COMMON@TAILOR_SHOP"
-    if IsPedModel(ped, `MP_FEMALE`) then
+    if IsPedModel(ped, `MP_FEMALE`) == 1 then
         animation = "MECH_LOCO_F@TYPE@COWGIRL@NORMAL@UNARMED@IDLE"
     end
 
@@ -2043,26 +2080,21 @@ function Intro:ResetCharacter()
         return false
     end
 
-    if Character:IsFlagSet(CHARACTER_FLAG.DIRTY) then
+    if Character:IsUpdating() then
         Utils:Debug("RESET_CHARACTER - waiting for character to be ready")
         return false
     end
 
-    if not CreatorXml:Initialize() then
-        Utils:Debug("RESET_CHARACTER - waiting for creator xml to initialize")
-        return false
-    end
-
-    if not CreatorPresets:Init(self.selectedPreset) then
-        Utils:Debug("RESET_CHARACTER - waiting for creator presets to initialize")
+    -- Load the data before attaching so the name is kept
+    if not Character:LoadEditorData() then
+        Utils:Debug("RESET_CHARACTER - waiting for creator data to initialize")
         return false
     end
 
     local name = Character.name or ""
 
     Utils:Debug("RESET_CHARACTER - resetting character")
-    Character:Reset()
-    Character:SetPed(ped)
+    Character:Attach(ped)
     Character:ApplyName(name)
     Character:ApplyAll()
 
@@ -2085,8 +2117,19 @@ function Intro:ResetCharacter()
     return true
 end
 
+-- Called before the creator unloads the data that is needed to export
+function Intro:SaveEditedCharacter()
+    if self.state ~= INTRO_STATE.CUSTOMIZE then return end
+    self.presetData[self.selectedPreset] = Character:Export()
+end
+
 function Intro:ExportCharacter()
-    local data = Character:Export()
+    -- Use the character that was saved when the creator closed
+    local data = self.presetData[self.selectedPreset]
+    if Creator:IsFlagSet(EDITOR_FLAG.ACTIVE) then
+        data = Character:Export()
+    end
+
     NuiHelper:Copy(data)
 
     print("Here's a copy of your character's data:")
@@ -2104,7 +2147,7 @@ function Intro:FadeOutScreen(duration)
         return false
     end
 
-    if IsScreenFadingIn() then
+    if IsScreenFadingIn() == 1 then
         Utils:Debug("NET_CHAR_CREATOR_FADE_OUT_SCREEN - screen is currently fading in, waiting for it to finish before fading out")
         return false
     end
@@ -2127,12 +2170,12 @@ function Intro:FadeInScreen(duration)
         return false
     end
 
-    if IsScreenFadingOut() then
+    if IsScreenFadingOut() == 1 then
         Utils:Debug("NET_CHAR_CREATOR_FADE_IN_SCREEN - screen is currently fading out, waiting for it to finish before fading in")
         return false
     end
 
-    if IsLoadingScreenVisible() then
+    if IsLoadingScreenVisible() == 1 then
         Utils:Debug("NET_CHAR_CREATOR_FADE_IN_SCREEN - shutting down the loading screen")
         ShutdownLoadingScreen()
 
@@ -2199,8 +2242,7 @@ function Intro:SetActivePedPreset(target)
         return
     end
 
-    Character:Reset()
-    Character:SetPed(presetPed)
+    Character:Attach(presetPed)
 end
 
 function Intro:MoveEditCamera(viewId)
@@ -2214,41 +2256,45 @@ function Intro:MoveEditCamera(viewId)
     if not viewData then return end
 
     if DoesCamExist(self.editCamera) ~= 1 then
-        return
+        self.editCamera = CreateCamera(`DEFAULT_SCRIPTED_CAMERA`, false)
     end
 
-    -- Destroy any previous interpolation source camera
-    if DoesCamExist(self.editCameraInterp) == 1 then
-        DestroyCam(self.editCameraInterp, false)
-        self.editCameraInterp = 0
+    -- Cut to the first view, the views after that are interpolated
+    local duration = 1200
+    if IsCamActive(self.editCamera) ~= 1 then
+        SetCamActive(self.editCamera, true)
+        duration = 0
     end
 
-    -- Build a source camera from the current stored view data for smooth interpolation
-    if self.currentEditViewData then
-        local src = self.currentEditViewData
-        self.editCameraInterp = CreateCamera(`DEFAULT_SCRIPTED_CAMERA`, false)
-        SetCamCoord(self.editCameraInterp, src.position.x, src.position.y, src.position.z)
-        SetCamRot(self.editCameraInterp, src.rotation.x, src.rotation.y, src.rotation.z, 2)
-        SetCamFov(self.editCameraInterp, src.fov)
-        SetCamFocusDistance(self.editCameraInterp, src.focus)
-    end
-
-    -- Move editCamera to the new view
-    SetCamCoord(self.editCamera, viewData.position.x, viewData.position.y, viewData.position.z)
-    SetCamRot(self.editCamera, viewData.rotation.x, viewData.rotation.y, viewData.rotation.z, 2)
-    SetCamFov(self.editCamera, viewData.fov)
+    -- Interpolate the camera itself like net_char_creator does, switching cameras blurs the first frame
+    local position = viewData.position
+    local rotation = viewData.rotation
+    SetCamParams(self.editCamera, position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, viewData.fov, duration, 1, 1, 2, 1, 1)
     SetCamFocusDistance(self.editCamera, viewData.focus)
 
-    if DoesCamExist(self.editCameraInterp) == 1 then
-        SetCamActiveWithInterp(self.editCamera, self.editCameraInterp, 900, 1, 1)
-    else
-        SetCamActive(self.editCamera, true)
-    end
-
     RenderScriptCams(true, false, 3000, true, false, 0)
+    ShakeCam(self.editCamera, "HAND_SHAKE", 0.04)
 
     self.currentEditViewId = viewId
-    self.currentEditViewData = viewData
+end
+
+function Intro:ActivateTransitionCamera()
+    if DoesCamExist(self.transitionCamera) ~= 1 then
+        self.transitionCamera = CreateCamera(`DEFAULT_SCRIPTED_CAMERA`, false)
+    end
+
+    SetCamCoord(self.transitionCamera, -561.8157, -3780.966, 239.0805)
+    SetCamRot(self.transitionCamera, -4.2146, -0.0007, -87.8802, 2)
+    SetCamFov(self.transitionCamera, 30.0)
+    SetCamActive(self.transitionCamera, true)
+    RenderScriptCams(true, false, 3000, true, false, 0)
+
+    -- The editor camera cuts to its view again once the editor opens
+    if DoesCamExist(self.editCamera) == 1 then
+        SetCamActive(self.editCamera, false)
+    end
+
+    self.currentEditViewId = EDITOR_VIEW.INVALID
 end
 
 function Intro:SetupMirrorInteriorGroup()
@@ -2295,7 +2341,7 @@ function Intro:SetupMirrorInteriorGroup()
 end
 
 function Intro:AddDialogueParticipant(ped, characterName)
-    if DoesEntityExist(ped) ~= 1 or IsEntityDead(ped) then
+    if DoesEntityExist(ped) ~= 1 or IsEntityDead(ped) == 1 then
         return false
     end
 
@@ -2323,7 +2369,7 @@ function Intro:CreateConversation(conversation, singleLine, singleLineIndex, pre
     end
 
     for ped, name in pairs(self.dialogParticipants) do
-        if DoesEntityExist(ped) and IsEntityDead(ped) ~= 1 then
+        if DoesEntityExist(ped) == 1 and IsEntityDead(ped) ~= 1 then
             if IsPedInCurrentConversation(conversation, ped, name) ~= 1 then
                 AddPedToConversation(conversation, ped, name)
             end
@@ -2381,14 +2427,14 @@ function Intro:RegisterCharacterPrompts(toggle)
         import = {
             controls = { "INPUT_GAME_MENU_RS" },
             text = "Import",
-            visible = toggle,
-            enabled = toggle,
+            visible = IntroConfig.EnableImport and toggle,
+            enabled = IntroConfig.EnableImport and toggle,
         },
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
-            visible = enableReset and toggle,
-            enabled = enableReset and toggle,
+            visible = IntroConfig.EnableStartFresh and enableReset and toggle,
+            enabled = IntroConfig.EnableStartFresh and enableReset and toggle,
             hold = "MEDIUM_TIMED_EVENT",
         },
         confirm = {
@@ -2424,9 +2470,11 @@ end
 function Intro:RegisterEditorPrompts(toggle)
     local switchText = Creator:IsAdvancedMode() and "Basic Options" or "Advanced Options"
     local canSwitch = not self:IsFlagSet(INTRO_FLAG.BLOCK_QUICK_SWITCH)
-    local canRandomize = self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT)
-    local canReset = not self:IsFlagSet(INTRO_FLAG.RESET_CHARACTER) and self:IsFlagSet(INTRO_FLAG.CHARACTER_RESET_PROMPT)
+    local canRandomizeHead = IntroConfig.EnableRandomizeHead and self:IsFlagSet(INTRO_FLAG.HEAD_RANDOMIZE_PROMPT)
+    local canReset = IntroConfig.EnableStartFresh and not self:IsFlagSet(INTRO_FLAG.RESET_CHARACTER) and self:IsFlagSet(INTRO_FLAG.CHARACTER_RESET_PROMPT)
     local enableReset = Character:IsModified() or Character:IsRandomized()
+
+    local canRandomizeName = IntroConfig.EnableRandomizeName and self:IsFlagSet(INTRO_FLAG.CHARACTER_RENAME_PROMPT)
 
     if self.selectedPreset == EDITOR_CONFIG.MALE and self:IsFlagSet(INTRO_FLAG.MALE_PED_RANDOMIZED) then
         enableReset = true
@@ -2438,56 +2486,138 @@ function Intro:RegisterEditorPrompts(toggle)
         settings = {
             controls = { "INPUT_GAME_MENU_TAB_LEFT_SECONDARY" },
             text = "Settings",
-            visible = toggle,
-            enabled = toggle,
+            visible = IntroConfig.EnableSettings and toggle,
+            enabled = IntroConfig.EnableSettings and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
         switch = {
             controls = { "INPUT_GAME_MENU_LS" },
             text = switchText,
-            visible = toggle,
-            enabled = canSwitch and toggle,
+            visible = IntroConfig.EnableQuickSwitch and toggle,
+            enabled = IntroConfig.EnableQuickSwitch and canSwitch and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
-        randomize = {
+        randomizeName = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Randomize",
-            visible = canRandomize and toggle,
-            enabled = canRandomize and toggle,
+            visible = canRandomizeName and toggle,
+            enabled = canRandomizeName and toggle,
+        },
+        randomizeHead = {
+            controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
+            text = "Randomize",
+            visible = canRandomizeHead and toggle,
+            enabled = canRandomizeHead and toggle,
         },
         reset = {
             controls = { "INPUT_GAME_MENU_EXTRA_OPTION" },
             text = "Start Fresh",
-            visible = not canRandomize and canReset and toggle,
-            enabled = not canRandomize and canReset and enableReset and toggle,
+            visible = not canRandomizeHead and canReset and toggle,
+            enabled = not canRandomizeHead and canReset and enableReset and toggle,
             hold = "SHORT_TIMED_EVENT",
         },
     })
+end
+
+function Intro:TakeMugshot()
+    -- No sound as the flash will play
+    self:DestroyPrompts()
+    self:DestroyObjective()
+
+    if self.mugshotShowUi then
+        local root = DatabindingAddDataContainerFromPath("", "CharacterCreationRoot")
+        local overlay = DatabindingAddDataContainer(root, "photoOverlay")
+
+        DatabindingAddDataBool(overlay, "showPhotoOverlay", true)
+        DatabindingAddDataString(overlay, "gamertag", Character.name or "")
+        DatabindingAddDataString(overlay, "socialClubId", self.mugshotTitle or "")
+
+        LaunchUiappByHashWithEntry(`character_creator`, `photo_overlay`)
+    end
+
+    self:SetState(INTRO_MUGSHOT_STATE.INIT, "MUGSHOT")
+end
+
+function Intro:UsesRerollPayment()
+    return self:IsFlagSet(INTRO_FLAG.IS_REROLLING) and IntroConfig.EnableRerollPayment == true
+end
+
+-- Returns nothing when it is free, Gold is used while the currency button is held like the game does
+function Intro:GetRerollPrice()
+    if not self:UsesRerollPayment() then return end
+
+    local cash = IntroConfig.RerollCashCost or 0
+    local gold = IntroConfig.RerollGoldCost or 0
+    local useGold = IsControlPressed(0, `INPUT_SHOP_CHANGE_CURRENCY`) == 1
+
+    if useGold and gold > 0 then return "gold", gold end
+    if cash > 0 then return "cash", cash end
+    if gold > 0 then return "gold", gold end
+end
+
+function Intro:RequestRerollPayment(currency, amount)
+    self.rerollPaymentTime = GetGameTimer()
+    self.rerollPaymentResult = nil
+
+    BusyspinnerSetText("Processing Transaction...")
+    TriggerEvent("native_cc:reroll_payment_requested", currency, amount)
+end
+
+function Intro:MaintainRerollPayment()
+    local timedOut = GetGameTimer() - self.rerollPaymentTime > TIMEOUT_GENERIC
+    if self.rerollPaymentResult == nil and not timedOut then return end
+
+    self.rerollPaymentTime = 0
+    BusyspinnerOff()
+
+    if self.rerollPaymentResult then
+        self:TakeMugshot()
+    elseif self.rerollPaymentResult == nil then
+        ShowAlert("ERROR", "ALERT", "The transaction timed out. Please try again.", { acceptHash = `IB_DISMISS` })
+    end
 end
 
 function Intro:RegisterMugshotPrompts(toggle, held)
     local seconds = self.mugshotTimer or 3
     local showUi = self.mugshotShowUi == true
 
+    local payment = self:UsesRerollPayment()
+    local canUseGold = payment and (IntroConfig.RerollGoldCost or 0) > 0
+    local currency, amount = self:GetRerollPrice()
+
     local confirmText = "Confirm"
     if held and showUi then
         confirmText = "Hide Details"
     elseif held and not showUi then
         confirmText = "Show Details"
+    elseif currency == "cash" then
+        confirmText = string.format("Confirm Changes ($%.2f)", amount)
+    elseif currency == "gold" then
+        confirmText = string.format("Confirm Changes (~COLOR_CASH_GOLD~℅%.2f~s~)", amount)
+    elseif payment then
+        confirmText = "Confirm Changes (Free)"
+    elseif self:IsFlagSet(INTRO_FLAG.IS_REROLLING) then
+        confirmText = "Confirm Changes"
     end
 
     self:RegisterPrompts({
         options = {
             controls = { "INPUT_SHOP_CHANGE_CURRENCY" },
             text = "Options",
-            visible = toggle,
-            enabled = toggle,
+            visible = IntroConfig.EnableMugshotOptions and not payment and toggle,
+            enabled = IntroConfig.EnableMugshotOptions and not payment and toggle,
         },
         export = {
             controls = { "INPUT_GAME_MENU_RS" },
             text = "Export",
-            visible = not held and toggle,
-            enabled = toggle,
+            visible = IntroConfig.EnableExport and not payment and not held and toggle,
+            enabled = IntroConfig.EnableExport and not payment and toggle,
+        },
+        gold = {
+            controls = { "INPUT_SHOP_CHANGE_CURRENCY" },
+            text = "Use Gold",
+            visible = canUseGold and toggle,
+            enabled = canUseGold and toggle,
         },
         time = {
             controls = { "INPUT_GAME_MENU_LEFT", "INPUT_GAME_MENU_RIGHT" },
@@ -2556,7 +2686,7 @@ end
 
 function Intro:DestroyPrompts()
     for key, prompt in pairs(self.prompts) do
-        if UiPromptIsValid(prompt) then
+        if UiPromptIsValid(prompt) == 1 then
             UiPromptDelete(prompt)
         end
         self.prompts[key] = 0
@@ -2580,11 +2710,11 @@ function Intro:DestroyObjective()
 end
 
 function Intro:DestroyAnimScenes()
-    if DoesAnimSceneExist(self.animScene) then
+    if DoesAnimSceneExist(self.animScene) == 1 then
         DeleteAnimScene(self.animScene)
     end
 
-    if DoesAnimSceneExist(self.lightrig) then
+    if DoesAnimSceneExist(self.lightrig) == 1 then
         DeleteAnimScene(self.lightrig)
     end
 
@@ -2601,7 +2731,7 @@ function Intro:DestroyAllPeds()
     }
 
     for _, ped in ipairs(PED_HANDLES) do
-        if ped and DoesEntityExist(ped) then
+        if ped and DoesEntityExist(ped) == 1 then
             DeletePed(ped)
         end
     end
@@ -2619,7 +2749,7 @@ function Intro:DestroyAllCameras()
     }
 
     for _, cam in ipairs(CAMERA_HANDLES) do
-        if cam and DoesCamExist(cam) then
+        if cam and DoesCamExist(cam) == 1 then
             DestroyCam(cam, false)
         end
     end
@@ -2689,10 +2819,19 @@ SignalBus:on("item_focused", function(itemId)
     else
         Intro:ClearFlag(INTRO_FLAG.CHARACTER_RESET_PROMPT)
     end
+
+    if itemId == UI_ITEM_ID.MAIN__NAME then
+        Intro:SetFlag(INTRO_FLAG.CHARACTER_RENAME_PROMPT)
+    else
+        Intro:ClearFlag(INTRO_FLAG.CHARACTER_RENAME_PROMPT)
+    end
 end)
 
 SignalBus:on("new_page", function(pageId)
     if pageId == UI_PAGE_ID.HAIR then
+        Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
+    elseif pageId == UI_PAGE_ID.ATTRIBUTES then
+        -- Attributes are not available in the advanced options
         Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
     elseif Character:IsMale() and pageId == UI_PAGE_ID.MAKEUP then
         Intro:SetFlag(INTRO_FLAG.BLOCK_QUICK_SWITCH)
@@ -2741,6 +2880,10 @@ SignalBus:on("camera_updated", function(data)
     Intro:MoveEditCamera(viewId)
 end)
 
+RegisterNetEvent("native_cc:reroll_payment_result", function(success)
+    Intro.rerollPaymentResult = success == true
+end)
+
 SignalBus:on("character_pasted", function(data)
     if Intro.state ~= INTRO_STATE.SELECT_GENDER then return end
     local preset = Character:IsMale() and EDITOR_CONFIG.MALE or EDITOR_CONFIG.FEMALE
@@ -2774,10 +2917,12 @@ SignalBus:on("timeofday_changed", function(time)
 end)
 
 SignalBus:on("menu_confirm", function()
+    Intro:SaveEditedCharacter()
     Intro.editorResult = INTRO_EDITOR_STATUS.CONFIRM
 end)
 
 SignalBus:on("menu_cancel", function()
+    Intro:SaveEditedCharacter()
     Intro.editorResult = INTRO_EDITOR_STATUS.CANCEL
 end)
 

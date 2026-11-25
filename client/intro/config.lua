@@ -9,6 +9,35 @@ IntroConfig.UseDialog = true
 -- Whether to skip specifically the character customization dialog
 IntroConfig.UseCustomizeDialog = false
 
+-- Whether players can open the Character Creator settings menu
+IntroConfig.EnableSettings = true
+
+-- Whether players can switch between the basic and advanced options from within the Character Creator
+IntroConfig.EnableQuickSwitch = true
+
+-- Whether players can randomize their character's name
+IntroConfig.EnableRandomizeName = true
+
+-- Whether players can randomize their character's custom head in the advanced options
+IntroConfig.EnableRandomizeHead = true
+
+-- Whether players can reset their character using the "Start Fresh" prompt
+IntroConfig.EnableStartFresh = true
+
+-- Whether players can import a character from their clipboard
+IntroConfig.EnableImport = true
+
+-- Whether players can export their character to their clipboard
+IntroConfig.EnableExport = true
+
+-- Whether players can change the mugshot options (details, extra time and title)
+IntroConfig.EnableMugshotOptions = true
+
+-- Whether confirming changes to an existing character costs money
+IntroConfig.EnableRerollPayment = false
+IntroConfig.RerollCashCost = 400.0
+IntroConfig.RerollGoldCost = 10.0
+
 -- Minimum and maximum cooldown time (in seconds) between idle fidget animations
 IntroConfig.FidgetCooldownMin = 30
 IntroConfig.FidgetCooldownMax = 60

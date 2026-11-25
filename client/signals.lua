@@ -1,5 +1,6 @@
 SignalBus = {
-    listeners = {}
+    listeners = {},
+    muted = 0,
 }
 
 --- Subscribe to an event
@@ -38,12 +39,24 @@ end
 ---@param eventName string
 ---@param ... any Arguments passed to the callback handlers
 function SignalBus:emit(eventName, ...)
+    if self.muted > 0 then return end
+
     local handlers = self.listeners[eventName]
     if not handlers then return end
 
     for i = 1, #handlers do
         handlers[i](...)
     end
+end
+
+--- Stop emitting signals until unmuted
+function SignalBus:mute()
+    self.muted = self.muted + 1
+end
+
+--- Resume emitting signals
+function SignalBus:unmute()
+    self.muted = math.max(self.muted - 1, 0)
 end
 
 --- Wipe all registered listeners (useful on resource stop/reset)

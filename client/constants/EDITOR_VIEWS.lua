@@ -34,7 +34,7 @@ EDITOR_VIEW:AddAttribute("SupportsFidgets", {
 })
 
 EDITOR_VIEW:AddAttribute("IsZoom", {
-    [EDITOR_VIEWS.FULL_BODY_CLOSE] = true,
-    [EDITOR_VIEWS.FACE_CLOSE]      = true,
-    [EDITOR_VIEWS.EYES]            = true,
+    [EDITOR_VIEWS.FACE]       = true,
+    [EDITOR_VIEWS.FACE_CLOSE] = true,
+    [EDITOR_VIEWS.EYES]       = true,
 })

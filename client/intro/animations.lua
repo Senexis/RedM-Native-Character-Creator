@@ -1,10 +1,15 @@
+local DRIFT_HEADING_LIMIT <const> = 0.5
+local DRIFT_POSITION_LIMIT <const> = 0.03
+local DRIFT_CORRECTION_TIME <const> = 500
+
 --- @class IntroAnim
 IntroAnimations = {
     flags = 0,
     bodySize = 0.5,
     lastFidget = {},
     nextFidget = {},
-    headingFixTimer = 0,
+    anchors = {},
+    corrections = {},
     showTeeth = false,
     showEyes = false,
 }
@@ -14,6 +19,20 @@ function IntroAnimations:Reset()
     self.bodySize = 0.5
     self.lastFidget = {}
     self.nextFidget = {}
+    self.anchors = {}
+    self.corrections = {}
+end
+
+function IntroAnimations:ResetPed(preset, ped)
+    if self:IsFlagSet(INTRO_ANIMATION_FLAG.ZOOM_MOOD) and DoesEntityExist(ped) == 1 then
+        ClearFacialIdleAnimOverride(ped)
+    end
+
+    self.flags = 0
+    self.lastFidget[preset] = nil
+    self.nextFidget[preset] = nil
+    self.anchors[ped] = nil
+    self.corrections[ped] = nil
 end
 
 function IntroAnimations:IsFlagSet(flag)
@@ -101,6 +120,96 @@ function IntroAnimations:MaintainAnimations(preset, ped)
     self:MaintainMoveNetwork(preset, ped)
 end
 
+function IntroAnimations:MaintainNeutral(preset, ped)
+    if DoesEntityExist(ped) ~= 1 then
+        Utils:Debug("MAINTAIN_NEUTRAL - CCMN - ped does not exist for preset: ", EDITOR_CONFIG:ToString(preset))
+        return
+    end
+
+    if IsTaskMoveNetworkActive(ped) ~= 1 then
+        Utils:Debug("NET_CHAR_CREATOR__MOVE_NET__MAINTAIN_NEUTRAL - CCMN - trying out this move network ")
+        self:InitializeMoveNetwork(preset, ped)
+        return
+    end
+
+    local gender = preset == EDITOR_CONFIG.MALE and "male" or "female"
+    local clipset = string.format("clipset@mp_character_creator@%s", gender)
+
+    Citizen.InvokeNative(Natives.TaskSetClipsetState, ped, joaat(clipset), 184808581)
+    ForcePedMotionState(ped, "MotionState_DoNothing", false, 0, false)
+
+    self.bodySize = self:GetBodySize()
+    SetTaskMoveNetworkSignalFloat(ped, "BODY_SIZE", self.bodySize)
+
+    if self:IsFlagSet(INTRO_ANIMATION_FLAG.FACING_FORWARD) then return end
+
+    local netState = GetTaskMoveNetworkState(ped)
+
+    -- Wait for the turn to the front to finish
+    if self:IsFlagSet(INTRO_ANIMATION_FLAG.IDLE) then
+        if GetTaskMoveNetworkEvent(ped, "Turn_to_Face_TransitionClipFinished") == 1 and IsTaskMoveNetworkReadyForTransition(ped) == 1 then
+            RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
+            self:SetFacingForward(ped)
+        elseif netState == "Idle_State" then
+            self:SetFacingForward(ped)
+        end
+
+        return
+    end
+
+    if netState == "Idle_State" then
+        local headingState = self:GetHeadingState(ped)
+        if headingState == 0.5 then
+            self:SetFlag(INTRO_ANIMATION_FLAG.IDLE)
+            self:SetFacingForward(ped)
+        elseif IsTaskMoveNetworkReadyForTransition(ped) == 1 then
+            SetTaskMoveNetworkSignalFloat(ped, "CURRENT_HEADING", headingState)
+            RequestTaskMoveNetworkStateTransition(ped, "Turn_to_Face_Transition")
+            self:SetFlag(INTRO_ANIMATION_FLAG.IDLE)
+        end
+
+        return
+    end
+
+    if IsTaskMoveNetworkReadyForTransition(ped) ~= 1 then return end
+
+    -- Bring every other state back to the idle
+    if netState == "Stop_Right_State" then
+        if HasAnimEventFired(ped, "Stop_RightFinished") == 1 then
+            RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
+        end
+    elseif netState == "Stop_Left_State" then
+        if HasAnimEventFired(ped, "Stop_LeftFinished") == 1 then
+            RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
+        end
+    elseif netState == "Step_Right_State" then
+        if HasAnimEventFired(ped, "Step_RightFinished") == 1 then
+            RequestTaskMoveNetworkStateTransition(ped, "Stop_Right_State")
+        end
+    elseif netState == "Step_Left_State" then
+        if HasAnimEventFired(ped, "Step_LeftFinished") == 1 then
+            RequestTaskMoveNetworkStateTransition(ped, "Stop_Left_State")
+        end
+    elseif netState == "Look_Right_Idle" or netState == "Look_Left_Idle" then
+        RequestTaskMoveNetworkStateTransition(ped, "Still_Idle")
+    elseif netState == "Still_Idle" then
+        RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
+    elseif netState == "Turn_to_Face_Transition" then
+        if GetTaskMoveNetworkEvent(ped, "Turn_to_Face_TransitionClipFinished") == 1 then
+            RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
+            self:SetFacingForward(ped)
+        end
+    end
+end
+
+function IntroAnimations:SetFacingForward(ped)
+    self:SetFlag(INTRO_ANIMATION_FLAG.FACING_FORWARD)
+
+    -- The drift correction starts from where the character faces the front
+    self.anchors[ped] = { position = GetEntityCoords(ped, true), heading = GetEntityHeading(ped) }
+    self.corrections[ped] = nil
+end
+
 function IntroAnimations:InitializeMoveNetwork(preset, ped)
     self.bodySize = self:GetBodySize()
 
@@ -123,6 +232,11 @@ function IntroAnimations:InitializeMoveNetwork(preset, ped)
         Citizen.InvokeNative(Natives.TaskMoveNetworkAdvancedByNameWithInitParams, ped, "Character_Creator", struct:Buffer(), position.x, position.y, position.z, rotation.x, rotation.y, rotation.z, 2, 0.3, 0, 0, 2, 0)
     end
 
+    -- Keep the first position of the ped, the network is started again from wherever it drifted to
+    if not self.anchors[ped] then
+        self.anchors[ped] = { position = position, heading = GetEntityHeading(ped) }
+    end
+
     SetTaskMoveNetworkSignalFloat(ped, "BODY_SIZE", self.bodySize or 0.5)
     ForcePedMotionState(ped, "MotionState_DoNothing", false, 0, false)
     FreezeEntityPosition(ped, false)
@@ -138,8 +252,8 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
     Citizen.InvokeNative(Natives.TaskSetClipsetState, ped, joaat(clipset), 184808581)
     ForcePedMotionState(ped, "MotionState_DoNothing", false, 0, false)
 
-    local inputLeft = IsControlPressed(2, `INPUT_GAME_MENU_TAB_LEFT`)
-    local inputRight = IsControlPressed(2, `INPUT_GAME_MENU_TAB_RIGHT`)
+    local inputLeft = IsControlPressed(2, `INPUT_GAME_MENU_TAB_LEFT`) == 1
+    local inputRight = IsControlPressed(2, `INPUT_GAME_MENU_TAB_RIGHT`) == 1
     local isZoomed = EDITOR_VIEW:GetIsZoom(Intro.currentEditViewId)
 
     if IsUiappRunningByHash("character_creator") ~= 1 then
@@ -203,18 +317,18 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
                             RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
                         end
                     elseif netState == "Step_Right_State" then
-                        if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, 1752866596) then
+                        if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, "Step_RightFinished") == 1 then
                             RequestTaskMoveNetworkStateTransition(ped, "Stop_Right_State")
                         end
                     elseif netState == "Step_Left_State" then
-                        if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, -1187150655) then
+                        if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, "Step_LeftFinished") == 1 then
                             RequestTaskMoveNetworkStateTransition(ped, "Stop_Left_State")
                         end
                     end
                 end
             elseif
                 GetTaskMoveNetworkState(ped) == "Turn_to_Face_Transition" and
-                (GetTaskMoveNetworkEvent(ped, "Turn_to_Face_TransitionClipFinished") or self:GetHeadingState(ped) == 0.5) and
+                (GetTaskMoveNetworkEvent(ped, "Turn_to_Face_TransitionClipFinished") == 1 or self:GetHeadingState(ped) == 0.5) and
                 IsTaskMoveNetworkReadyForTransition(ped) == 1
             then
                 RequestTaskMoveNetworkStateTransition(ped, "Still_Idle")
@@ -306,7 +420,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
             elseif
                 GetTaskMoveNetworkState(ped) == "Turn_to_Face_Transition" and
                 IsTaskMoveNetworkReadyForTransition(ped) == 1 and
-                (GetTaskMoveNetworkEvent(ped, "Turn_to_Face_TransitionClipFinished") or self:GetHeadingState(ped) == 0.5)
+                (GetTaskMoveNetworkEvent(ped, "Turn_to_Face_TransitionClipFinished") == 1 or self:GetHeadingState(ped) == 0.5)
             then
                 RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
                 self:ClearFlag(INTRO_ANIMATION_FLAG.TURNING)
@@ -316,7 +430,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
         if not self:IsFlagSet(INTRO_ANIMATION_FLAG.STEP_LEFT_ACTIVE) then
             if not suppressRotation and inputRight and not self:IsFlagSet(INTRO_ANIMATION_FLAG.STEP_RIGHT_ACTIVE) then
                 local netState = GetTaskMoveNetworkState(ped)
-                if netState == "Idle_State" or netState == "Stop_Left_State" or (netState == "Step_Right_State" and HasAnimEventFired(ped, 1752866596)) then
+                if netState == "Idle_State" or netState == "Stop_Left_State" or (netState == "Step_Right_State" and HasAnimEventFired(ped, "Step_RightFinished") == 1) then
                     if IsTaskMoveNetworkReadyForTransition(ped) == 1 then
                         RequestTaskMoveNetworkStateTransition(ped, "Step_Left_State")
                         self:ClearFlag(INTRO_ANIMATION_FLAG.STEP_RIGHT_ACTIVE)
@@ -328,7 +442,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
             -- Stepping Left Active
             if not inputRight then
                 if GetTaskMoveNetworkState(ped) == "Step_Left_State" then
-                    if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, -1187150655) then
+                    if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, "Step_LeftFinished") == 1 then
                         RequestTaskMoveNetworkStateTransition(ped, "Stop_Left_State")
                         self:ClearFlag(INTRO_ANIMATION_FLAG.STEP_LEFT_ACTIVE)
                     end
@@ -339,7 +453,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
         if not self:IsFlagSet(INTRO_ANIMATION_FLAG.STEP_RIGHT_ACTIVE) then
             if not suppressRotation and inputLeft and not self:IsFlagSet(INTRO_ANIMATION_FLAG.STEP_LEFT_ACTIVE) then
                 local netState = GetTaskMoveNetworkState(ped)
-                if netState == "Idle_State" or netState == "Stop_Right_State" or (netState == "Step_Left_State" and HasAnimEventFired(ped, -1187150655)) then
+                if netState == "Idle_State" or netState == "Stop_Right_State" or (netState == "Step_Left_State" and HasAnimEventFired(ped, "Step_LeftFinished") == 1) then
                     if IsTaskMoveNetworkReadyForTransition(ped) == 1 then
                         RequestTaskMoveNetworkStateTransition(ped, "Step_Right_State")
                         self:ClearFlag(INTRO_ANIMATION_FLAG.STEP_LEFT_ACTIVE)
@@ -351,7 +465,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
             -- Stepping Right Active
             if not inputLeft then
                 if GetTaskMoveNetworkState(ped) == "Step_Right_State" then
-                    if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, 1752866596) then
+                    if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, "Step_RightFinished") == 1 then
                         RequestTaskMoveNetworkStateTransition(ped, "Stop_Right_State")
                         self:ClearFlag(INTRO_ANIMATION_FLAG.STEP_RIGHT_ACTIVE)
                     end
@@ -362,7 +476,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
         -- Handle final cleanup back to Idle from Stop states
         if not inputRight then
             if GetTaskMoveNetworkState(ped) == "Stop_Left_State" then
-                if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, -1727958697) then
+                if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, "Stop_LeftFinished") == 1 then
                     RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
                 end
             end
@@ -370,7 +484,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
 
         if not inputLeft then
             if GetTaskMoveNetworkState(ped) == "Stop_Right_State" then
-                if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, 993220401) then
+                if IsTaskMoveNetworkReadyForTransition(ped) == 1 and HasAnimEventFired(ped, "Stop_RightFinished") == 1 then
                     RequestTaskMoveNetworkStateTransition(ped, "Idle_State")
                 end
             end
@@ -382,7 +496,7 @@ function IntroAnimations:MaintainMoveNetwork(preset, ped)
     self:HandleSpecialAnimations(ped)
 
     if not suppressAnimation and not suppressRotation then
-        self:HandlePositionFix(ped)
+        self:HandleDrift(ped)
     end
 end
 
@@ -442,22 +556,78 @@ function IntroAnimations:HandleSpecialAnimations(ped)
     end
 end
 
-function IntroAnimations:HandlePositionFix(ped)
-    if self.headingFixTimer > 0 then
-        self.headingFixTimer = self.headingFixTimer - GetFrameTime()
+function IntroAnimations:HandleDrift(ped)
+    local anchor = self.anchors[ped]
+    if not anchor then return end
+
+    -- Only correct while no animation rotates the character
+    local netState = GetTaskMoveNetworkState(ped)
+    if netState ~= "Idle_State" and netState ~= "Still_Idle" then
+        self.corrections[ped] = nil
         return
     end
 
-    if GetTaskMoveNetworkState(ped) ~= "Idle_State" then
+    local correction = self.corrections[ped]
+    if correction then
+        self:UpdateDriftCorrection(ped, correction)
         return
     end
 
-    -- Prevents the player from slowly rotating away over time
-    if self:GetHeadingState(ped) == 0.5 then
-        SetEntityHeading(ped, 90.0)
+    -- Every rotation is a multiple of 45 degrees from the first heading
+    local heading = GetEntityHeading(ped)
+    local steps = math.floor((heading - anchor.heading) / 45.0 + 0.5)
+    local target = anchor.heading + steps * 45.0
+
+    local headingDifference = (target - heading + 180.0) % 360.0 - 180.0
+
+    -- None of the animations move the character
+    local position = GetEntityCoords(ped, true)
+    local distance = #(vector2(position.x, position.y) - vector2(anchor.position.x, anchor.position.y))
+
+    local correctHeading = math.abs(headingDifference) > DRIFT_HEADING_LIMIT
+    local correctPosition = distance > DRIFT_POSITION_LIMIT
+    if not correctHeading and not correctPosition then return end
+
+    Utils:Debug("HANDLE_DRIFT - correcting heading by", headingDifference, "and position by", distance)
+
+    local positionTarget = position
+    if correctPosition then
+        positionTarget = vector3(anchor.position.x, anchor.position.y, position.z)
     end
 
-    self.headingFixTimer = 1.0
+    local headingTarget = heading
+    if correctHeading then
+        headingTarget = heading + headingDifference
+    end
+
+    self.corrections[ped] = {
+        startTime = GetGameTimer(),
+        fromHeading = heading,
+        toHeading = headingTarget,
+        fromPosition = position,
+        toPosition = positionTarget,
+    }
+end
+
+function IntroAnimations:UpdateDriftCorrection(ped, correction)
+    local progress = math.min((GetGameTimer() - correction.startTime) / DRIFT_CORRECTION_TIME, 1.0)
+
+    -- Ease in and out
+    local eased = progress * progress * (3.0 - 2.0 * progress)
+
+    local heading = correction.fromHeading + (correction.toHeading - correction.fromHeading) * eased
+    SetEntityHeading(ped, heading % 360.0)
+
+    local from = correction.fromPosition
+    local to = correction.toPosition
+    if from ~= to then
+        local position = from + (to - from) * eased
+        SetEntityCoordsNoOffset(ped, position.x, position.y, position.z, false, false, false)
+    end
+
+    if progress >= 1.0 then
+        self.corrections[ped] = nil
+    end
 end
 
 function IntroAnimations:GetHeadingState(ped)

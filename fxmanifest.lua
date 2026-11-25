@@ -37,6 +37,10 @@ client_scripts {
     "client/character/blend.lua",
     "client/character/blends.lua",
     "client/character/overlay.lua",
+    "client/character/migrations.lua",
+    "client/character/serializer.lua",
+    "client/character/assets.lua",
+    "client/character/applier.lua",
 
     -- Creator files
     "client/creator/presets.lua",

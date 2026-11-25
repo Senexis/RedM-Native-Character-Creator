@@ -1,5 +1,3 @@
-local SKINTONE_ORDER <const> = { 0, 3, 2, 1, 4, 5 }
-
 CreatorPresets = {
     configNode = 0,
     heritageNode = 0,
@@ -107,26 +105,34 @@ function CreatorPresets:GetSkintones()
 
     local node = CreatorXml:RequestGetNode()
     local count = CreatorXml:GetCount(EDITOR_XML_QUERY.BODY_SKINTONE_SHOPITEM_COUNT)
-    local result = {}
+    local items = {}
 
     for i = 0, count - 1 do
         CreatorXml:RequestSetNode(node)
 
         local id = CreatorXml:GetHash(EDITOR_XML_QUERY.BODY_SKINTONE_SHOPITEM_ID, i)
         local skintone = CreatorXml:GetInt(EDITOR_XML_QUERY.BODY_SKINTONE_SHOPITEM_SKIN_TONE, i)
-        local order = SKINTONE_ORDER[skintone + 1] or skintone
 
-        result[#result + 1] = { index = i, order = order, id = id, skintone = skintone }
+        items[skintone] = id
     end
 
-    table.sort(result, function(a, b) return a.order < b.order end)
+    local result = {}
+    for index, skintone in ipairs(Character:GetSkintones()) do
+        local value = CHARACTER_SKINTONE:GetValue(skintone)
+        if value and items[value] then
+            result[#result + 1] = { index = index - 1, id = items[value], skintone = value }
+        else
+            Utils:Warn("Skin tone", CHARACTER_SKINTONE:ToString(skintone), "has no shop item in the editor XML")
+        end
+    end
 
     self.cache.skintones = result
     return result
 end
 
+-- The skin tone is an option of Character:GetSkintones()
 function CreatorPresets:GetBodyShopItems(skintone, build)
-    skintone = SKINTONE_ORDER[skintone + 1] or skintone
+    skintone = Character:GetSkintoneValue(skintone)
     local key = string.format("%d_%d", skintone, build)
 
     if self.cache.bodyShopItems and self.cache.bodyShopItems[key] then
@@ -175,7 +181,7 @@ function CreatorPresets:GetHeritages()
     return result
 end
 
----@return table<number, { index: number, order: number, id: number, skintone: number }>
+---@return table<number, { index: number, id: number, skintone: number }>
 function CreatorPresets:GetHeadShopItems()
     if self.cache.headShopItems then
         return self.cache.headShopItems
@@ -191,20 +197,18 @@ function CreatorPresets:GetHeadShopItems()
 
         local id = CreatorXml:GetHash(EDITOR_XML_QUERY.HEAD_PRESET_SHOPITEM_ID, i)
         local skintone = CreatorXml:GetInt(EDITOR_XML_QUERY.HEAD_PRESET_SHOPITEM_SKINTONE, i)
-        local order = SKINTONE_ORDER[skintone + 1] or skintone
 
-        result[#result + 1] = { index = i, order = order, id = id, skintone = skintone }
+        result[#result + 1] = { index = i, id = id, skintone = skintone }
     end
-
-    table.sort(result, function(a, b) return a.order < b.order end)
 
     self.cache.headShopItems = result
     return result
 end
 
----@return { index: number, order: number, id: number, skintone: number } | nil
+-- The skin tone is an option of Character:GetSkintones()
+---@return { index: number, id: number, skintone: number } | nil
 function CreatorPresets:GetHeadShopItemForSkintone(skintone)
-    skintone = SKINTONE_ORDER[skintone + 1] or skintone
+    skintone = Character:GetSkintoneValue(skintone)
 
     if self.cache.headShopItem and self.cache.headShopItem[skintone] then
         return self.cache.headShopItem[skintone]

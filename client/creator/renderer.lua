@@ -1,3 +1,6 @@
+-- Steppers with more options than this show the position of the selected option
+local ENTRY_COUNTER_MIN_OPTIONS <const> = 8
+
 CreatorRenderer = {
     swatches = {
         generated = false,
@@ -8,6 +11,32 @@ CreatorRenderer = {
     shouldPollGridX = false,
     shouldPollGridXY = false,
 }
+
+-- Shop items use the label of their barber style
+local function getStyleLabel(component, noneLabel)
+    if Character:IsCustomComponent(component) then
+        return component.id
+    end
+
+    if component == "NONE" then
+        return noneLabel
+    end
+
+    return component:gsub("^CLOTHING_ITEM_", "BARBER_STYLE_") .. "_PAGE"
+end
+
+local function getHeadPartLabels(list)
+    local labels = {}
+    for _, item in ipairs(list) do
+        if item == "NONE" then
+            labels[#labels + 1] = "NATIVE_CREATOR_CUSTOM_HEAD_NONE"
+        else
+            labels[#labels + 1] = Character:GetComponentId(item)
+        end
+    end
+
+    return labels
+end
 
 function CreatorRenderer:UpdateText()
     self:CreateNewText()
@@ -22,15 +51,23 @@ function CreatorRenderer:UpdateText()
 end
 
 function CreatorRenderer:CreateNewText()
-    AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Go back to the previous menu.")
+    if Creator:UsesMenu() then
+        AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Go back to the previous menu.")
+    else
+        AddTextEntry("NATIVE_CREATOR_CONFIRM_TOOLTIP", "Take a picture of your character and confirm your appearance.")
+    end
+
+    if IntroConfig.EnableRandomizeName then
+        AddTextEntry("NATIVE_CREATOR_NAME_TOOLTIP", "Use ~INPUT_FRONTEND_ACCEPT~ to change your character's name. Use ~INPUT_GAME_MENU_EXTRA_OPTION~ to randomize.")
+    else
+        AddTextEntry("NATIVE_CREATOR_NAME_TOOLTIP", "Use ~INPUT_FRONTEND_ACCEPT~ to change your character's name.")
+    end
 
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_DEFAULT", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Excludes advanced options.")
     AddTextEntry("NATIVE_CREATOR_RANDOMIZE_TOOLTIP_ADVANCED", "Hold ~INPUT_FRONTEND_ACCEPT~ to randomize your character.~n~Includes most advanced options.")
 
     AddTextEntry("NATIVE_CREATOR_ADVANCED_MENU_HEADING", "Advanced Menu")
     AddTextEntry("NATIVE_CREATOR_ADVANCED_OPTIONS_HEADING", "Advanced Options")
-
-    AddTextEntry("NATIVE_CREATOR_ERROR_NAME_DISABLED", "~e~Go back to change your name.")
 
     AddTextEntry("NATIVE_CREATOR_HAIR_COLOR_TOOLTIP", "Change your character's hair and eyebrows color.")
     AddTextEntry("NATIVE_CREATOR_HEIGHT_TOOLTIP", "Adjust the height of your character.")
@@ -55,6 +92,7 @@ function CreatorRenderer:CreateNewText()
     AddTextEntry("NATIVE_CREATOR_BODY_SKIN_TONE_TOOLTIP", "Select your character's skin tone.")
 
     AddTextEntry("NATIVE_CREATOR_PRESET_DEFAULT", "Standard")
+    AddTextEntry("NATIVE_CREATOR_ENTRY_COUNTER", "Option ~1~ of ~2~.")
 
     for _, height in ipairs(CreatorConfig.Heights) do
         if height.label then AddTextEntry(height.id, height.label) end
@@ -68,52 +106,29 @@ function CreatorRenderer:CreateNewText()
         if voice.label then AddTextEntry(voice.id, voice.label) end
     end
 
-    for _, drawable in ipairs(CreatorConfig.CustomMaleHeadDrawables) do
-        if drawable.label then AddTextEntry(drawable.id, drawable.label) end
+    ---@type CharacterComponent[][]
+    local components = {
+        CreatorConfig.MaleHairs, CreatorConfig.FemaleHairs, CreatorConfig.MaleBeards,
+        CreatorConfig.MaleTeeth, CreatorConfig.FemaleTeeth, CreatorConfig.MaleEyes, CreatorConfig.FemaleEyes,
+        CreatorConfig.MaleHeadDrawables, CreatorConfig.FemaleHeadDrawables,
+        CreatorConfig.MaleHeadNormals, CreatorConfig.FemaleHeadNormals,
+        CreatorConfig.MaleHeadMaterials, CreatorConfig.FemaleHeadMaterials,
+    }
+
+    for _, albedos in pairs(CreatorConfig.MaleHeadAlbedos or {}) do
+        components[#components + 1] = albedos
     end
 
-    for _, drawable in ipairs(CreatorConfig.CustomFemaleHeadDrawables) do
-        if drawable.label then AddTextEntry(drawable.id, drawable.label) end
+    for _, albedos in pairs(CreatorConfig.FemaleHeadAlbedos or {}) do
+        components[#components + 1] = albedos
     end
 
-    for _, skintone in ipairs(CreatorConfig.CustomMaleHeadAlbedos) do
-        for _, albedo in ipairs(skintone) do
-            if albedo.label then AddTextEntry(albedo.id, albedo.label) end
+    for _, list in ipairs(components) do
+        for _, component in ipairs(list or {}) do
+            if Character:IsCustomComponent(component) and component.label then
+                AddTextEntry(component.id, component.label)
+            end
         end
-    end
-
-    for _, skintone in ipairs(CreatorConfig.CustomFemaleHeadAlbedos) do
-        for _, albedo in ipairs(skintone) do
-            if albedo.label then AddTextEntry(albedo.id, albedo.label) end
-        end
-    end
-
-    for _, normal in ipairs(CreatorConfig.CustomMaleHeadNormals) do
-        if normal.label then AddTextEntry(normal.id, normal.label) end
-    end
-
-    for _, normal in ipairs(CreatorConfig.CustomFemaleHeadNormals) do
-        if normal.label then AddTextEntry(normal.id, normal.label) end
-    end
-
-    for _, material in ipairs(CreatorConfig.CustomMaleHeadMaterials) do
-        if material.label then AddTextEntry(material.id, material.label) end
-    end
-
-    for _, material in ipairs(CreatorConfig.CustomFemaleHeadMaterials) do
-        if material.label then AddTextEntry(material.id, material.label) end
-    end
-
-    for _, hair in ipairs(CreatorConfig.CustomMaleHairs) do
-        if hair.label then AddTextEntry(hair.id, hair.label) end
-    end
-
-    for _, hair in ipairs(CreatorConfig.CustomFemaleHairs) do
-        if hair.label then AddTextEntry(hair.id, hair.label) end
-    end
-
-    for _, beard in ipairs(CreatorConfig.CustomMaleBeards) do
-        if beard.label then AddTextEntry(beard.id, beard.label) end
     end
 
     for _, layer in pairs(CreatorConfig.Overlays) do
@@ -149,7 +164,7 @@ end
 function CreatorRenderer:SetTextDefault()
     AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Match Hair Colors")
 
-    AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
+    AddTextEntry("CHAR_CREATOR_CONFIRM", Creator:UsesMenu() and "Back" or "Confirm")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Whistle")
     AddTextEntry("CHAR_CREATOR_WHISTLE_STYLE", "Style")
@@ -212,7 +227,7 @@ end
 function CreatorRenderer:SetTextAdvanced()
     AddTextEntry("CHAR_CREATOR_MATCH_HAIR_COLOR_PROMPT", "Toggle Clothing")
 
-    AddTextEntry("CHAR_CREATOR_CONFIRM", "Back")
+    AddTextEntry("CHAR_CREATOR_CONFIRM", Creator:UsesMenu() and "Back" or "Confirm")
 
     AddTextEntry("CHAR_CREATOR_WHISTLE_TITLE", "Voice")
     AddTextEntry("CHAR_CREATOR_WHISTLE_STYLE", "Style")
@@ -300,19 +315,62 @@ function CreatorRenderer:UpdateSubheaderOverride(pageId)
     self.subheaderOverride = label.id
 end
 
-function CreatorRenderer:UpdateFooterLabel(footer)
+function CreatorRenderer:GetEntryCounter(itemId)
+    if UI_ITEM_ID:GetSkipEntryCounter(itemId) then return nil end
+
+    -- Color swatches already show their position
+    if UI_ITEM_ID:GetType(itemId) == UI_ITEM_TYPE.COLOR then return nil end
+
+    local databinding = UI_ITEM_ID:GetDatabinding(itemId)
+    if not databinding or not databinding.Array or not databinding.Value then return nil end
+
+    local count = CreatorDatabinding:GetArrayCount(databinding.Array)
+    if count <= ENTRY_COUNTER_MIN_OPTIONS then return nil end
+
+    local position = CreatorDatabinding:ReadInt(databinding.Value) % count + 1
+
+    local label = GetStringFromHashKey("NATIVE_CREATOR_ENTRY_COUNTER")
+    label = string.gsub(label, "~1~", tostring(position))
+    label = string.gsub(label, "~2~", tostring(count))
+
+    return label
+end
+
+function CreatorRenderer:GetFooterLabel(footer)
     local label = GetStringFromHashKey(footer)
     if label == "" then label = footer end
+
+    return label
+end
+
+-- The counts are on their own line below the tooltip
+function CreatorRenderer:WriteFooterLabel(label, counts)
+    if counts then
+        label = string.format("%s~n~%s", label, counts)
+    end
 
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__FOOTER__LABEL, label)
 end
 
-function CreatorRenderer:UpdateOverlayFooterLabel(footer)
-    local label = GetStringFromHashKey(footer)
-    if label == "" then label = footer end
+function CreatorRenderer:UpdateFooterLabel(footer, counter)
+    self:WriteFooterLabel(self:GetFooterLabel(footer), counter)
+end
 
-    local suffix = CharacterOverlay:GetFooterSuffix()
-    label = string.format("%s %s", label, suffix)
+function CreatorRenderer:UpdateOverlayFooterLabel(footer, counter)
+    local counts = CharacterOverlay:GetFooterSuffix()
+    if counter then
+        counts = string.format("%s %s", counter, counts)
+    end
+
+    self:WriteFooterLabel(self:GetFooterLabel(footer), counts)
+end
+
+function CreatorRenderer:UpdateAttributeFooterLabel(footer)
+    local label = self:GetFooterLabel(footer)
+
+    -- The game's label has the total of 2 points in its text in every language
+    label = string.gsub(label, "2", tostring(CreatorConfig.AttributePoints or 0))
+    label = string.gsub(label, "~1~", tostring(Character:GetAttributePointsLeft()))
 
     CreatorDatabinding:WriteString(DATABINDING_ID.ROOT__FOOTER__LABEL, label)
 end
@@ -335,10 +393,14 @@ function CreatorRenderer:UpdateItemFooter(itemId)
 
     CreatorRenderer:UpdateDetailImage(uiData.Image)
 
+    local counter = CreatorRenderer:GetEntryCounter(itemId)
+
     if UI_ITEM_ID:GetOverlayLayer(itemId) or UI_ITEM_ID:GetOverlayColor(itemId) then
-        CreatorRenderer:UpdateOverlayFooterLabel(uiData.Footer)
+        CreatorRenderer:UpdateOverlayFooterLabel(uiData.Footer, counter)
+    elseif UI_ITEM_ID:GetCharacterAttribute(itemId) then
+        CreatorRenderer:UpdateAttributeFooterLabel(uiData.Footer)
     else
-        CreatorRenderer:UpdateFooterLabel(uiData.Footer)
+        CreatorRenderer:UpdateFooterLabel(uiData.Footer, counter)
     end
 end
 
@@ -648,10 +710,9 @@ function CreatorRenderer:GetSkintoneSwatches()
 end
 
 function CreatorRenderer:GetBodyBuildLabels()
-    local builds = Character:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
     local labels = {}
 
-    for _, build in pairs(builds) do
+    for _, build in ipairs(Character:GetBodyBuilds()) do
         labels[#labels + 1] = build.id
     end
 
@@ -670,29 +731,9 @@ function CreatorRenderer:GetPresetLabels(zone)
 end
 
 function CreatorRenderer:GetHairLabels()
-    local gender = Character:GetGenderShort()
-    local hairs = {}
-    local custom = {}
-
-    if Character:IsMale() then
-        hairs = CreatorConfig.MaleHairs
-        custom = CreatorConfig.CustomMaleHairs
-    else
-        hairs = CreatorConfig.FemaleHairs
-        custom = CreatorConfig.CustomFemaleHairs
-    end
-
     local labels = {}
-    for _, item in ipairs(hairs) do
-        if item == "NONE" then
-            labels[#labels + 1] = "CLOTHING_ITEM_HAIR_NONE"
-        else
-            labels[#labels + 1] = string.format("BARBER_STYLE_%s_HAIR_%03d_PAGE", gender, item)
-        end
-    end
-
-    for _, item in ipairs(custom) do
-        labels[#labels + 1] = item.id
+    for _, item in ipairs(Character:GetHairStyles()) do
+        labels[#labels + 1] = getStyleLabel(item, "CLOTHING_ITEM_HAIR_NONE")
     end
 
     return labels
@@ -710,19 +751,9 @@ function CreatorRenderer:GetHairSwatches()
 end
 
 function CreatorRenderer:GetBeardLabels()
-    if Character:IsFemale() then return {} end
-
     local labels = {}
-    for _, item in ipairs(CreatorConfig.MaleBeards) do
-        if item == "NONE" then
-            labels[#labels + 1] = "CLOTHING_ITEM_BEARD_NONE"
-        else
-            labels[#labels + 1] = string.format("BARBER_STYLE_M_BEARD_%03d_PAGE", item)
-        end
-    end
-
-    for _, item in ipairs(CreatorConfig.CustomMaleBeards) do
-        labels[#labels + 1] = item.id
+    for _, item in ipairs(Character:GetBeardStyles()) do
+        labels[#labels + 1] = getStyleLabel(item, "CLOTHING_ITEM_BEARD_NONE")
     end
 
     return labels
@@ -740,34 +771,39 @@ function CreatorRenderer:GetBeardSwatches()
 end
 
 function CreatorRenderer:GetTeethLabels()
-    local gender = Character:GetGenderShort()
-
     local labels = {}
-    for _, item in ipairs(CreatorConfig.Teeth) do
-        labels[#labels + 1] = string.format("CLOTHING_ITEM_%s_TEETH_%03d", gender, item)
+    for _, item in ipairs(Character:GetTeethOptions()) do
+        labels[#labels + 1] = Character:GetComponentId(item)
     end
 
     return labels
 end
 
 function CreatorRenderer:GetEyeSwatches()
-    local gender = Character:GetGenderShort()
+    local fallbacks = CreatorConfig.CustomComponentFallbacks or {}
 
     local components = {}
-    for _, item in ipairs(CreatorConfig.Eyes) do
-        components[#components + 1] = string.format("CLOTHING_ITEM_%s_EYES_001_TINT_%03d", gender, item)
+    for _, item in ipairs(Character:GetEyeOptions()) do
+        if Character:IsCustomComponent(item) then
+            -- Custom eyes are not shop items, so generate the swatch from their palette
+            local tints = item.tints or fallbacks.tints or {}
+            components[#components + 1] = item.swatch or {
+                swatch = "UISW_FLAT_CK000",
+                palette = item.palette or fallbacks.palette or "METAPED_TINT_GENERIC",
+                tint0 = tints[1] or 0,
+                tint1 = tints[2] or 0,
+                tint2 = tints[3] or 0,
+            }
+        else
+            components[#components + 1] = item
+        end
     end
 
     return components
 end
 
 function CreatorRenderer:GetWhistleLabels()
-    local labels = {}
-    for _, item in ipairs(CreatorConfig.Whistles) do
-        labels[#labels + 1] = string.format("CHAR_CREATOR_WHISTLE_STYLE_%d", item)
-    end
-
-    return labels
+    return CreatorConfig.Whistles
 end
 
 function CreatorRenderer:GetHeightLabels()
@@ -780,74 +816,19 @@ function CreatorRenderer:GetHeightLabels()
 end
 
 function CreatorRenderer:GetHeadDrawableLabels()
-    local custom = {}
-
-    if Character:IsMale() then
-        custom = CreatorConfig.CustomMaleHeadDrawables
-    else
-        custom = CreatorConfig.CustomFemaleHeadDrawables
-    end
-
-    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
-    for _, item in ipairs(custom) do
-        labels[#labels + 1] = item.id
-    end
-
-    return labels
+    return getHeadPartLabels(Character:GetHeadDrawables())
 end
 
 function CreatorRenderer:GetHeadAlbedoLabels()
-    local skintone = Character:GetSkintone()
-    local custom = {}
-
-    if Character:IsMale() then
-        custom = CreatorConfig.CustomMaleHeadAlbedos
-    else
-        custom = CreatorConfig.CustomFemaleHeadAlbedos
-    end
-
-    local skintoneCustom = custom[skintone + 1]
-
-    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
-    for _, item in ipairs(skintoneCustom) do
-        labels[#labels + 1] = item.id
-    end
-
-    return labels
+    return getHeadPartLabels(Character:GetHeadAlbedos())
 end
 
 function CreatorRenderer:GetHeadNormalLabels()
-    local custom = {}
-
-    if Character:IsMale() then
-        custom = CreatorConfig.CustomMaleHeadNormals
-    else
-        custom = CreatorConfig.CustomFemaleHeadNormals
-    end
-
-    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
-    for _, item in ipairs(custom) do
-        labels[#labels + 1] = item.id
-    end
-
-    return labels
+    return getHeadPartLabels(Character:GetHeadNormals())
 end
 
 function CreatorRenderer:GetHeadMaterialLabels()
-    local custom = {}
-
-    if Character:IsMale() then
-        custom = CreatorConfig.CustomMaleHeadMaterials
-    else
-        custom = CreatorConfig.CustomFemaleHeadMaterials
-    end
-
-    local labels = { "NATIVE_CREATOR_CUSTOM_HEAD_NONE" }
-    for _, item in ipairs(custom) do
-        labels[#labels + 1] = item.id
-    end
-
-    return labels
+    return getHeadPartLabels(Character:GetHeadMaterials())
 end
 
 function CreatorRenderer:GetWeightLabels()
@@ -869,13 +850,8 @@ function CreatorRenderer:GetVoiceLabels()
 end
 
 function CreatorRenderer:GetOverlayLabels(layer)
-    local overlay = CreatorConfig.Overlays[layer]
-    if not overlay then
-        error(string.format("Invalid layer: %s", layer))
-    end
-
     local labels = { "CHAR_CREATOR_LAYER_NONE" }
-    for index, data in pairs(overlay) do
+    for index, data in ipairs(CharacterOverlay:GetLayerOverlays(layer)) do
         if not data.id then
             error(string.format("Item %s in layer %s is missing an ID", index, layer))
         end
@@ -887,9 +863,7 @@ function CreatorRenderer:GetOverlayLabels(layer)
             label = string.format(label, Character:GetBeardColorString())
         end
 
-        if not data.gender or data.gender == Character:GetGenderShort() then
-            labels[#labels + 1] = label
-        end
+        labels[#labels + 1] = label
     end
 
     return labels

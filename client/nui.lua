@@ -36,18 +36,18 @@ function NuiHelper:StartThread()
                 DisableAllControlActions(i)
             end
 
-            local usingKbd = IsUsingKeyboardAndMouse(0)
+            local usingKbd = IsUsingKeyboardAndMouse(0) == 1
             if usingKbd ~= lastUsingKbd then
                 lastUsingKbd = usingKbd
                 SendNUIMessage({ type = usingKbd and 'using_keyboard' or 'using_controller' })
             end
 
-            if IsDisabledControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) then
+            if IsDisabledControlJustReleased(0, `INPUT_GAME_MENU_ACCEPT`) == 1 then
                 SendNUIMessage({ type = 'trigger_accept' })
             end
 
             local backspace = IsRawKeyPressed(VK_BACK) or IsRawKeyReleased(VK_BACK)
-            if not backspace and IsDisabledControlJustReleased(0, `INPUT_GAME_MENU_CANCEL`) then
+            if not backspace and IsDisabledControlJustReleased(0, `INPUT_GAME_MENU_CANCEL`) == 1 then
                 SendNUIMessage({ type = 'trigger_cancel' })
             end
 

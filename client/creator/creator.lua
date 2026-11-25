@@ -4,10 +4,9 @@ local function GetDefaultData()
         flags = EDITOR_FLAG.CLEAR,
         state = EDITOR_STATE.INIT,
         stateChangeTime = 0,
-        headRequests = {},
-        bodyRequests = {},
         mode = CREATOR_MODE.DEFAULT,
         restoreTarget = 0,
+        nameBlocked = false,
     }
 end
 
@@ -47,6 +46,18 @@ function Creator:Open(rerolling, config)
     self:SetFlag(EDITOR_FLAG.ACTIVE)
 end
 
+function Creator:CanChangeWhistle()
+    if not self:IsFlagSet(EDITOR_FLAG.REROLLING) then return true end
+
+    return CreatorConfig.AllowWhistleOnReroll ~= false
+end
+
+function Creator:CanChangeAttributes()
+    if not self:IsFlagSet(EDITOR_FLAG.REROLLING) then return true end
+
+    return CreatorConfig.AllowAttributesOnReroll ~= false
+end
+
 function Creator:Finish(confirmed)
     if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
         return
@@ -75,8 +86,19 @@ function Creator:OpenEditor(mode, restore)
     self:SetFlag(EDITOR_FLAG.EDITOR_ACTIVE)
 end
 
-function Creator:CloseEditor()
+function Creator:CloseEditor(confirmed)
     if not self:IsFlagSet(EDITOR_FLAG.ACTIVE) then
+        return
+    end
+
+    -- Without the menu, closing the editor finishes the creator
+    if not self:UsesMenu() then
+        if confirmed and (not Character.name or Character.name == "") then
+            self:Rename()
+            return
+        end
+
+        self:Finish(confirmed)
         return
     end
 
@@ -108,11 +130,72 @@ function Creator:Rename()
         return
     end
 
+    if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) then
+        return
+    end
+
     local maxNameLength = CreatorConfig.MaxNameLength or 50
     NextOnscreenKeyboardResultWillDisplayUsingTheseFonts(256)
     DisplayOnscreenKeyboard(4, "NAME_TITLE_PROMPT", "", Character.name or "", "", "", "", maxNameLength)
 
     self:SetFlag(EDITOR_FLAG.NAME_PROMPT)
+end
+
+function Creator:MaintainNamePrompt()
+    if not self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) then
+        return
+    end
+
+    local status = UpdateOnscreenKeyboard()
+    if status == 0 then
+        return
+    end
+
+    if status == 1 then
+        Character:ApplyName(GetOnscreenKeyboardResult())
+    end
+
+    self:ClearFlag(EDITOR_FLAG.NAME_PROMPT)
+end
+
+-- The name option opens a keyboard that needs Rockstar's profanity filter, so open our own instead
+function Creator:MaintainNameSelect()
+    self:MaintainNameClickBlock()
+
+    if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) then return end
+    if UI_ITEM_ID:GetIdFromHash(CreatorEvents.currentFocusedItem) ~= UI_ITEM_ID.MAIN__NAME then return end
+
+    local CONTROLS <const> = { `INPUT_GAME_MENU_ACCEPT`, `INPUT_FRONTEND_ACCEPT` }
+
+    local released = false
+    for _, group in ipairs({ 0, 2 }) do
+        for _, control in ipairs(CONTROLS) do
+            DisableControlAction(group, control, true)
+
+            if IsDisabledControlJustReleased(group, control) == 1 then
+                released = true
+            end
+        end
+    end
+
+    if released then
+        self:Rename()
+    end
+end
+
+-- The UI handles mouse clicks itself, so the name option is disabled while the mouse is down
+function Creator:MaintainNameClickBlock()
+    if not CreatorDatabinding.initialized then return end
+
+    local blocked = PointerIsLeftButtonHeld() == 1
+    if PointerIsLeftButtonJustReleased() == 1 then
+        blocked = true
+    end
+
+    if blocked == self.nameBlocked then return end
+
+    self.nameBlocked = blocked
+    CreatorDatabinding:WriteBool(DATABINDING_ID.MAIN__NAME__ENABLED, not blocked)
 end
 
 function Creator:Import()
@@ -218,16 +301,14 @@ end
 function Creator:UpdateStateSetup()
     DisableAllControlActions(0)
 
-    if not CreatorXml:Initialize() then
+    local loaded, loadError = Character:LoadEditorData()
+    if loadError then
+        Utils:Error(loadError)
+        self:SetState(EDITOR_STATE.TEARDOWN)
         return
     end
 
-    CreatorXml:RequestReset(0)
-
-    local config = Character:GetCreatorConfig()
-    if not CreatorPresets:Init(config) then
-        Utils:Error(string.format("Editor config %s not defined in XML", EDITOR_CONFIG:ToString(config)))
-        self:SetState(EDITOR_STATE.TEARDOWN)
+    if not loaded then
         return
     end
 
@@ -235,17 +316,24 @@ function Creator:UpdateStateSetup()
         return
     end
 
-    if not self:PreloadHeads() then
+    -- The creator can switch between every head and body
+    if not CharacterAssets:IsRequested() then
+        CharacterAssets:Request(true)
         return
     end
 
-    if not self:PreloadBodies() then
+    if not CharacterAssets:IsLoaded() then
         return
     end
 
     Character:ApplyAll()
 
-    self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
+    if self:UsesMenu() then
+        self:SetState(EDITOR_STATE.TRANSITION_TO_MENU)
+    else
+        self:OpenEditor(CREATOR_MODE.DEFAULT, false)
+        self:SetState(EDITOR_STATE.TRANSITION_TO_EDITOR)
+    end
 end
 
 function Creator:UpdateStateInMenu()
@@ -264,12 +352,7 @@ function Creator:UpdateStateInMenu()
         return
     end
 
-    if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) and UpdateOnscreenKeyboard() == 1 then
-        local result = GetOnscreenKeyboardResult()
-        Character:ApplyName(result)
-        CreatorMenu:Refresh()
-        self:ClearFlag(EDITOR_FLAG.NAME_PROMPT)
-    end
+    self:MaintainNamePrompt()
 
     if not self:IsFlagSet(EDITOR_FLAG.MENU_RUNNING) then
         DisableAllControlActions(0)
@@ -293,7 +376,13 @@ function Creator:UpdateStateInMenu()
 end
 
 function Creator:UpdateStateInEditor()
-    CancelOnscreenKeyboard()
+    if self:IsFlagSet(EDITOR_FLAG.NAME_PROMPT) then
+        self:MaintainNamePrompt()
+    else
+        CancelOnscreenKeyboard()
+    end
+
+    self:MaintainNameSelect()
 
     if IsUiappRunningByHash(`shop_menu`) == 1 then
         CloseUiappByHash(`shop_menu`)
@@ -448,12 +537,11 @@ function Creator:UpdateStateTeardown()
         CreatorMenu:Close()
     end
 
-    if IsUiappTransitioningByHash(`character_creator`) or IsUiappTransitioningByHash(`shop_menu`) then
+    if IsUiappTransitioningByHash(`character_creator`) == 1 or IsUiappTransitioningByHash(`shop_menu`) == 1 then
         return
     end
 
-    self:ReleaseHeads()
-    self:ReleaseBodies()
+    CharacterAssets:Release()
     RemoveAnimDict("face_human@gen_male@base")
 
     if self:IsFlagSet(EDITOR_FLAG.CONFIRMED) then
@@ -544,107 +632,8 @@ function Creator:PreloadAnimations()
     return true
 end
 
-function Creator:InitHeadRequests()
-    local ped = Character:GetPed()
-    local pedType = GetMetaPedType(ped)
-    local heritages = CreatorPresets:GetHeritages()
-
-    for _, heritage in ipairs(heritages) do
-        CreatorPresets:SetHeritage(heritage.index)
-
-        local items = CreatorPresets:GetHeadShopItems()
-        for _, item in ipairs(items) do
-            local requestHandle = RequestMetaPedComponent(pedType, item.id, 0, 1, 1)
-
-            self.headRequests[#self.headRequests + 1] = {
-                hash = item.id,
-                handle = requestHandle,
-                loaded = false,
-            }
-        end
-    end
-end
-
-function Creator:PreloadHeads()
-    if not self:IsFlagSet(EDITOR_FLAG.HEADS_REQUESTED) then
-        self:InitHeadRequests()
-        self:SetFlag(EDITOR_FLAG.HEADS_REQUESTED)
-        return false
-    end
-
-    local allLoaded = true
-    for _, request in ipairs(self.headRequests) do
-        request.loaded = HasMetaPedAssetLoaded(request.handle) == 1
-        if not request.loaded then allLoaded = false end
-    end
-
-    return allLoaded
-end
-
-function Creator:ReleaseHeads()
-    for _, item in ipairs(self.headRequests) do
-        ReleaseMetaPedAssetRequest(item.handle)
-        item.loaded = false
-    end
-
-    self:ClearFlag(EDITOR_FLAG.HEADS_REQUESTED)
-end
-
-function Creator:InitBodyRequests()
-    local ped = Character:GetPed()
-    local pedType = GetMetaPedType(ped)
-    local skintones = CreatorPresets:GetSkintones()
-    local bodyBuilds = CreatorPresets:GetBodyBuilds()
-
-    for _, skintoneItem in ipairs(skintones) do
-        for _, buildItem in ipairs(bodyBuilds) do
-            local build = CreatorPresets:GetBodyBuild(buildItem.index)
-            local body = CreatorPresets:GetBodyShopItems(skintoneItem.skintone, build)
-
-            if body.upper then
-                local upperHandle = RequestMetaPedComponent(pedType, body.upper, 0, 1, 1)
-                self.bodyRequests[#self.bodyRequests + 1] = {
-                    hash = body.upper,
-                    handle = upperHandle,
-                    loaded = false,
-                }
-            end
-
-            if body.lower then
-                local lowerHandle = RequestMetaPedComponent(pedType, body.lower, 0, 1, 1)
-                self.bodyRequests[#self.bodyRequests + 1] = {
-                    hash = body.lower,
-                    handle = lowerHandle,
-                    loaded = false,
-                }
-            end
-        end
-    end
-end
-
-function Creator:PreloadBodies()
-    if not self:IsFlagSet(EDITOR_FLAG.BODIES_REQUESTED) then
-        self:InitBodyRequests()
-        self:SetFlag(EDITOR_FLAG.BODIES_REQUESTED)
-        return false
-    end
-
-    local allLoaded = true
-    for _, request in ipairs(self.bodyRequests) do
-        request.loaded = HasMetaPedAssetLoaded(request.handle) == 1
-        if not request.loaded then allLoaded = false end
-    end
-
-    return allLoaded
-end
-
-function Creator:ReleaseBodies()
-    for _, item in ipairs(self.bodyRequests) do
-        ReleaseMetaPedAssetRequest(item.handle)
-        item.loaded = false
-    end
-
-    self:ClearFlag(EDITOR_FLAG.BODIES_REQUESTED)
+function Creator:UsesMenu()
+    return CreatorConfig.UseMenu == true
 end
 
 function Creator:SetMode(mode)

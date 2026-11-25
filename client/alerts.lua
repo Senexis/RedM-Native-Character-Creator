@@ -63,7 +63,7 @@ CreateThread(function()
         end
 
         for _, channel in ipairs(CHANNELS) do
-            while EventsUiIsPending(channel) do
+            while EventsUiIsPending(channel) == 1 do
                 local msg = DataView.ArrayBuffer(8 * 4)
                 msg:SetInt32(0, 0)
                 msg:SetInt32(8, 0)

@@ -11,15 +11,15 @@ CreatorEvents = {
 function CreatorEvents:Maintain()
     -- Zooming isn't handled through events anymore
     if self.zoomMode == ZOOM_MODE.TOGGLE then
-        if IsControlJustPressed(2, "INPUT_INSPECT_ZOOM") then
+        if IsControlJustPressed(2, "INPUT_INSPECT_ZOOM") == 1 then
             self.isZooming = not self.isZooming
             SignalBus:emit("zoom_updated", self.isZooming)
         end
     else
-        if self.isZooming == false and IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+        if self.isZooming == false and IsControlPressed(2, "INPUT_INSPECT_ZOOM") == 1 then
             self.isZooming = true
             SignalBus:emit("zoom_updated", true)
-        elseif self.isZooming == true and not IsControlPressed(2, "INPUT_INSPECT_ZOOM") then
+        elseif self.isZooming == true and IsControlPressed(2, "INPUT_INSPECT_ZOOM") ~= 1 then
             self.isZooming = false
             SignalBus:emit("zoom_updated", false)
         end
@@ -63,7 +63,7 @@ function CreatorEvents:Maintain()
         end
     end
 
-    while EventsUiIsPending(`ui_character_creator_events`) do
+    while EventsUiIsPending(`ui_character_creator_events`) == 1 do
         local data = DataView.ArrayBuffer(8 * 4)
 
         if Citizen.InvokeNative(Natives.EventsUiPeekMessage, `ui_character_creator_events`, data:Buffer()) ~= 0 then
@@ -171,6 +171,11 @@ function CreatorEvents:OnDataAdjustableChanged(parameter, index)
 
     local value = CreatorDatabinding:ReadInt(databinding.Value)
     SignalBus:emit("adjustable_changed", itemId, value)
+
+    -- Update the counter of the selected option
+    if CreatorRenderer:GetEntryCounter(itemId) then
+        CreatorRenderer:UpdateItemFooter(itemId)
+    end
 end
 
 function CreatorEvents:OnItemSelected(parameter)
@@ -184,7 +189,7 @@ function CreatorEvents:OnItemSelected(parameter)
     if actionId == UI_ACTION_ID.ROTATE then return end
 
     if actionId == UI_ACTION_ID.CONFIRM_EDIT or actionId == UI_ACTION_ID.CANCEL_EDIT then
-        Creator:CloseEditor()
+        Creator:CloseEditor(actionId == UI_ACTION_ID.CONFIRM_EDIT)
     else
         SignalBus:emit("action_selected", actionId, itemId)
     end
@@ -354,6 +359,21 @@ end)
 SignalBus:on("voice_randomized", function(style)
     if not Creator:IsAdvancedMode() then return end
     CreatorDatabinding:WriteInt(DATABINDING_ID.WHISTLE__STYLE__VALUE, style)
+end)
+
+SignalBus:on("name_applied", function(name)
+    if not CreatorDatabinding.initialized then return end
+    CreatorDatabinding:WriteString(DATABINDING_ID.MAIN__NAME__VALUE, name or "")
+end)
+
+SignalBus:on("attributes_changed", function()
+    if not CreatorDatabinding.initialized or not Creator:IsDefaultMode() then return end
+    CreatorDatabinding:ApplyAttributesFromCharacter()
+
+    local focusedItem = UI_ITEM_ID:GetIdFromHash(CreatorEvents.currentFocusedItem)
+    if focusedItem and UI_ITEM_ID:GetCharacterAttribute(focusedItem) then
+        CreatorRenderer:UpdateItemFooter(focusedItem)
+    end
 end)
 
 SignalBus:on("randomized", function()

@@ -395,15 +395,67 @@
         });
       }
 
+      function requireIdentifier(data, field) {
+        requireField(data, field);
+        validateIdentifier(data[field], field);
+      }
+
+      function requireMap(data, field, validate) {
+        requireField(data, field);
+        const value = data[field];
+
+        // Empty tables are encoded as an empty array
+        if (Array.isArray(value) && value.length === 0) return;
+
+        if (!isPlainObject(value)) {
+          throw new Error(`"${field}" must be a set of key/value pairs.`);
+        }
+
+        for (const [key, val] of Object.entries(value)) {
+          validate(val, `${field}.${key}`);
+        }
+      }
+
+      // Options that can't be matched are left out of the export
+      function optionalIdentifier(data, field, label = field) {
+        if (data[field] === undefined) return;
+        validateIdentifier(data[field], label);
+      }
+
+      function validateIdentifier(value, label) {
+        if (typeof value === "string" && value.length > 0) return;
+        if (isFiniteNumber(value)) return;
+
+        throw new Error(`"${label}" must be a valid option.`);
+      }
+
+      function validateNumber(value, label, { min, max } = {}) {
+        if (!isFiniteNumber(value)) {
+          throw new Error(`"${label}" must be a valid number.`);
+        }
+        if (min !== undefined && value < min) {
+          throw new Error(`"${label}" must be at least ${min}.`);
+        }
+        if (max !== undefined && value > max) {
+          throw new Error(`"${label}" must be at most ${max}.`);
+        }
+      }
+
+      function validateLayer(value, label) {
+        if (!isPlainObject(value)) {
+          throw new Error(`"${label}" must be an object.`);
+        }
+
+        validateIdentifier(value.id, `${label}.id`);
+        validateNumber(value.alpha, `${label}.alpha`, { min: 0, max: 1 });
+      }
+
       // ---------------------------------------------------------------------
       // Character schema validation
       // ---------------------------------------------------------------------
 
-      function validateCharacterData(data) {
-        if (!isPlainObject(data)) {
-          throw new Error("This doesn't look like valid character data.");
-        }
-
+      // Version 1 stores the index of each chosen option
+      function validateCharacterDataV1(data) {
         // Name
         requireString(data, "name", { min: 1, max: currentMaxNameLength });
 
@@ -446,12 +498,146 @@
         requireNumberMap(data, "expressions", { min: -1.0, max: 1.0 });
         requireNumberMap(data, "layerColors", { min: 0 });
         requireLayerList(data, "layers");
+      }
+
+      // Version 2 stores the ID or value of each chosen option
+      function validateCharacterDataV2(data) {
+        // Name
+        requireString(data, "name", { min: 1, max: currentMaxNameLength });
+
+        // Simple numeric fields
+        const numberFields = [
+          "age",
+          "weariness",
+          "whistleStyle",
+          "whistleClarity",
+          "whistlePitch",
+          "skintone",
+        ];
+
+        for (const field of numberFields) {
+          requireNonNegativeNumber(data, field);
+        }
+
+        // Options identified by their ID or value
+        const identifierFields = [
+          "height",
+          "weight",
+          "voice",
+          "heritage",
+          "bodyType",
+          "eyeColor",
+          "teeth",
+          "headDrawable",
+          "headAlbedo",
+          "headNormal",
+          "headMaterial",
+          "hair",
+          "hairColor",
+          "beard",
+          "beardColor",
+        ];
+
+        for (const field of identifierFields) {
+          requireIdentifier(data, field);
+        }
+
+        // Boolean fields
+        requireBoolean(data, "ignoreHeritageLimits");
+        requireBoolean(data, "ignoreOverlayLimits");
+
+        // Collections
+        requireHashArray(data, "clothingItems");
+        requireMap(data, "presets", validateIdentifier);
+        requireMap(data, "expressions", (value, label) => validateNumber(value, label, { min: -1.0, max: 1.0 }));
+        requireMap(data, "layers", validateLayer);
+        requireMap(data, "layerColors", validateIdentifier);
+
+        if ("attributes" in data) {
+          requireMap(data, "attributes", (value, label) => validateNumber(value, label, { min: 0 }));
+        }
+      }
+
+      // Version 3 groups the whistle and head options, and stores the skin tone by name
+      function validateCharacterDataV3(data) {
+        // Name
+        requireString(data, "name", { min: 1, max: currentMaxNameLength });
+
+        // Simple numeric fields
+        requireNonNegativeNumber(data, "age");
+        requireNumber(data, "weariness");
+
+        // Options identified by their ID or value
+        const identifierFields = [
+          "heritage",
+          "skintone",
+          "bodyType",
+          "height",
+          "weight",
+          "voice",
+          "eyeColor",
+          "teeth",
+          "hair",
+          "hairColor",
+          "beard",
+          "beardColor",
+        ];
+
+        for (const field of identifierFields) {
+          optionalIdentifier(data, field);
+        }
+
+        // Grouped options
+        requireField(data, "whistle");
+        if (!isPlainObject(data.whistle)) {
+          throw new Error('"whistle" must be an object.');
+        }
+        optionalIdentifier(data.whistle, "style", "whistle.style");
+        validateNumber(data.whistle.pitch, "whistle.pitch", { min: 0, max: 1 });
+        validateNumber(data.whistle.clarity, "whistle.clarity", { min: 0, max: 1 });
+
+        requireField(data, "head");
+        if (!isPlainObject(data.head)) {
+          throw new Error('"head" must be an object.');
+        }
+        for (const field of ["drawable", "albedo", "normal", "material"]) {
+          optionalIdentifier(data.head, field, `head.${field}`);
+        }
+
+        // Boolean fields
+        requireBoolean(data, "ignoreHeritageLimits");
+        requireBoolean(data, "ignoreOverlayLimits");
+
+        // Collections
+        requireHashArray(data, "clothingItems");
+        requireMap(data, "attributes", (value, label) => validateNumber(value, label, { min: 0 }));
+        requireMap(data, "presets", validateIdentifier);
+        requireMap(data, "expressions", (value, label) => validateNumber(value, label, { min: -1.0, max: 1.0 }));
+        requireMap(data, "layers", validateLayer);
+        requireMap(data, "layerColors", validateIdentifier);
+      }
+
+      function validateCharacterData(data) {
+        if (!isPlainObject(data)) {
+          throw new Error("This doesn't look like valid character data.");
+        }
+
+        if (data.version === 1) {
+          validateCharacterDataV1(data);
+        } else if (data.version === 2) {
+          validateCharacterDataV2(data);
+        } else {
+          validateCharacterDataV3(data);
+        }
 
         // Version
         if (!("version" in data)) {
           throw new Error('This character is created with an incompatible version. Please contact staff with your character data and the gender of the character for assistance.');
         }
         requireNumber(data, "version", { min: 1, max: currentVersion });
+        if (!Number.isInteger(data.version)) {
+          throw new Error('"version" must be a whole number.');
+        }
 
         // Ped type / model must match the current character
         requireNumber(data, "pedType", { min: 0, max: 3 });

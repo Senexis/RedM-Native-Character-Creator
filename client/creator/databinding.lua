@@ -1,6 +1,7 @@
 CreatorDatabinding = {
     initialized = false,
     datastore = {},
+    arrayCounts = {},
 }
 
 -- Initialize main creator UI databinding
@@ -415,20 +416,20 @@ function CreatorDatabinding:Initialize()
     self.datastore[id.WHISTLE__CLARITY__MINIMUM] = DatabindingAddDataInt(self.datastore[id.WHISTLE__CLARITY], "minimum", 0)
     self.datastore[id.WHISTLE__CLARITY__MAXIMUM] = DatabindingAddDataInt(self.datastore[id.WHISTLE__CLARITY], "maximum", 100)
     self.datastore[id.ATTRIBUTES__HEALTH] = DatabindingAddDataContainer(self.datastore[id.ROOT], "health_attribute")
-    self.datastore[id.ATTRIBUTES__HEALTH__VALUE] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "value", CreatorConfig.Attributes.Health.Default or 1)
-    self.datastore[id.ATTRIBUTES__HEALTH__MINIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "minimum", CreatorConfig.Attributes.Health.Min or 1)
-    self.datastore[id.ATTRIBUTES__HEALTH__MAXIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "maximum", CreatorConfig.Attributes.Health.Max or 10)
-    self.datastore[id.ATTRIBUTES__HEALTH__TOTAL_TANKS] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "total_tanks", 10)
+    self.datastore[id.ATTRIBUTES__HEALTH__VALUE] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "value", 0)
+    self.datastore[id.ATTRIBUTES__HEALTH__MINIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "minimum", 0)
+    self.datastore[id.ATTRIBUTES__HEALTH__MAXIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "maximum", 0)
+    self.datastore[id.ATTRIBUTES__HEALTH__TOTAL_TANKS] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__HEALTH], "total_tanks", 0)
     self.datastore[id.ATTRIBUTES__STAMINA] = DatabindingAddDataContainer(self.datastore[id.ROOT], "stamina_attribute")
-    self.datastore[id.ATTRIBUTES__STAMINA__VALUE] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "value", CreatorConfig.Attributes.Stamina.Default or 1)
-    self.datastore[id.ATTRIBUTES__STAMINA__MINIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "minimum", CreatorConfig.Attributes.Stamina.Min or 1)
-    self.datastore[id.ATTRIBUTES__STAMINA__MAXIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "maximum", CreatorConfig.Attributes.Stamina.Max or 10)
-    self.datastore[id.ATTRIBUTES__STAMINA__TOTAL_TANKS] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "total_tanks", 10)
+    self.datastore[id.ATTRIBUTES__STAMINA__VALUE] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "value", 0)
+    self.datastore[id.ATTRIBUTES__STAMINA__MINIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "minimum", 0)
+    self.datastore[id.ATTRIBUTES__STAMINA__MAXIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "maximum", 0)
+    self.datastore[id.ATTRIBUTES__STAMINA__TOTAL_TANKS] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__STAMINA], "total_tanks", 0)
     self.datastore[id.ATTRIBUTES__DEADEYE] = DatabindingAddDataContainer(self.datastore[id.ROOT], "deadeye_attribute")
-    self.datastore[id.ATTRIBUTES__DEADEYE__VALUE] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "value", CreatorConfig.Attributes.Deadeye.Default or 1)
-    self.datastore[id.ATTRIBUTES__DEADEYE__MINIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "minimum", CreatorConfig.Attributes.Deadeye.Min or 1)
-    self.datastore[id.ATTRIBUTES__DEADEYE__MAXIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "maximum", CreatorConfig.Attributes.Deadeye.Max or 10)
-    self.datastore[id.ATTRIBUTES__DEADEYE__TOTAL_TANKS] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "total_tanks", 10)
+    self.datastore[id.ATTRIBUTES__DEADEYE__VALUE] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "value", 0)
+    self.datastore[id.ATTRIBUTES__DEADEYE__MINIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "minimum", 0)
+    self.datastore[id.ATTRIBUTES__DEADEYE__MAXIMUM] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "maximum", 0)
+    self.datastore[id.ATTRIBUTES__DEADEYE__TOTAL_TANKS] = DatabindingAddDataInt(self.datastore[id.ATTRIBUTES__DEADEYE], "total_tanks", 0)
 
     self.initialized = true
 
@@ -461,11 +462,20 @@ function CreatorDatabinding:FilloutUiData()
         ::continue::
     end
 
-    -- The name toggle is permanently disabled due to it using profanity filters
-    self:WriteBool(id.MAIN__NAME__ENABLED, false)
+    self:WriteString(id.MAIN__NAME__VALUE, Character.name or "")
 
-    -- TODO: Attributes support
-    self:WriteBool(id.MAIN__ATTRIBUTES__VISIBLE, false)
+    if Creator:IsDefaultMode() then
+        local showWhistle = CreatorConfig.SkipWhistle ~= true and Creator:CanChangeWhistle()
+        if not showWhistle then
+            self:WriteBool(id.MAIN__WHISTLE__VISIBLE, false)
+            self:WriteBool(id.MAIN__WHISTLE__ENABLED, false)
+        end
+    end
+
+    -- Attributes are only available in the basic options
+    local showAttributes = CreatorConfig.SkipAttributePoints ~= true and Creator:IsDefaultMode() and Creator:CanChangeAttributes()
+    self:WriteBool(id.MAIN__ATTRIBUTES__VISIBLE, showAttributes)
+    self:WriteBool(id.MAIN__ATTRIBUTES__ENABLED, showAttributes)
 
     -- Fill all the stepper options
     if Creator:IsDefaultMode() then
@@ -606,6 +616,8 @@ function CreatorDatabinding:ApplyFromCharacter()
         CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.APPEARANCE__EYE_COLOR, Character.eyeColor)
         CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.HAIR__HAIR_COLOR, Character.hairColor)
         CreatorRenderer:UpdateColorSwatch(UI_ITEM_ID.HAIR__BEARD_COLOR, Character.beardColor)
+
+        self:ApplyAttributesFromCharacter()
     else
         self:WriteInt(id.APPEARANCE__BODY_BUILD__VALUE, Character.height)
         self:WriteInt(id.APPEARANCE__EYEBROWS__VALUE, Character.weight)
@@ -649,6 +661,22 @@ function CreatorDatabinding:ApplyFromCharacter()
     end
 end
 
+function CreatorDatabinding:ApplyAttributesFromCharacter()
+    for _, attribute in ipairs(CHARACTER_ATTRIBUTE:Values()) do
+        local databinding = CHARACTER_ATTRIBUTE:GetDatabinding(attribute)
+        if not databinding then goto continue end
+
+        local min, max = Character:GetAttributeLimits(attribute)
+
+        self:WriteInt(databinding.Value, Character:GetAttribute(attribute))
+        self:WriteInt(databinding.Min, min)
+        self:WriteInt(databinding.Max, Character:GetAttributeMaximum(attribute))
+        self:WriteInt(databinding.Total, max)
+
+        ::continue::
+    end
+end
+
 function CreatorDatabinding:UpdateBlockedOverlays()
     local layers = CharacterOverlay:GetBlockedLayers()
     for _, layer in ipairs(OVERLAY_LAYER:Values()) do
@@ -680,6 +708,7 @@ function CreatorDatabinding:Destroy()
     end
 
     self.datastore = {}
+    self.arrayCounts = {}
     self.initialized = false
 end
 
@@ -755,6 +784,12 @@ function CreatorDatabinding:WriteHashArray(index, options)
     for _, option in ipairs(options) do
         Citizen.InvokeNative(Natives.DatabindingAddHashToArray, binding, joaat(option), -1)
     end
+
+    self.arrayCounts[index] = #options
+end
+
+function CreatorDatabinding:GetArrayCount(index)
+    return self.arrayCounts[index] or 0
 end
 
 function CreatorDatabinding:WriteOrHideHashArray(arrayIndex, visibleIndex, options, noneOption)

@@ -13,6 +13,25 @@ function Utils:CopyData(source, target)
     return target
 end
 
+-- Compares entry[key] instead of the entry when a key is given
+function Utils:IndexOf(list, value, key)
+    for index, entry in ipairs(list) do
+        local compare = entry
+        if key ~= nil then
+            compare = nil
+            if type(entry) == "table" then
+                compare = entry[key]
+            end
+        end
+
+        if compare == value then
+            return index
+        end
+    end
+
+    return nil
+end
+
 function Utils:Debug(...)
     if CreatorConfig.Debug ~= true then return end
 

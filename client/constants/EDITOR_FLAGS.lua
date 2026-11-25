@@ -16,13 +16,11 @@ local EDITOR_FLAGS = {
     CONFIRMED          = 1 << 9,
     CANCELLED          = 1 << 10,
     FACIAL_HAIR_HIDDEN = 1 << 11,
-    HEADS_REQUESTED    = 1 << 12,
     REROLLING          = 1 << 13,
     NAME_PROMPT        = 1 << 14,
     IMPORT_PROMPT      = 1 << 15,
     QUICK_SWITCH       = 1 << 16,
     QUICK_SETTINGS     = 1 << 17,
-    BODIES_REQUESTED   = 1 << 18,
     RESTORE            = 1 << 19,
 }
 

@@ -35,6 +35,7 @@ local INTRO_FLAGS = {
     HEAD_RANDOMIZE_PROMPT        = 1 << 32,
     IMPORT_REQUESTED             = 1 << 33,
     IMPORT_OPENED                = 1 << 34,
+    CHARACTER_RENAME_PROMPT      = 1 << 35,
 }
 
 ---@type INTRO_FLAGS | EnumRegistry

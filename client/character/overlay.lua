@@ -1,18 +1,23 @@
 CharacterOverlay = {
     drawable = -1,
+    applied = false,
     albedo = 0,
     normal = 0,
     material = 0,
     layers = {},
     flags = 0,
+
+    -- Textures that stay on the peds the character was attached to
+    textures = {},
 }
 
 -- This is a hard limit, increasing this only results in -1 layer IDs
 CharacterOverlay.MAX_LAYERS_COUNT = 15
 
-function CharacterOverlay:RequestUpdate()
+function CharacterOverlay:RequestUpdate(throttle)
     Character:SetFlag(CHARACTER_FLAG.UPDATE_OVERLAYS)
     Character:SetFlag(CHARACTER_FLAG.DIRTY)
+    Character:ThrottleUpdate(throttle)
 end
 
 function CharacterOverlay:ClearOverlay()
@@ -22,6 +27,33 @@ function CharacterOverlay:ClearOverlay()
     end
 
     self.drawable = -1
+    self.applied = false
+end
+
+function CharacterOverlay:ReleasePedTexture(ped)
+    local texture = self.textures[ped]
+    if not texture then return end
+
+    ClearPedTexture(texture)
+    ReleaseTexture(texture)
+
+    self.textures[ped] = nil
+end
+
+function CharacterOverlay:Detach(ped)
+    if self.drawable == -1 then return end
+
+    -- A texture that was never applied is not on the ped
+    if not self.applied or not ped or ped == 0 then
+        self:ClearOverlay()
+        return
+    end
+
+    self:ReleasePedTexture(ped)
+    self.textures[ped] = self.drawable
+
+    self.drawable = -1
+    self.applied = false
 end
 
 function CharacterOverlay:Maintain()
@@ -73,6 +105,10 @@ function CharacterOverlay:Maintain()
     ApplyTextureOnPed(ped, `heads`, self.drawable)
     UpdatePedTexture(self.drawable)
 
+    -- Release the texture the ped had before
+    self.applied = true
+    self:ReleasePedTexture(ped)
+
     Character:ClearFlag(CHARACTER_FLAG.OVERLAY_DIRTY)
 
     return true
@@ -101,20 +137,34 @@ function CharacterOverlay:SetBaseLayer(albedo, normal, material, apply)
     if apply then self:RequestUpdate() end
 end
 
-function CharacterOverlay:GetLayerBlends(layer)
-    if layer == OVERLAY_LAYER.ROOT then return { "BLEND_NONE" } end
+function CharacterOverlay:GetLayerOverlays(layer)
+    if layer == OVERLAY_LAYER.ROOT then return {} end
 
     local overlay = CreatorConfig.Overlays[layer]
     if not overlay then
         error(string.format("Invalid layer: %s", layer))
     end
 
-    local blends = { "BLEND_NONE" }
-    for index, data in pairs(overlay) do
+    local gender = Character:GetGenderShort()
+
+    local overlays = {}
+    for index, data in ipairs(overlay) do
         if not data.blend then
             error(string.format("Item %s in layer %s is missing a blend value", index, OVERLAY_LAYER:ToString(layer)))
         end
 
+        if not data.gender or data.gender == gender then
+            overlays[#overlays + 1] = data
+        end
+    end
+
+    return overlays
+end
+
+function CharacterOverlay:GetLayerBlends(layer)
+    local blends = { "BLEND_NONE" }
+
+    for _, data in ipairs(self:GetLayerOverlays(layer)) do
         local blend = data.blend
         if layer == OVERLAY_LAYER.EYEBROWS or layer == OVERLAY_LAYER.HEAD_HAIR then
             blend = string.format(blend, Character:GetHairColorString())
@@ -122,9 +172,7 @@ function CharacterOverlay:GetLayerBlends(layer)
             blend = string.format(blend, Character:GetBeardColorString())
         end
 
-        if not data.gender or data.gender == Character:GetGenderShort() then
-            blends[#blends + 1] = blend
-        end
+        blends[#blends + 1] = blend
     end
 
     return blends
@@ -146,7 +194,7 @@ function CharacterOverlay:GetLayerColors(layer, blend)
     end
 
     local colors = {}
-    for index, data in pairs(overlay) do
+    for index, data in ipairs(overlay) do
         if not data.blend then
             error(string.format("Item %s in layer %s is missing a blend value", index, OVERLAY_LAYER:ToString(layer)))
         end
@@ -231,10 +279,32 @@ function CharacterOverlay:GetFooterSuffix()
         prefix = "~COLOR_YELLOW~"
     end
 
-    return "~n~" .. prefix .. string.format("%d of %d~s~ overlays used.", count, self.MAX_LAYERS_COUNT)
+    return prefix .. string.format("%d of %d~s~ overlays used.", count, self.MAX_LAYERS_COUNT)
 end
+
+-- Releases the textures of peds that no longer exist
+CreateThread(function()
+    while true do
+        Wait(5000)
+
+        for ped, _ in pairs(CharacterOverlay.textures) do
+            if DoesEntityExist(ped) ~= 1 then
+                CharacterOverlay:ReleasePedTexture(ped)
+            end
+        end
+
+        if CharacterOverlay.drawable ~= -1 and not Character:Exists() then
+            CharacterOverlay:ClearOverlay()
+        end
+    end
+end)
 
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
+
     CharacterOverlay:ClearOverlay()
+
+    for ped, _ in pairs(CharacterOverlay.textures) do
+        CharacterOverlay:ReleasePedTexture(ped)
+    end
 end)

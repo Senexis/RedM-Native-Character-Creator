@@ -178,3 +178,16 @@ function ShopApi.SetItemFooter(...) end
 --- Clears custom footer for a specific item.
 --- @param ... any Required: itemId string.
 function ShopApi.ClearItemFooter(...) end
+
+--- @class CharacterCustomComponent
+--- @field id string The ID that is exported and used as the label key.
+--- @field label string|nil The text to display, the ID is used as an existing label when not set.
+--- @field drawable string|integer|nil
+--- @field albedo string|integer|nil
+--- @field normal string|integer|nil
+--- @field material string|integer|nil
+--- @field palette string|integer|nil
+--- @field tints integer[]|nil
+--- @field swatch table|nil
+
+--- @alias CharacterComponent string|CharacterCustomComponent

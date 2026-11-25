@@ -1,5 +1,59 @@
-local CHARACTER_VERSION <const> = 1
+local CHARACTER_VERSION <const> = 3
 _G.CHARACTER_VERSION = CHARACTER_VERSION
+
+-- The minimum time between ped updates while a grid is being adjusted
+local GRID_UPDATE_THROTTLE <const> = 50
+local GRID_OVERLAY_UPDATE_THROTTLE <const> = 100
+
+-- The minimum opacity of the ageing layer, like net_char_creator uses
+local MIN_AGEING_ALPHA <const> = 0.001
+
+local HEAD_PARTS <const> = {
+    { field = "headDrawable", key = "drawable", list = "GetHeadDrawables" },
+    { field = "headAlbedo",   key = "albedo",   list = "GetHeadAlbedos" },
+    { field = "headNormal",   key = "normal",   list = "GetHeadNormals" },
+    { field = "headMaterial", key = "material", list = "GetHeadMaterials" },
+}
+
+local function getAttributeConfig(attribute)
+    local config = {}
+    if CreatorConfig.Attributes and CreatorConfig.Attributes[attribute] then
+        config = CreatorConfig.Attributes[attribute]
+    end
+
+    local min = config.Min or 1
+    local max = math.max(config.Max or 10, min)
+    local default = math.min(math.max(config.Default or min, min), max)
+
+    return { Min = min, Max = max, Default = default }
+end
+
+local function getListOption(list, option)
+    if #list == 0 then
+        return 0, nil
+    end
+
+    local normalized = (option or 0) % #list
+    return normalized, list[normalized + 1]
+end
+
+local function getDefaultOption(list, id, fallback)
+    local index = Utils:IndexOf(list, id, "id")
+    if not index then return fallback end
+    return index - 1
+end
+
+local function getAgeLimits()
+    local minAge = CreatorConfig.MinAge or 18
+    local maxAge = math.max(CreatorConfig.MaxAge or 60, minAge + 1)
+    return minAge, maxAge
+end
+
+local function ageToAlpha(age)
+    local minAge, maxAge = getAgeLimits()
+    local alpha = ((tonumber(age) or minAge) - minAge) / (maxAge - minAge)
+    return math.max(MIN_AGEING_ALPHA, math.min(1.0, alpha))
+end
 
 local function GetDefaultData()
     return {
@@ -7,12 +61,14 @@ local function GetDefaultData()
         _flags = 0,
         _ped = 0,
         _clothingLevel = CHARACTER_CLOTHING_LEVEL.DEFAULT,
+        _lastUpdateTime = 0,
+        _nextUpdateTime = 0,
 
         -- Exported
         name = "",
         age = CreatorConfig.MinAge or 18,
-        height = CreatorConfig.DefaultHeight or 2,
-        weight = CreatorConfig.DefaultWeight or 10,
+        height = getDefaultOption(CreatorConfig.Heights, CreatorConfig.DefaultHeight, 2),
+        weight = getDefaultOption(CreatorConfig.Weights, CreatorConfig.DefaultWeight, 10),
         weariness = CreatorConfig.MinWeariness or 0.0,
         voice = 0,
 
@@ -21,6 +77,12 @@ local function GetDefaultData()
         whistleStyle = 0,
         whistlePitch = 50,
         whistleClarity = 50,
+
+        attributes = {
+            [CHARACTER_ATTRIBUTE.HEALTH]  = getAttributeConfig(CHARACTER_ATTRIBUTE.HEALTH).Default,
+            [CHARACTER_ATTRIBUTE.STAMINA] = getAttributeConfig(CHARACTER_ATTRIBUTE.STAMINA).Default,
+            [CHARACTER_ATTRIBUTE.DEADEYE] = getAttributeConfig(CHARACTER_ATTRIBUTE.DEADEYE).Default,
+        },
 
         heritage = 0,
         skintone = 0,
@@ -132,7 +194,7 @@ local function GetDefaultData()
 
         layers = {
             [OVERLAY_LAYER.SKIN_MOTTLING] = { id = 0, alpha = 1.0 },
-            [OVERLAY_LAYER.AGEING]        = { id = 0, alpha = 1.0 },
+            [OVERLAY_LAYER.AGEING]        = { id = 0, alpha = ageToAlpha(CreatorConfig.MinAge or 18) },
             [OVERLAY_LAYER.COMPLEXION]    = { id = 0, alpha = 1.0 },
             [OVERLAY_LAYER.COMPLEXION_2]  = { id = 0, alpha = 1.0 },
             [OVERLAY_LAYER.FRECKLES]      = { id = 0, alpha = 1.0 },
@@ -164,6 +226,9 @@ local defaults = GetDefaultData()
 Character = setmetatable({}, { __index = defaults })
 
 function Character:Reset()
+    -- Keep the overlays on the ped the character was attached to
+    CharacterOverlay:Detach(self:GetPed())
+
     defaults = GetDefaultData()
 
     for k, v in pairs(defaults) do
@@ -173,163 +238,42 @@ function Character:Reset()
     end
 end
 
+function Character:Attach(ped)
+    self:Reset()
+    self:SetPed(ped)
+
+    return self:LoadEditorData()
+end
+
+-- Returns false while loading, with an error when it can never be loaded
+function Character:LoadEditorData()
+    if not CreatorXml:Initialize() then
+        return false
+    end
+
+    local config = self:GetCreatorConfig()
+    if config == EDITOR_CONFIG.INVALID then
+        return false, "The ped does not use a model supported by the character creator"
+    end
+
+    if not CreatorPresets:Init(config) then
+        return false, string.format("Editor config %s not defined in XML", EDITOR_CONFIG:ToString(config))
+    end
+
+    return true
+end
+
+function Character:IsUpdating()
+    return self:IsFlagSet(CHARACTER_FLAG.DIRTY)
+end
+
 function Character:Import(data, skipApply)
     if type(data) ~= "table" then
         Utils:Error("Failed to import character data, expected table but got", type(data))
         return
     end
 
-    local MAPPER <const> = {
-        { "version",              true },
-        { "pedType",              true },
-        { "pedModel",             true },
-        { "ignoreHeritageLimits", true },
-        { "ignoreOverlayLimits",  true },
-        { "heritage",             self.ApplyHeritage },
-        { "name",                 self.ApplyName },
-        { "age",                  self.ApplyAgeAlpha },
-        { "height",               self.ApplyHeight },
-        { "weight",               self.ApplyWeight },
-        { "weariness",            self.ApplyWeariness },
-        { "voice",                self.ApplyVoice },
-        { "clothingItems",        self.ApplyClothingItems },
-        { "whistleStyle",         self.ApplyWhistleStyle },
-        { "whistlePitch",         self.ApplyWhistlePitch },
-        { "whistleClarity",       self.ApplyWhistleClarity },
-        { "skintone",             self.ApplySkintone },
-        { "bodyType",             self.ApplyBody },
-        { "eyeColor",             self.ApplyEyeColor },
-        { "teeth",                self.ApplyTeeth },
-        { "headDrawable",         self.ApplyHeadDrawable },
-        { "headAlbedo",           self.ApplyHeadAlbedo },
-        { "headNormal",           self.ApplyHeadNormal },
-        { "headMaterial",         self.ApplyHeadMaterial },
-        { "hair",                 self.ApplyHairStyle },
-        { "hairColor",            self.ApplyHairColor },
-        { "beard",                self.ApplyBeardStyle },
-        { "beardColor",           self.ApplyBeardColor },
-        { "presets",              true },
-        { "expressions",          true },
-        { "layers",               true },
-        { "layerColors",          true },
-    }
-
-    local MAPPER_KEYS = {}
-    for _, config in ipairs(MAPPER) do
-        local key = config[1]
-        MAPPER_KEYS[key] = true
-    end
-
-    for key, _ in pairs(data) do
-        if not MAPPER_KEYS[key] then
-            Utils:Warn("Unknown character data key", tostring(key), "skipping...")
-            data[key] = nil
-        end
-    end
-
-    for _, config in ipairs(MAPPER) do
-        local key = config[1]
-        local func = config[2]
-        local value = data[key]
-
-        if type(value) == "table" then
-            Utils:Debug("Applying character data for key", tostring(key), "with value", type(value), json.encode(value))
-        else
-            Utils:Debug("Applying character data for key", tostring(key), "with value", type(value), tostring(value))
-        end
-
-        if key == "version" or key == "pedType" or key == "pedModel" then
-            -- These are validation values, do nothing
-        elseif key == "ignoreHeritageLimits" then
-            self.ignoreHeritageLimits = (value == true)
-            if self.ignoreHeritageLimits then
-                Utils:Warn("Ignore heritage limits enabled, proceeding without restrictions")
-            end
-        elseif key == "ignoreOverlayLimits" then
-            self.ignoreOverlayLimits = (value == true)
-            if self.ignoreOverlayLimits then
-                Utils:Warn("Ignore overlay limits enabled, proceeding without restrictions")
-            end
-        elseif key == "presets" then
-            if type(value) == "table" then
-                for presetKey, presetValue in pairs(value) do
-                    local presetKeyNum = tonumber(presetKey)
-                    local presetValNum = tonumber(presetValue)
-
-                    if presetKeyNum and presetValNum then
-                        presetValNum = math.max(0, presetValNum)
-                        Utils:Debug("Applying preset for zone", PED_EXPRESSION_ZONE:ToString(presetKeyNum), "with value", tostring(presetValNum))
-                        self:ApplyPreset(presetKeyNum, presetValNum)
-                    else
-                        Utils:Warn("Invalid preset for zone", tostring(presetKey), "with value", tostring(presetValue))
-                    end
-                end
-            else
-                Utils:Warn("Invalid presets format. Expected a table, got", type(value))
-            end
-        elseif key == "expressions" then
-            if type(value) == "table" then
-                for expressionKey, expressionVal in pairs(value) do
-                    local expressionKeyNum = tonumber(expressionKey)
-                    local expressionValNum = tonumber(expressionVal)
-
-                    if expressionKeyNum and expressionValNum then
-                        expressionValNum = math.min(1.0, math.max(-1.0, expressionValNum))
-                        Utils:Debug("Applying expression", PED_EXPRESSION:ToString(expressionKeyNum), "with value", tostring(expressionValNum))
-                        self:ApplyExpressionValue(expressionKeyNum, expressionValNum)
-                    else
-                        Utils:Warn("Invalid expression for expression", tostring(expressionKey), "with value", tostring(expressionVal))
-                    end
-                end
-            else
-                Utils:Warn("Invalid expressions format. Expected a table, got", type(value))
-            end
-        elseif key == "layers" then
-            if type(value) == "table" then
-                for layerKey, layerValue in pairs(value) do
-                    local layerKeyNum = tonumber(layerKey)
-
-                    if layerKeyNum then
-                        local isTable = type(layerValue) == "table"
-                        local id = (isTable and tonumber(layerValue.id)) or 0
-                        local alpha = (isTable and tonumber(layerValue.alpha)) or 1.0
-
-                        id = math.max(0, id)
-                        alpha = math.min(1.0, math.max(0.0, alpha))
-
-                        Utils:Debug("Applying layer", OVERLAY_LAYER:ToString(layerKeyNum), "with id", id, "alpha", alpha)
-                        self:ApplyOverlayBlend(layerKeyNum, id)
-                        self:ApplyOverlayAlpha(layerKeyNum, alpha)
-                    else
-                        Utils:Warn("Invalid layer key", tostring(layerKey), "with value", tostring(layerValue))
-                    end
-                end
-            else
-                Utils:Warn("Invalid layers format. Expected a table, got", type(value))
-            end
-        elseif key == "layerColors" then
-            if type(value) == "table" then
-                for layerKey, layerVal in pairs(value) do
-                    local layerKeyNum = tonumber(layerKey)
-                    local layerValNum = tonumber(layerVal) or 0
-
-                    if layerKeyNum then
-                        layerValNum = math.max(0, layerValNum)
-                        Utils:Debug("Applying layer color for layer", OVERLAY_LAYER:ToString(layerKeyNum), "with value", tostring(layerValNum))
-                        self:ApplyOverlayColor(layerKeyNum, layerValNum)
-                    else
-                        Utils:Warn("Invalid layer key for color", tostring(layerKey), "with value", tostring(layerVal))
-                    end
-                end
-            else
-                Utils:Warn("Invalid layerColors format. Expected a table, got", type(value))
-            end
-        elseif type(func) == "function" then
-            func(self, value)
-        else
-            Utils:Error("Missing logic for key", tostring(key), "received value", type(value), tostring(value))
-        end
-    end
+    CharacterSerializer:Import(data)
 
     if not skipApply then
         self:ApplyAll()
@@ -337,20 +281,7 @@ function Character:Import(data, skipApply)
 end
 
 function Character:Export()
-    local data = Utils:CopyData(defaults)
-    local copy = Utils:CopyData(self, data)
-
-    for k, _ in pairs(copy) do
-        if k:sub(1, 1) == "_" then
-            copy[k] = nil
-        end
-    end
-
-    copy.version = CHARACTER_VERSION
-    copy.pedType = self:GetPedType()
-    copy.pedModel = self:GetModel()
-
-    return copy
+    return CharacterSerializer:Export()
 end
 
 function Character:IsFlagSet(flag)
@@ -406,6 +337,10 @@ function Character:Maintain()
         return
     end
 
+    if GetGameTimer() < self._nextUpdateTime then
+        return
+    end
+
     local ped = self:GetPed()
     if ped == 0 or IsPedReadyToRender(ped) ~= 1 then
         return
@@ -435,6 +370,9 @@ function Character:Maintain()
         UpdatePedVariation(ped, false, true, true, true, false)
 
         self:ClearFlag(CHARACTER_FLAG.UPDATE_PED)
+
+        self._lastUpdateTime = GetGameTimer()
+        self._nextUpdateTime = 0
     end
 
     self:ClearFlag(CHARACTER_FLAG.DIRTY)
@@ -545,6 +483,92 @@ function Character:GetBeardColorString()
     return color or "GREY"
 end
 
+function Character:GetBodyBuilds()
+    return self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
+end
+
+-- Custom components are made from drawables instead of shop items
+---@param component CharacterComponent|nil
+---@return boolean
+function Character:IsCustomComponent(component)
+    return type(component) == "table"
+end
+
+---@param component CharacterComponent
+---@return string
+function Character:GetComponentId(component)
+    if type(component) == "string" then
+        return component
+    end
+
+    return component.id
+end
+
+---@return CharacterComponent[]
+function Character:GetHairStyles()
+    return self:IsMale() and CreatorConfig.MaleHairs or CreatorConfig.FemaleHairs
+end
+
+---@return CharacterComponent[]
+function Character:GetBeardStyles()
+    if self:IsFemale() then return {} end
+    return CreatorConfig.MaleBeards
+end
+
+---@return CharacterComponent[]
+function Character:GetTeethOptions()
+    return self:IsMale() and CreatorConfig.MaleTeeth or CreatorConfig.FemaleTeeth
+end
+
+---@return CharacterComponent[]
+function Character:GetEyeOptions()
+    return self:IsMale() and CreatorConfig.MaleEyes or CreatorConfig.FemaleEyes
+end
+
+function Character:GetSkintones()
+    local skintones = CHARACTER_SKINTONE:Values()
+    table.sort(skintones)
+    return skintones
+end
+
+function Character:GetSkintoneId(skintone)
+    local _, id = getListOption(self:GetSkintones(), skintone or self.skintone)
+    return id
+end
+
+-- Returns the skin tone that the editor XML uses
+function Character:GetSkintoneValue(skintone)
+    local id = self:GetSkintoneId(skintone)
+    if not id then return 0 end
+    return CHARACTER_SKINTONE:GetValue(id) or 0
+end
+
+---@return CharacterComponent[]
+function Character:GetHeadDrawables()
+    return self:IsMale() and CreatorConfig.MaleHeadDrawables or CreatorConfig.FemaleHeadDrawables
+end
+
+-- Albedos are made for the head of a specific skin tone
+---@return CharacterComponent[]
+function Character:GetHeadAlbedos(skintone)
+    local albedos = self:IsMale() and CreatorConfig.MaleHeadAlbedos or CreatorConfig.FemaleHeadAlbedos
+
+    local id = self:GetSkintoneId(skintone)
+    if not id or not albedos[id] then return { "NONE" } end
+
+    return albedos[id]
+end
+
+---@return CharacterComponent[]
+function Character:GetHeadNormals()
+    return self:IsMale() and CreatorConfig.MaleHeadNormals or CreatorConfig.FemaleHeadNormals
+end
+
+---@return CharacterComponent[]
+function Character:GetHeadMaterials()
+    return self:IsMale() and CreatorConfig.MaleHeadMaterials or CreatorConfig.FemaleHeadMaterials
+end
+
 function Character:GetShopItemInfo(item)
     local pedType = self:GetPedType()
 
@@ -583,7 +607,21 @@ function Character:GetShopItemInfo(item)
     }
 end
 
+function Character:IsShopItemValid(item)
+    local hash = item
+    if type(item) == "string" then
+        hash = joaat(item)
+    end
+
+    return ItemdatabaseIsKeyValid(hash, 0) == 1
+end
+
 function Character:ApplyShopItem(item)
+    if not self:IsShopItemValid(item) then
+        Utils:Warn("Shop item", tostring(item), "is not valid, skipping...")
+        return
+    end
+
     local ped = self:GetPed()
     ApplyShopItemToPed(ped, item, false, true, true)
 
@@ -593,6 +631,27 @@ end
 function Character:ApplyMetaPedOutfit(outfit)
     local ped = self:GetPed()
     EquipMetaPedOutfit(ped, outfit)
+
+    self:RequestUpdate()
+end
+
+-- The component that is replaced has to be removed first
+function Character:ApplyCustomComponent(component, fallbacks, tints)
+    local drawable = component.drawable
+    if not drawable then
+        error(string.format("No drawable found for custom component: %s", json.encode(component)), 2)
+    end
+
+    fallbacks = fallbacks or {}
+    tints = component.tints or tints or fallbacks.tints or {}
+
+    local albedo = component.albedo or fallbacks.albedo or 0
+    local normal = component.normal or fallbacks.normal or 0
+    local material = component.material or fallbacks.material or 0
+    local palette = component.palette or fallbacks.palette or "METAPED_TINT_GENERIC"
+
+    local ped = self:GetPed()
+    SetMetaPedTag(ped, drawable, albedo, normal, material, palette, tints[1] or 0, tints[2] or 0, tints[3] or 0)
 
     self:RequestUpdate()
 end
@@ -619,9 +678,27 @@ function Character:RemoveTagFromPed(tag)
     self:RequestUpdate()
 end
 
-function Character:RequestUpdate()
+function Character:RequestUpdate(throttle)
+    if throttle then
+        -- Keep the components in sync every frame while the full variation update is throttled
+        local ped = self:GetPed()
+        if ped ~= 0 then
+            Citizen.InvokeNative(Natives.SetActiveMetaPedComponentsUpdated, ped, true)
+        end
+    end
+
     self:SetFlag(CHARACTER_FLAG.UPDATE_PED)
     self:SetFlag(CHARACTER_FLAG.DIRTY)
+    self:ThrottleUpdate(throttle)
+end
+
+-- Delays pending updates until the throttle (in ms) has passed since the last update
+function Character:ThrottleUpdate(throttle)
+    if throttle then
+        self._nextUpdateTime = math.max(self._nextUpdateTime, self._lastUpdateTime + throttle)
+    else
+        self._nextUpdateTime = 0
+    end
 end
 
 function Character:ApplyAll()
@@ -655,6 +732,8 @@ function Character:ApplyName(value)
         self.name = value
         self:SetModified()
     end
+
+    SignalBus:emit("name_applied", self.name)
 end
 
 function Character:GenerateName()
@@ -748,15 +827,30 @@ function Character:ApplyWeariness(value)
         self:SetModified()
     end
 
-    local min = CreatorConfig.MinWeariness or 0.0
-    local max = CreatorConfig.MaxWeariness or 0.5
-    local result = min + (self.weariness * (max - min))
-
     local ped = self:GetPed()
-    SetMetaPedWeariness(ped, result)
+    SetMetaPedWeariness(ped, self:WearinessUiToGameValue(self.weariness))
 end
 
-function Character:GetExpressionGameBounds(expressionId)
+function Character:WearinessUiToGameValue(uiValue)
+    local min = CreatorConfig.MinWeariness or 0.0
+    local max = CreatorConfig.MaxWeariness or 0.5
+    return min + (uiValue * (max - min))
+end
+
+function Character:WearinessGameToUiValue(gameValue)
+    local min = CreatorConfig.MinWeariness or 0.0
+    local max = CreatorConfig.MaxWeariness or 0.5
+    if math.abs(max - min) < 1e-5 then return 0.0 end
+
+    local uiValue = (gameValue - min) / (max - min)
+    return math.max(0.0, math.min(1.0, uiValue))
+end
+
+function Character:GetExpressionGameBounds(expressionId, ignoreHeritageLimits)
+    if ignoreHeritageLimits == nil then
+        ignoreHeritageLimits = self.ignoreHeritageLimits
+    end
+
     local min, max = -1.0, 1.0
 
     -- Fill the limits from the heritage
@@ -764,7 +858,7 @@ function Character:GetExpressionGameBounds(expressionId)
     local tuning = data[expressionId]
 
     -- Apply the fine tuning limits if available and desired or not overridable
-    if tuning and (not tuning.overridable or not self.ignoreHeritageLimits) then
+    if tuning and (not tuning.overridable or not ignoreHeritageLimits) then
         min = tuning.min or min
         max = tuning.max or max
     end
@@ -777,8 +871,8 @@ function Character:GetExpressionGameBounds(expressionId)
     return min, max
 end
 
-function Character:ExpressionUiToGameValue(expressionId, uiValue)
-    local min, max = self:GetExpressionGameBounds(expressionId)
+function Character:ExpressionUiToGameValue(expressionId, uiValue, ignoreHeritageLimits)
+    local min, max = self:GetExpressionGameBounds(expressionId, ignoreHeritageLimits)
     local projected = min + (uiValue * (max - min))
 
     -- Clamp the result within the bounds (handles reversed min/max)
@@ -786,8 +880,8 @@ function Character:ExpressionUiToGameValue(expressionId, uiValue)
     return math.max(lower, math.min(upper, projected))
 end
 
-function Character:ExpressionGameToUiValue(expressionId, gameValue)
-    local min, max = self:GetExpressionGameBounds(expressionId)
+function Character:ExpressionGameToUiValue(expressionId, gameValue, ignoreHeritageLimits)
+    local min, max = self:GetExpressionGameBounds(expressionId, ignoreHeritageLimits)
     local range = max - min
 
     if math.abs(range) < 1e-5 then return 0.0 end
@@ -864,40 +958,29 @@ function Character:RemoveHead(skipEvent)
     self:RemoveTagFromPed(COMPONENT_TAG.HEADS)
 end
 
-function Character:ApplyHeadDrawable(value, apply)
+function Character:ApplyHeadPart(field, value, apply)
     if value ~= nil then
-        self.headDrawable = value
+        self[field] = value
         self:SetModified()
     end
 
     if apply then self:ApplyHead(true) end
+end
+
+function Character:ApplyHeadDrawable(value, apply)
+    self:ApplyHeadPart("headDrawable", value, apply)
 end
 
 function Character:ApplyHeadAlbedo(value, apply)
-    if value ~= nil then
-        self.headAlbedo = value
-        self:SetModified()
-    end
-
-    if apply then self:ApplyHead(true) end
+    self:ApplyHeadPart("headAlbedo", value, apply)
 end
 
 function Character:ApplyHeadNormal(value, apply)
-    if value ~= nil then
-        self.headNormal = value
-        self:SetModified()
-    end
-
-    if apply then self:ApplyHead(true) end
+    self:ApplyHeadPart("headNormal", value, apply)
 end
 
 function Character:ApplyHeadMaterial(value, apply)
-    if value ~= nil then
-        self.headMaterial = value
-        self:SetModified()
-    end
-
-    if apply then self:ApplyHead(true) end
+    self:ApplyHeadPart("headMaterial", value, apply)
 end
 
 function Character:ApplyHead(apply)
@@ -915,94 +998,34 @@ function Character:ApplyHead(apply)
         info = {}
     end
 
-    local shouldOverride = false
+    local component = {
+        drawable = info.drawable or 0,
+        albedo = info.albedo or 0,
+        normal = info.normal or 0,
+        material = info.material or 0,
+    }
 
-    local drawable = info.drawable or 0
-    if self.headDrawable > 0 then
-        local drawables = self:IsMale() and CreatorConfig.CustomMaleHeadDrawables or CreatorConfig.CustomFemaleHeadDrawables
-        if not drawables then drawables = {} end
+    local replaced = false
 
-        local normalized = (self.headDrawable - 1) % #drawables
-        local customDrawable = drawables[normalized + 1]
+    for _, part in ipairs(HEAD_PARTS) do
+        local normalized, entry = getListOption(self[part.list](self), self[part.field])
+        self[part.field] = normalized
 
-        if self.headDrawable ~= (normalized + 1) then
-            self.headDrawable = (normalized + 1)
-        end
-
-        if customDrawable.value then
-            drawable = joaat(customDrawable.value)
-            shouldOverride = true
-        end
-    end
-
-    local albedo = info.albedo or 0
-    if self.headAlbedo > 0 then
-        local albedos = self:IsMale() and CreatorConfig.CustomMaleHeadAlbedos or CreatorConfig.CustomFemaleHeadAlbedos
-        if not albedos then albedos = {} end
-
-        local skintoneAlbedos = albedos[head.skintone + 1] or {}
-        local normalized = (self.headAlbedo - 1) % #skintoneAlbedos
-        local customAlbedo = skintoneAlbedos[normalized + 1]
-
-        if self.headAlbedo ~= (normalized + 1) then
-            self.headAlbedo = (normalized + 1)
-        end
-
-        if customAlbedo.value then
-            albedo = joaat(customAlbedo.value)
-            shouldOverride = true
+        if entry and self:IsCustomComponent(entry) and entry[part.key] then
+            component[part.key] = joaat(entry[part.key])
+            replaced = true
         end
     end
 
-    local normal = info.normal or 0
-    if self.headNormal > 0 then
-        local normals = self:IsMale() and CreatorConfig.CustomMaleHeadNormals or CreatorConfig.CustomFemaleHeadNormals
-        if not normals then normals = {} end
+    CharacterOverlay:SetBaseLayer(component.albedo, component.normal, component.material, apply)
 
-        local normalized = (self.headNormal - 1) % #normals
-        local customNormal = normals[normalized + 1]
-
-        if self.headNormal ~= (normalized + 1) then
-            self.headNormal = (normalized + 1)
-        end
-
-        if customNormal.value then
-            normal = joaat(customNormal.value)
-            shouldOverride = true
-        end
-    end
-
-    local material = info.material or 0
-    if self.headMaterial > 0 then
-        local materials = self:IsMale() and CreatorConfig.CustomMaleHeadMaterials or CreatorConfig.CustomFemaleHeadMaterials
-        if not materials then materials = {} end
-
-        local normalized = (self.headMaterial - 1) % #materials
-        local customMaterial = materials[normalized + 1]
-
-        if self.headMaterial ~= (normalized + 1) then
-            self.headMaterial = (normalized + 1)
-        end
-
-        if customMaterial.value then
-            material = joaat(customMaterial.value)
-            shouldOverride = true
-        end
-    end
-
-    CharacterOverlay:SetBaseLayer(albedo, normal, material, apply)
-
-    if not shouldOverride then
+    if not replaced then
         self:ApplyShopItem(head.id)
         return
     end
 
     self:RemoveHead(true)
-
-    local ped = self:GetPed()
-    SetMetaPedTag(ped, drawable, albedo, normal, material, "METAPED_TINT_GENERIC", 0, 0, 0)
-
-    self:RequestUpdate()
+    self:ApplyCustomComponent(component)
 end
 
 function Character:WearingCustomHead()
@@ -1015,21 +1038,22 @@ function Character:ApplyAgeBlend(apply)
     self:ApplyOverlayBlend(OVERLAY_LAYER.AGEING, normalized + 1, apply)
 end
 
+function Character:AgeToAlpha(age)
+    return ageToAlpha(age)
+end
+
+-- The age sets the opacity of the ageing layer, but not the other way around
 function Character:ApplyAgeAlpha(value, apply)
-    if value ~= nil then
-        self.age = value
-        self:SetModified()
+    if value == nil then
+        self:ApplyOverlayAlpha(OVERLAY_LAYER.AGEING, nil, apply)
+        return
     end
 
-    local minAge = CreatorConfig.MinAge or 18
-    local maxAge = CreatorConfig.MaxAge or 60
+    local minAge, maxAge = getAgeLimits()
+    self.age = math.max(minAge, math.min(maxAge, math.floor((tonumber(value) or minAge) + 0.5)))
+    self:SetModified()
 
-    local alpha = (self.age - minAge) / (maxAge - minAge)
-    alpha = math.floor(alpha * 10000 + 0.5) / 10000
-    if alpha < 0.0001 then alpha = 0.0001 end
-    if alpha > 1.0 then alpha = 1.0 end
-
-    self:ApplyOverlayAlpha(OVERLAY_LAYER.AGEING, alpha, apply)
+    self:ApplyOverlayAlpha(OVERLAY_LAYER.AGEING, ageToAlpha(self.age), apply)
 end
 
 function Character:ApplySkintone(value, apply)
@@ -1045,7 +1069,7 @@ function Character:ApplySkintone(value, apply)
 end
 
 function Character:GetBodyBuild()
-    local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
+    local bodyBuilds = self:GetBodyBuilds()
     local normalized = self.bodyType % #bodyBuilds
     local bodyBuild = bodyBuilds[normalized + 1]
 
@@ -1085,7 +1109,7 @@ function Character:ApplyBodyExpressions(value)
         self:SetModified()
     end
 
-    local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
+    local bodyBuilds = self:GetBodyBuilds()
     local normalized = self.bodyType % #bodyBuilds
     local bodyBuild = bodyBuilds[normalized + 1]
 
@@ -1104,18 +1128,17 @@ function Character:ApplyEyeColor(value)
         self:SetModified()
     end
 
-    local colors = CreatorConfig.Eyes
-    local normalized = self.eyeColor % #colors
-    local color = colors[normalized + 1]
+    local normalized, eyes = getListOption(self:GetEyeOptions(), self.eyeColor)
+    self.eyeColor = normalized
 
-    if self.eyeColor ~= normalized then
-        self.eyeColor = normalized
+    if not eyes then return end
+
+    if self:IsCustomComponent(eyes) then
+        self:RemoveTagFromPed(COMPONENT_TAG.EYES)
+        self:ApplyCustomComponent(eyes, CreatorConfig.CustomComponentFallbacks)
+    else
+        self:ApplyShopItem(eyes)
     end
-
-    local gender = self:GetGenderShort()
-    local eyes = string.format("CLOTHING_ITEM_%s_EYES_001_TINT_%03d", gender, color)
-
-    self:ApplyShopItem(eyes)
 end
 
 function Character:ApplyTeeth(value)
@@ -1124,18 +1147,17 @@ function Character:ApplyTeeth(value)
         self:SetModified()
     end
 
-    local teeth = CreatorConfig.Teeth
-    local normalized = self.teeth % #teeth
-    local teethItem = teeth[normalized + 1]
+    local normalized, teeth = getListOption(self:GetTeethOptions(), self.teeth)
+    self.teeth = normalized
 
-    if self.teeth ~= normalized then
-        self.teeth = normalized
+    if not teeth then return end
+
+    if self:IsCustomComponent(teeth) then
+        self:RemoveTagFromPed(COMPONENT_TAG.TEETH)
+        self:ApplyCustomComponent(teeth, CreatorConfig.CustomComponentFallbacks)
+    else
+        self:ApplyShopItem(teeth)
     end
-
-    local gender = self:GetGenderShort()
-    local key = string.format("CLOTHING_ITEM_%s_TEETH_%03d", gender, teethItem)
-
-    self:ApplyShopItem(key)
 end
 
 function Character:ApplyHairStyle(value)
@@ -1184,70 +1206,27 @@ function Character:ApplyHair()
         self.hairColor = normalizedColor
     end
 
-    local gender = self:GetGenderShort()
+    local normalized, hair = getListOption(self:GetHairStyles(), self.hair)
+    self.hair = normalized
 
-    local hairs = self:IsMale() and CreatorConfig.MaleHairs or CreatorConfig.FemaleHairs
-    local custom = self:IsMale() and CreatorConfig.CustomMaleHairs or CreatorConfig.CustomFemaleHairs
-
-    local normalizedHair = self.hair % (#hairs + #custom)
-    local hair = { id = "NONE", custom = false }
-
-    if self.hair ~= normalizedHair then
-        self.hair = normalizedHair
-    end
-
-    if normalizedHair < #hairs then
-        local id = hairs[normalizedHair + 1]
-        if id ~= "NONE" then
-            local item = string.format("CLOTHING_ITEM_%s_HAIR_%03d_%s", gender, id, color)
-            hair = { id = item, custom = false }
-        end
-    else
-        hair = custom[normalizedHair - #hairs + 1]
-        hair.custom = true
-    end
-
-    if hair.id == "NONE" then
+    if not hair or hair == "NONE" then
         self:RemoveHair()
         return
     end
 
-    if hair.custom then
-        self:ApplyCustomHair(hair, color)
+    if self:IsCustomComponent(hair) then
+        local tints = CreatorConfig.CustomHairTints[color]
+        if not tints then
+            error(string.format("No tints found for custom hair color: %s", color), 2)
+        end
+
+        self:RemoveHair(true)
+        self:ApplyCustomComponent(hair, CreatorConfig.CustomHairFallbacks, tints)
     else
-        self:ApplyShopItem(hair.id)
+        self:ApplyShopItem(string.format("%s_%s", hair, color))
     end
 
     SignalBus:emit("hair_applied", hair)
-end
-
-function Character:ApplyCustomHair(hair, color)
-    local tints = CreatorConfig.CustomHairTints[color]
-    if not tints then
-        error(string.format("No tints found for custom hair color: %s", color), 2)
-    end
-
-    local tint0 = tints[1] or 0
-    local tint1 = tints[2] or 0
-    local tint2 = tints[3] or 0
-
-    local drawable = hair.drawable
-    if not drawable then
-        error(string.format("No drawable found for custom hair: %s", json.encode(hair)), 2)
-    end
-
-    local fallbacks = CreatorConfig.CustomHairFallbacks
-    local albedo = hair.albedo or fallbacks.albedo or 0
-    local normal = hair.normal or fallbacks.normal or 0
-    local material = hair.material or fallbacks.material or 0
-    local palette = hair.palette or fallbacks.palette or 0
-
-    self:RemoveHair(true)
-
-    local ped = self:GetPed()
-    SetMetaPedTag(ped, drawable, albedo, normal, material, palette, tint0, tint1, tint2)
-
-    self:RequestUpdate()
 end
 
 function Character:ApplyBeardStyle(value)
@@ -1317,68 +1296,27 @@ function Character:ApplyBeard()
         self.beardColor = normalizedColor
     end
 
-    local beards = CreatorConfig.MaleBeards
-    local custom = CreatorConfig.CustomMaleBeards
+    local normalized, beard = getListOption(self:GetBeardStyles(), self.beard)
+    self.beard = normalized
 
-    local normalizedBeard = self.beard % (#beards + #custom)
-    local beard = { id = "NONE", custom = false }
-
-    if self.beard ~= normalizedBeard then
-        self.beard = normalizedBeard
-    end
-
-    if normalizedBeard < #beards then
-        local id = beards[normalizedBeard + 1]
-        if id ~= "NONE" then
-            local item = string.format("CLOTHING_ITEM_M_BEARD_%03d_%s", id, color)
-            beard = { id = item, custom = false }
-        end
-    else
-        beard = custom[normalizedBeard - #beards + 1]
-        beard.custom = true
-    end
-
-    if beard.id == "NONE" then
+    if not beard or beard == "NONE" then
         self:RemoveBeard()
         return
     end
 
-    if beard.custom then
-        self:ApplyCustomBeard(beard, color)
+    if self:IsCustomComponent(beard) then
+        local tints = CreatorConfig.CustomBeardTints[color]
+        if not tints then
+            error(string.format("No tints found for custom beard color: %s", color), 2)
+        end
+
+        self:RemoveBeard(true)
+        self:ApplyCustomComponent(beard, CreatorConfig.CustomBeardFallbacks, tints)
     else
-        self:ApplyShopItem(beard.id)
+        self:ApplyShopItem(string.format("%s_%s", beard, color))
     end
 
     SignalBus:emit("beard_applied", beard)
-end
-
-function Character:ApplyCustomBeard(beard, color)
-    local tints = CreatorConfig.CustomBeardTints[color]
-    if not tints then
-        error(string.format("No tints found for custom beard color: %s", color), 2)
-    end
-
-    local tint0 = tints[1] or 0
-    local tint1 = tints[2] or 0
-    local tint2 = tints[3] or 0
-
-    local drawable = beard.drawable
-    if not drawable then
-        error(string.format("No drawable found for custom beard: %s", json.encode(beard)), 2)
-    end
-
-    local fallbacks = CreatorConfig.CustomBeardFallbacks
-    local albedo = beard.albedo or fallbacks.albedo or 0
-    local normal = beard.normal or fallbacks.normal or 0
-    local material = beard.material or fallbacks.material or 0
-    local palette = beard.palette or fallbacks.palette or 0
-
-    self:RemoveBeard(true)
-
-    local ped = self:GetPed()
-    SetMetaPedTag(ped, drawable, albedo, normal, material, palette, tint0, tint1, tint2)
-
-    self:RequestUpdate()
 end
 
 function Character:GetOverlay(layer)
@@ -1429,7 +1367,12 @@ function Character:ApplyOverlayAlpha(layer, value, apply)
 
     local overlay = self.layers[layer] or { id = 0, alpha = 1.0 }
     if value ~= nil then
-        if value < 0.0001 then value = 0.0001 end
+        local minAlpha = 0.0001
+        if layer == OVERLAY_LAYER.AGEING then
+            minAlpha = MIN_AGEING_ALPHA
+        end
+
+        if value < minAlpha then value = minAlpha end
         if value > 1.0 then value = 1.0 end
         overlay.alpha = value
 
@@ -1491,6 +1434,10 @@ function Character:ApplyWhistleStyle(value)
         self:SetModified()
     end
 
+    -- The position in the list is the shape that is applied
+    local normalized = getListOption(CreatorConfig.Whistles, self.whistleStyle)
+    self.whistleStyle = normalized
+
     local ped = self:GetPed()
     SetWhistleConfigForPed(ped, "Ped.WhistleShape", self.whistleStyle)
 end
@@ -1515,6 +1462,57 @@ function Character:ApplyWhistleClarity(value)
     SetWhistleConfigForPed(ped, "Ped.WhistleClarity", self.whistleClarity * 0.01)
 end
 
+function Character:GetAttribute(attribute)
+    return self.attributes[attribute] or getAttributeConfig(attribute).Default
+end
+
+function Character:GetAttributeLimits(attribute)
+    local config = getAttributeConfig(attribute)
+    return config.Min, config.Max
+end
+
+function Character:GetAttributePointsLeft()
+    local used = 0
+    for _, attribute in ipairs(CHARACTER_ATTRIBUTE:Values()) do
+        used = used + (self:GetAttribute(attribute) - getAttributeConfig(attribute).Min)
+    end
+
+    return math.max((CreatorConfig.AttributePoints or 0) - used, 0)
+end
+
+-- The highest value the attribute can be raised to with the remaining points
+function Character:GetAttributeMaximum(attribute)
+    local config = getAttributeConfig(attribute)
+    return math.min(config.Max, self:GetAttribute(attribute) + self:GetAttributePointsLeft())
+end
+
+function Character:ApplyAttribute(attribute, value)
+    if value ~= nil then
+        local config = getAttributeConfig(attribute)
+        value = math.floor(tonumber(value) or config.Default)
+        value = math.max(config.Min, math.min(self:GetAttributeMaximum(attribute), value))
+
+        self.attributes[attribute] = value
+        self:SetModified()
+    end
+
+    SignalBus:emit("attributes_changed")
+end
+
+function Character:ApplyAttributes(values)
+    local attributes = CHARACTER_ATTRIBUTE:Values()
+    table.sort(attributes)
+
+    -- Start from the minimums so the points are spent in order
+    for _, attribute in ipairs(attributes) do
+        self.attributes[attribute] = getAttributeConfig(attribute).Min
+    end
+
+    for _, attribute in ipairs(attributes) do
+        self:ApplyAttribute(attribute, values[attribute] or getAttributeConfig(attribute).Default)
+    end
+end
+
 function Character:Whistle()
     local ped = self:GetPed()
     TaskWhistleAnim(ped, `WhistleHorseLong`, `unspecified`)
@@ -1526,12 +1524,18 @@ function Character:Vocalize()
         return
     end
 
+    local voices = CreatorConfig.Voices
+    local voice = voices[(self.voice or 0) % #voices + 1]
+
+    local value = 1
+    if voice then value = voice.value end
+
     local gender = self:GetGenderFull()
-    local voice = (self.voice or 0) + 1
+    local item = string.format("VOCALIZATIONS_WAVELOADED_PLAYER_%s%02d", gender, value)
 
     local struct = DataView.ArrayBuffer(7 * 8)
     struct:SetInt64(0 * 8, VarString(10, "LITERAL_STRING", "YEEHAW"))
-    struct:SetInt64(1 * 8, VarString(10, "LITERAL_STRING", string.format("VOCALIZATIONS_WAVELOADED_PLAYER_%s%02d", gender, voice)))
+    struct:SetInt64(1 * 8, VarString(10, "LITERAL_STRING", item))
     struct:SetInt32(2 * 8, 0)
     struct:SetInt32(3 * 8, (`SPEECH_PARAMS_FORCE_FRONTEND`) --[[@as integer]])
     struct:SetInt32(4 * 8, 0)
@@ -1585,7 +1589,10 @@ function Character:RandomizeAll()
         self:RandomizeCustomHead(true)
     end
 
-    self:RandomizeWhistle(false)
+    if Creator:CanChangeWhistle() then
+        self:RandomizeWhistle(false)
+    end
+
     self:RandomizeVoice(false)
 
     CharacterOverlay:RequestUpdate()
@@ -1602,7 +1609,7 @@ function Character:RandomizeHeritage()
 end
 
 function Character:RandomizeSkintone()
-    local skintones = CreatorPresets:GetSkintones()
+    local skintones = self:GetSkintones()
     local skintone = GetRandomIntInRange(0, #skintones)
     self:ApplySkintone(skintone, true)
     SignalBus:emit("skintone_randomized", self.skintone)
@@ -1613,26 +1620,25 @@ function Character:GenerateAge()
 end
 
 function Character:RandomizeAge()
-    self.age = self:GenerateAge()
-    self:ApplyAgeAlpha(self.age, true)
+    self:ApplyAgeAlpha(self:GenerateAge(), true)
     SignalBus:emit("age_randomized", self.age)
 end
 
 function Character:RandomizeBodyBuild()
-    local bodyBuilds = self:IsMale() and CreatorConfig.MaleBodyBuilds or CreatorConfig.FemaleBodyBuilds
+    local bodyBuilds = self:GetBodyBuilds()
     local index = GetRandomIntInRange(0, #bodyBuilds)
     self:ApplyBody(index)
     SignalBus:emit("body_randomized", self.bodyType)
 end
 
 function Character:RandomizeEyes()
-    local eyeColors = CreatorConfig.Eyes
+    local eyeColors = self:GetEyeOptions()
     self:ApplyEyeColor(GetRandomIntInRange(0, #eyeColors))
     SignalBus:emit("eyes_randomized", self.eyeColor)
 end
 
 function Character:RandomizeTeeth()
-    local teethOptions = CreatorConfig.Teeth
+    local teethOptions = self:GetTeethOptions()
     self:ApplyTeeth(GetRandomIntInRange(0, #teethOptions))
     SignalBus:emit("teeth_randomized", self.teeth)
 end
@@ -1643,10 +1649,8 @@ function Character:RandomizeHair()
 end
 
 function Character:RandomizeHairStyle()
-    local hairStyles = self:IsMale() and CreatorConfig.MaleHairs or CreatorConfig.FemaleHairs
-    local customStyles = self:IsMale() and CreatorConfig.CustomMaleHairs or CreatorConfig.CustomFemaleHairs
-
-    self:ApplyHairStyle(GetRandomIntInRange(0, #hairStyles + #customStyles))
+    local hairStyles = self:GetHairStyles()
+    self:ApplyHairStyle(GetRandomIntInRange(0, #hairStyles))
     SignalBus:emit("hair_style_randomized", self.hair)
 end
 
@@ -1664,10 +1668,8 @@ end
 
 function Character:RandomizeBeardStyle()
     if self:IsFemale() then return end
-    local beardStyles = CreatorConfig.MaleBeards
-    local customStyles = CreatorConfig.CustomMaleBeards
-
-    self:ApplyBeardStyle(GetRandomIntInRange(0, #beardStyles + #customStyles))
+    local beardStyles = self:GetBeardStyles()
+    self:ApplyBeardStyle(GetRandomIntInRange(0, #beardStyles))
     SignalBus:emit("beard_style_randomized", self.beard)
 end
 
@@ -1871,7 +1873,7 @@ function Character:RandomizeOverlayPresets(apply)
 end
 
 function Character:RandomizeWhistle(preview)
-    self:ApplyWhistleStyle(GetRandomIntInRange(0, 5))
+    self:ApplyWhistleStyle(GetRandomIntInRange(0, #CreatorConfig.Whistles))
     self:ApplyWhistlePitch(GetRandomIntInRange(0, 100))
     self:ApplyWhistleClarity(GetRandomIntInRange(0, 100))
 
@@ -1896,19 +1898,19 @@ function Character:RandomizeCustomHead(apply)
     local head = self:GetHeadShopItem()
     if not head then return end
 
-    local drawables = self:IsMale() and CreatorConfig.CustomMaleHeadDrawables or CreatorConfig.CustomFemaleHeadDrawables
+    -- Option 0 is NONE, which keeps the default head
+    local drawables = self:GetHeadDrawables()
     self:ApplyHeadDrawable(GetRandomIntInRange(0, #drawables), false)
 
-    local albedos = self:IsMale() and CreatorConfig.CustomMaleHeadAlbedos or CreatorConfig.CustomFemaleHeadAlbedos
-    local skintoneAlbedos = albedos[head.skintone + 1] or {}
-    local albedoIndex = GetRandomIntInRange(0, #skintoneAlbedos)
+    local albedos = self:GetHeadAlbedos()
+    local albedoIndex = GetRandomIntInRange(0, #albedos)
 
     local percentToSkipAlbedo = CreatorConfig.RandomizePercentToSkipHeadAlbedo or 70
     if GetRandomIntInRange(0, 100) < percentToSkipAlbedo then albedoIndex = 0 end
 
     self:ApplyHeadAlbedo(albedoIndex, false)
 
-    local normals = self:IsMale() and CreatorConfig.CustomMaleHeadNormals or CreatorConfig.CustomFemaleHeadNormals
+    local normals = self:GetHeadNormals()
     local normalIndex = GetRandomIntInRange(0, #normals)
 
     local percentToSkipNormal = CreatorConfig.RandomizePercentToSkipHeadNormal or 30
@@ -1916,7 +1918,7 @@ function Character:RandomizeCustomHead(apply)
 
     self:ApplyHeadNormal(normalIndex, false)
 
-    local materials = self:IsMale() and CreatorConfig.CustomMaleHeadMaterials or CreatorConfig.CustomFemaleHeadMaterials
+    local materials = self:GetHeadMaterials()
     local materialIndex = GetRandomIntInRange(0, #materials)
 
     local percentToSkipMaterial = CreatorConfig.RandomizePercentToSkipHeadMaterial or 70
@@ -1996,8 +1998,12 @@ function Character:ApplyDefaultClothing()
     end
 
     for _, item in ipairs(self.clothingItems) do
-        Utils:Debug("APPLY_DEFAULT_CLOTHING - applying outfit item", tostring(item))
-        ApplyShopItemToPed(ped, item, false, true, false)
+        if self:IsShopItemValid(item) then
+            Utils:Debug("APPLY_DEFAULT_CLOTHING - applying outfit item", tostring(item))
+            ApplyShopItemToPed(ped, item, false, true, false)
+        else
+            Utils:Warn("Clothing item", tostring(item), "is not valid, skipping...")
+        end
     end
 end
 
@@ -2028,9 +2034,11 @@ SignalBus:on("grid_x_changed", function(itemId, value)
     if itemId == UI_ITEM_ID.LIFESTYLE__EYE_REDNESS then
         Character:ApplyWeariness(value)
     elseif expressions and expressions.ExpressionX then
-        Character:ApplyExpressionValue(expressions.ExpressionX, value, true)
+        Character:ApplyExpressionValue(expressions.ExpressionX, value, false)
+        Character:RequestUpdate(GRID_UPDATE_THROTTLE)
     elseif overlayLayer then
-        Character:ApplyOverlayAlpha(overlayLayer, value, true)
+        Character:ApplyOverlayAlpha(overlayLayer, value, false)
+        CharacterOverlay:RequestUpdate(GRID_OVERLAY_UPDATE_THROTTLE)
     end
 end)
 
@@ -2041,9 +2049,11 @@ SignalBus:on("grid_y_changed", function(itemId, value)
     if itemId == UI_ITEM_ID.LIFESTYLE__EYE_REDNESS then
         Character:ApplyWeariness(value)
     elseif expressions and expressions.ExpressionY then
-        Character:ApplyExpressionValue(expressions.ExpressionY, value, true)
+        Character:ApplyExpressionValue(expressions.ExpressionY, value, false)
+        Character:RequestUpdate(GRID_UPDATE_THROTTLE)
     elseif overlayLayer then
-        Character:ApplyOverlayAlpha(overlayLayer, value, true)
+        Character:ApplyOverlayAlpha(overlayLayer, value, false)
+        CharacterOverlay:RequestUpdate(GRID_OVERLAY_UPDATE_THROTTLE)
     end
 end)
 
@@ -2063,6 +2073,12 @@ SignalBus:on("adjustable_changed", function(itemId, value)
     local preset = UI_ITEM_ID:GetExpressionZone(itemId)
     if preset then
         Character:ApplyPreset(preset, value)
+        return
+    end
+
+    local attribute = UI_ITEM_ID:GetCharacterAttribute(itemId)
+    if attribute then
+        Character:ApplyAttribute(attribute, value)
         return
     end
 
@@ -2098,12 +2114,6 @@ SignalBus:on("adjustable_changed", function(itemId, value)
         Character:ApplyWhistlePitch(value)
     elseif action == CHARACTER_ACTION.APPLY_WHISTLE_CLARITY then
         Character:ApplyWhistleClarity(value)
-    elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_HEALTH then
-        -- TODO: Attributes support
-    elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_STAMINA then
-        -- TODO: Attributes support
-    elseif action == CHARACTER_ACTION.APPLY_ATTRIBUTE_DEADEYE then
-        -- TODO: Attributes support
     elseif action == CHARACTER_ACTION.APPLY_HEIGHT then
         Character:ApplyHeight(value)
     elseif action == CHARACTER_ACTION.APPLY_WEIGHT then

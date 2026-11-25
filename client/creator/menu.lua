@@ -15,7 +15,11 @@ CreatorMenu = {
 function CreatorMenu:Open(rerolling, toSettings)
     self.rerolling = rerolling or false
 
-    local target = toSettings and SETTINGS_ID or MENU_ID
+    local target = MENU_ID
+    if toSettings and IntroConfig.EnableSettings then
+        target = SETTINGS_ID
+    end
+
     ShopApi.Open(target)
 end
 
@@ -129,6 +133,133 @@ function CreatorMenu:GetMenu()
         skipPrompt = {}
     end
 
+    local nameItem = {
+        Id = "ACTION_NAME",
+        Type = "TEXT",
+        Label = "Name",
+        Data = {
+            ItemDescription = "Name your character.",
+            Equipped = not rerolling and hasName,
+            ItemInfo1 = nameDisplay,
+        },
+        Prompts = {
+            Select = {
+                Action = function()
+                    Creator:Rename()
+                end,
+            },
+        },
+    }
+
+    if IntroConfig.EnableRandomizeName then
+        nameItem.Data.ItemDescription = "Name your character. You may choose a randomized name to get inspired."
+        nameItem.Prompts.Toggle = {
+            Label = "Randomize",
+            Action = function()
+                Character:RandomizeName()
+            end,
+        }
+    end
+
+    local switchFooter = nil
+    if IntroConfig.EnableQuickSwitch then
+        switchFooter = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes."
+    end
+
+    if IntroConfig.EnableImport then
+        nameItem.Footer = "Press ~INPUT_GAME_MENU_RS~ to import a character."
+        nameItem.Prompts.Info = {
+            Label = "Import",
+            Action = function()
+                Creator:Import()
+            end,
+        }
+    end
+
+    local items = {
+        nameItem,
+        {
+            Id = "ACTION_DEFAULT",
+            Type = "TEXT",
+            Label = defaultLabel,
+            Disabled = not hasName,
+            Footer = switchFooter,
+            Data = {
+                DisabledFooter = "~e~Name your character first.",
+                ItemDescription = defaultDescription,
+                Equipped = not rerolling and hasCreated,
+                ItemInfo1 = nameDisplay,
+            },
+            Prompts = {
+                Select = {
+                    Action = function()
+                        self:Hide()
+                        Creator:OpenEditor(CREATOR_MODE.DEFAULT, false)
+                    end,
+                },
+                Toggle = skipPrompt
+            }
+        },
+        {
+            Id = "ACTION_ADVANCED",
+            Type = "TEXT",
+            Label = "Advanced Options",
+            Disabled = not hasName,
+            Footer = switchFooter,
+            Data = {
+                DisabledFooter = "~e~Name your character first.",
+                ItemDescription = "Make various advanced adjustments to your character to fine-tune their appearance.",
+                Equipped = not rerolling and hasCreated,
+                ItemInfo1 = nameDisplay,
+            },
+            Prompts = {
+                Select = {
+                    Action = function()
+                        self:Hide()
+                        Creator:OpenEditor(CREATOR_MODE.ADVANCED, false)
+                    end,
+                },
+                Toggle = skipPrompt
+            }
+        },
+    }
+
+    if IntroConfig.EnableSettings then
+        items[#items + 1] = self:GetSettingsItem(nameDisplay)
+    end
+
+    local confirmItem = {
+        Id = "ACTION_CONFIRM",
+        Type = "TEXT",
+        Label = "Confirm",
+        Disabled = not hasName or not hasCreated,
+        Data = {
+            DisabledFooter = confirmDisabled,
+            ItemDescription = "Take a picture of your character and confirm your appearance.",
+            ItemInfo1 = nameDisplay,
+        },
+        Prompts = {
+            Select = {
+                Action = function()
+                    self:Close()
+                    Creator:Finish(true)
+                end,
+            },
+        },
+    }
+
+    if IntroConfig.EnableExport then
+        confirmItem.Footer = "Press ~INPUT_GAME_MENU_RS~ to export your character."
+        confirmItem.Prompts.Info = {
+            Label = "Export",
+            Action = function()
+                Intro:ExportCharacter()
+            end,
+        }
+    end
+
+    items[#items + 1] = confirmItem
+
     return {
         Title = "CHARACTER",
         Subtitle = "Main Menu",
@@ -139,317 +270,221 @@ function CreatorMenu:GetMenu()
                 Label = exitLabel,
             }
         },
+        Items = items,
+    }
+end
+
+function CreatorMenu:GetSettingsItem(nameDisplay)
+    return {
+        Id = SETTINGS_ID,
+        Type = "TEXT",
+        Label = "Settings",
+        Scene = "ITEM_LIST_DESCRIPTION",
+        Title = "SETTINGS",
+        Subtitle = "Creator Settings",
+        Footer = "Hold ~INPUT_GAME_MENU_TAB_LEFT_SECONDARY~ in the Creator to access settings.",
+        Data = {
+            ItemDescription = "Adjust various settings like camera zoom, lighting, animations, and more for the character creator.",
+            ItemInfo1 = nameDisplay,
+        },
         Items = {
             {
-                Id = "ACTION_NAME",
-                Type = "TEXT",
-                Label = "Name",
-                Footer = "Press ~INPUT_GAME_MENU_RS~ to import a character.",
+                Id = "SETTING_ZOOM",
+                Type = "STEPPER",
+                Label = "Zoom",
                 Data = {
-                    ItemDescription = "Name your character. You may choose a randomized name to get inspired.",
-                    Equipped = not rerolling and hasName,
-                    ItemInfo1 = nameDisplay,
+                    ItemDescription = "Toggle whether the camera zoom controls are held or toggled.",
+                    StepperOptions = {
+                        [ZOOM_MODE.HOLD]   = "Hold",
+                        [ZOOM_MODE.TOGGLE] = "Toggle"
+                    },
+                    StepperValue = self.settingZoom or ZOOM_MODE.HOLD,
+                    StepperVisible = true,
                 },
                 Prompts = {
-                    Select = {
-                        Action = function()
-                            Creator:Rename()
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or ZOOM_MODE.HOLD
+                            SignalBus:emit("zoom_mode_changed", value)
+                            self.settingZoom = value
                         end,
                     },
-                    Toggle = {
-                        Label = "Randomize",
-                        Action = function()
-                            Character:RandomizeName()
+                },
+            },
+            {
+                Id = "SETTING_LIGHTING",
+                Type = "STEPPER",
+                Label = "Lighting Preset",
+                Data = {
+                    ItemDescription = "Change the lighting preset used.",
+                    StepperOptions = self:GetTimecycleLabels(),
+                    StepperValue = self.settingLighting or 1,
+                    StepperVisible = true,
+                },
+                Prompts = {
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or 0
+                            local timecycle = self:GetTimecycleValue(value)
+                            SignalBus:emit("timecycle_changed", timecycle)
+                            self.settingLighting = value
+                        end,
+                    },
+                },
+            },
+            {
+                Id = "SETTING_TIME",
+                Type = "STEPPER",
+                Label = "Time of Day",
+                Data = {
+                    ItemDescription = "Change the time of day. Depending on the lighting preset, certain times of day may cause visual issues.",
+                    StepperOptions = self:GetTimeOfDayLabels(),
+                    StepperValue = self.settingTime or 1,
+                    StepperVisible = true,
+                },
+                Prompts = {
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or 1
+                            local time = self:GetTimeOfDayValue(value)
+                            SignalBus:emit("timeofday_changed", time)
+                            self.settingTime = value
+                        end,
+                    },
+                }
+            },
+            {
+                Id = "SETTING_CLOTHING",
+                Type = "STEPPER",
+                Label = "Clothing",
+                Data = {
+                    ItemDescription = "Toggle character creation clothing.",
+                    StepperOptions = {
+                        [CHARACTER_CLOTHING_LEVEL.DEFAULT] = "Default",
+                        [CHARACTER_CLOTHING_LEVEL.HATLESS] = "Hatless",
+                        [CHARACTER_CLOTHING_LEVEL.TOPLESS] = "Topless",
+                        [CHARACTER_CLOTHING_LEVEL.NUDE]    = "Nude"
+                    },
+                    StepperValue = self.settingClothing or CHARACTER_CLOTHING_LEVEL.DEFAULT,
+                    StepperVisible = true,
+                },
+                Prompts = {
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or CHARACTER_CLOTHING_LEVEL.DEFAULT
+                            Character:ApplyClothingLevel(value, false, true)
+                            self.settingClothing = value
+                        end,
+                    },
+                },
+            },
+            {
+                Id = "SETTING_ANIMATIONS",
+                Type = "STEPPER",
+                Label = "Animations",
+                Data = {
+                    ItemDescription = "Toggle character creation animations.",
+                    StepperOptions = {
+                        [ANIMATION_SETTING.DEFAULT]  = "Default",
+                        [ANIMATION_SETTING.REDUCED]  = "Reduced",
+                        [ANIMATION_SETTING.DISABLED] = "Disabled"
+                    },
+                    StepperValue = self.settingAnimations or ANIMATION_SETTING.DEFAULT,
+                    StepperVisible = true,
+                },
+                Prompts = {
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or ANIMATION_SETTING.DEFAULT
+                            Intro:SetAnimationLevel(value)
+                            self.settingAnimations = value
                             self:Refresh()
                         end,
                     },
-                    Info = {
-                        Label = "Import",
-                        Action = function()
-                            Creator:Import()
-                        end,
-                    }
                 },
             },
             {
-                Id = "ACTION_DEFAULT",
-                Type = "TEXT",
-                Label = defaultLabel,
-                Disabled = not hasName,
-                Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
+                Id = "SETTING_ROTATION",
+                Type = "STEPPER",
+                Label = "Rotation",
+                Disabled = self.settingAnimations == ANIMATION_SETTING.DISABLED,
                 Data = {
-                    DisabledFooter = "~e~Name your character first.",
-                    ItemDescription = defaultDescription,
-                    Equipped = not rerolling and hasCreated,
-                    ItemInfo1 = nameDisplay,
+                    DisabledFooter = "~e~Animations are disabled.",
+                    ItemDescription = "Toggles whether character rotation is animated or smooth.",
+                    StepperOptions = {
+                        [ROTATION_SETTING.ANIMATED] = "Animated",
+                        [ROTATION_SETTING.SMOOTH]   = "Smooth"
+                    },
+                    StepperValue = self.settingRotation or ROTATION_SETTING.ANIMATED,
+                    StepperVisible = true,
                 },
                 Prompts = {
-                    Select = {
-                        Action = function()
-                            self:Hide()
-                            Creator:OpenEditor(CREATOR_MODE.DEFAULT, false)
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or ROTATION_SETTING.ANIMATED
+                            Intro:SetRotationLevel(value)
+                            self.settingRotation = value
                         end,
                     },
-                    Toggle = skipPrompt
-                }
+                },
             },
             {
-                Id = "ACTION_ADVANCED",
-                Type = "TEXT",
-                Label = "Advanced Options",
-                Disabled = not hasName,
-                Footer = "Hold ~INPUT_GAME_MENU_LS~ in the Creator to switch modes.",
+                Id = "SETTING_HERITAGE_LIMITS",
+                Type = "STEPPER",
+                Label = "Heritage Limits",
+                Footer = "~COLOR_YELLOW~This may cause the character to change.",
                 Data = {
-                    DisabledFooter = "~e~Name your character first.",
-                    ItemDescription = "Make various advanced adjustments to your character to fine-tune their appearance.",
-                    Equipped = not rerolling and hasCreated,
-                    ItemInfo1 = nameDisplay,
+                    ItemDescription = "Toggles whether heritage Fine Tune limits are ignored.",
+                    StepperOptions = {
+                        "Enabled",
+                        "Disabled",
+                    },
+                    StepperValue = self.settingHeritageLimits or 1,
+                    StepperVisible = true,
                 },
                 Prompts = {
-                    Select = {
-                        Action = function()
-                            self:Hide()
-                            Creator:OpenEditor(CREATOR_MODE.ADVANCED, false)
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or 1
+                            Character.ignoreHeritageLimits = value == 2
+                            Character:ApplyAll()
+                            self.settingHeritageLimits = value
                         end,
                     },
-                    Toggle = skipPrompt
-                }
-
-            },
-            {
-                Id = SETTINGS_ID,
-                Type = "TEXT",
-                Label = "Settings",
-                Scene = "ITEM_LIST_DESCRIPTION",
-                Title = "SETTINGS",
-                Subtitle = "Creator Settings",
-                Footer = "Hold ~INPUT_GAME_MENU_TAB_LEFT_SECONDARY~ in the Creator to access settings.",
-                Data = {
-                    ItemDescription = "Adjust various settings like camera zoom, lighting, animations, and more for the character creator.",
-                    ItemInfo1 = nameDisplay,
                 },
-                Items = {
-                    {
-                        Id = "SETTING_ZOOM",
-                        Type = "STEPPER",
-                        Label = "Zoom",
-                        Data = {
-                            ItemDescription = "Toggle whether the camera zoom controls are held or toggled.",
-                            StepperOptions = {
-                                [ZOOM_MODE.HOLD]   = "Hold",
-                                [ZOOM_MODE.TOGGLE] = "Toggle"
-                            },
-                            StepperValue = self.settingZoom or ZOOM_MODE.HOLD,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or ZOOM_MODE.HOLD
-                                    SignalBus:emit("zoom_mode_changed", value)
-                                    self.settingZoom = value
-                                end,
-                            },
-                        },
-                    },
-                    {
-                        Id = "SETTING_LIGHTING",
-                        Type = "STEPPER",
-                        Label = "Lighting Preset",
-                        Data = {
-                            ItemDescription = "Change the lighting preset used.",
-                            StepperOptions = self:GetTimecycleLabels(),
-                            StepperValue = self.settingLighting or 1,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or 0
-                                    local timecycle = self:GetTimecycleValue(value)
-                                    SignalBus:emit("timecycle_changed", timecycle)
-                                    self.settingLighting = value
-                                end,
-                            },
-                        },
-                    },
-                    {
-                        Id = "SETTING_TIME",
-                        Type = "STEPPER",
-                        Label = "Time of Day",
-                        Data = {
-                            ItemDescription = "Change the time of day. Depending on the lighting preset, certain times of day may cause visual issues.",
-                            StepperOptions = self:GetTimeOfDayLabels(),
-                            StepperValue = self.settingTime or 1,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or 1
-                                    local time = self:GetTimeOfDayValue(value)
-                                    SignalBus:emit("timeofday_changed", time)
-                                    self.settingTime = value
-                                end,
-                            },
-                        }
-                    },
-                    {
-                        Id = "SETTING_CLOTHING",
-                        Type = "STEPPER",
-                        Label = "Clothing",
-                        Data = {
-                            ItemDescription = "Toggle character creation clothing.",
-                            StepperOptions = {
-                                [CHARACTER_CLOTHING_LEVEL.DEFAULT] = "Default",
-                                [CHARACTER_CLOTHING_LEVEL.HATLESS] = "Hatless",
-                                [CHARACTER_CLOTHING_LEVEL.TOPLESS] = "Topless",
-                                [CHARACTER_CLOTHING_LEVEL.NUDE]    = "Nude"
-                            },
-                            StepperValue = self.settingClothing or CHARACTER_CLOTHING_LEVEL.DEFAULT,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or CHARACTER_CLOTHING_LEVEL.DEFAULT
-                                    Character:ApplyClothingLevel(value, false, true)
-                                    self.settingClothing = value
-                                end,
-                            },
-                        },
-                    },
-                    {
-                        Id = "SETTING_ANIMATIONS",
-                        Type = "STEPPER",
-                        Label = "Animations",
-                        Data = {
-                            ItemDescription = "Toggle character creation animations.",
-                            StepperOptions = {
-                                [ANIMATION_SETTING.DEFAULT]  = "Default",
-                                [ANIMATION_SETTING.REDUCED]  = "Reduced",
-                                [ANIMATION_SETTING.DISABLED] = "Disabled"
-                            },
-                            StepperValue = self.settingAnimations or ANIMATION_SETTING.DEFAULT,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or ANIMATION_SETTING.DEFAULT
-                                    Intro:SetAnimationLevel(value)
-                                    self.settingAnimations = value
-                                    self:Refresh()
-                                end,
-                            },
-                        },
-                    },
-                    {
-                        Id = "SETTING_ROTATION",
-                        Type = "STEPPER",
-                        Label = "Rotation",
-                        Disabled = self.settingAnimations == ANIMATION_SETTING.DISABLED,
-                        Data = {
-                            DisabledFooter = "~e~Animations are disabled.",
-                            ItemDescription = "Toggles whether character rotation is animated or smooth.",
-                            StepperOptions = {
-                                [ROTATION_SETTING.ANIMATED] = "Animated",
-                                [ROTATION_SETTING.SMOOTH]   = "Smooth"
-                            },
-                            StepperValue = self.settingRotation or ROTATION_SETTING.ANIMATED,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or ROTATION_SETTING.ANIMATED
-                                    Intro:SetRotationLevel(value)
-                                    self.settingRotation = value
-                                end,
-                            },
-                        },
-                    },
-                    {
-                        Id = "SETTING_HERITAGE_LIMITS",
-                        Type = "STEPPER",
-                        Label = "Heritage Limits",
-                        Footer = "~COLOR_YELLOW~This may cause the character to change.",
-                        Data = {
-                            ItemDescription = "Toggles whether heritage Fine Tune limits are ignored.",
-                            StepperOptions = {
-                                "Enabled",
-                                "Disabled",
-                            },
-                            StepperValue = self.settingHeritageLimits or 1,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or 1
-                                    Character.ignoreHeritageLimits = value == 2
-                                    Character:ApplyAll()
-                                    self.settingHeritageLimits = value
-                                end,
-                            },
-                        },
-                    },
-                    {
-                        Id = "SETTING_OVERLAY_LIMITS",
-                        Type = "STEPPER",
-                        Label = "Overlay Limits",
-                        Footer = "~COLOR_YELLOW~This may cause the character to change.",
-                        Data = {
-                            ItemDescription = "Toggles whether overlay opacity limits are ignored.",
-                            StepperOptions = {
-                                "Enabled",
-                                "Disabled",
-                            },
-                            StepperValue = self.settingOverlayLimits or 1,
-                            StepperVisible = true,
-                        },
-                        Prompts = {
-                            Adjust = {
-                                Action = function(event)
-                                    local value = event.Data.StepperValue or 1
-                                    Character.ignoreOverlayLimits = value == 2
-                                    Character:ApplyAll()
-                                    self.settingOverlayLimits = value
-                                end,
-                            },
-                        },
-                    },
-                }
             },
             {
-                Id = "ACTION_CONFIRM",
-                Type = "TEXT",
-                Label = "Confirm",
-                Disabled = not hasName or not hasCreated,
-                Footer = "Press ~INPUT_GAME_MENU_RS~ to export your character.",
+                Id = "SETTING_OVERLAY_LIMITS",
+                Type = "STEPPER",
+                Label = "Overlay Limits",
+                Footer = "~COLOR_YELLOW~This may cause the character to change.",
                 Data = {
-                    DisabledFooter = confirmDisabled,
-                    ItemDescription = "Take a picture of your character and confirm your appearance.",
-                    ItemInfo1 = nameDisplay,
+                    ItemDescription = "Toggles whether overlay opacity limits are ignored.",
+                    StepperOptions = {
+                        "Enabled",
+                        "Disabled",
+                    },
+                    StepperValue = self.settingOverlayLimits or 1,
+                    StepperVisible = true,
                 },
                 Prompts = {
-                    Select = {
-                        Action = function()
-                            self:Close()
-                            Creator:Finish(true)
+                    Adjust = {
+                        Action = function(event)
+                            local value = event.Data.StepperValue or 1
+                            Character.ignoreOverlayLimits = value == 2
+                            Character:ApplyAll()
+                            self.settingOverlayLimits = value
                         end,
                     },
-                    Info = {
-                        Label = "Export",
-                        Action = function()
-                            Intro:ExportCharacter()
-                        end,
-                    }
                 },
             },
-        },
+        }
     }
 end
+
+SignalBus:on("name_applied", function()
+    CreatorMenu:Refresh()
+end)
 
 SignalBus:on("character_pasted", function()
     CreatorMenu.created = true

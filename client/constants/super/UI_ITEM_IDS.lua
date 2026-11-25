@@ -11,6 +11,8 @@
 ---@field GetIdFromUi fun(self, ui: table): number|nil
 ---@field GetAction fun(self, id: number): number|nil
 ---@field GetIdFromAction fun(self, action: table): number|nil
+---@field GetCharacterAttribute fun(self, id: number): integer|nil
+---@field GetIdFromCharacterAttribute fun(self, attribute: integer): number|nil
 ---@field GetExpressions fun(self, id: number): table|nil
 ---@field GetIdFromExpressions fun(self, expressions: table): number|nil
 ---@field GetExpressionZone fun(self, id: number): integer|nil
@@ -26,6 +28,7 @@
 ---@field GetGridLabels fun(self, id: number): table|nil
 ---@field GetIdFromGridLabels fun(self, labels: table): number|nil
 ---@field GetSkipAttributeCheck fun(self, id: number): boolean|nil
+---@field GetSkipEntryCounter fun(self, id: number): boolean|nil
 ---@field GetNameFromId fun(self, id: number): string|nil
 ---@field GetIdFromName fun(self, name: string): number|nil
 ---@field ToString fun(self, id: number): string
@@ -358,7 +361,7 @@ UI_ITEM_ID:AddModeAttribute("Camera", {
 
 UI_ITEM_ID:AddModeAttribute("Ui", {
     [CREATOR_MODE.DEFAULT] = {
-        [UI_ITEM_IDS.MAIN__NAME]               = { Footer = "NATIVE_CREATOR_ERROR_NAME_DISABLED", Image = nil },
+        [UI_ITEM_IDS.MAIN__NAME]               = { Footer = "NATIVE_CREATOR_NAME_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.MAIN__APPEARANCE]         = { Footer = "CHAR_CREATOR_TOOLTIP_APPEARANCE", Image = "character_creator_appearance" },
         [UI_ITEM_IDS.MAIN__WHISTLE]            = { Footer = "CHAR_CREATOR_TOOLTIP_WHISTLE", Image = nil },
         [UI_ITEM_IDS.MAIN__ATTRIBUTES]         = { Footer = "CHAR_CREATOR_TOOLTIP_ATTRIBUTES", Image = nil },
@@ -429,7 +432,7 @@ UI_ITEM_ID:AddModeAttribute("Ui", {
         [UI_ITEM_IDS.ATTRIBUTES__DEADEYE]      = { Footer = "CHAR_CREATOR_ATTRIBUTES_POOL_AMOUNT", Image = nil },
     },
     [CREATOR_MODE.ADVANCED] = {
-        [UI_ITEM_IDS.MAIN__NAME]               = { Footer = "NATIVE_CREATOR_ERROR_NAME_DISABLED", Image = nil },
+        [UI_ITEM_IDS.MAIN__NAME]               = { Footer = "NATIVE_CREATOR_NAME_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.MAIN__APPEARANCE]         = { Footer = "CHAR_CREATOR_TOOLTIP_APPEARANCE", Image = "character_creator_appearance" },
         [UI_ITEM_IDS.MAIN__WHISTLE]            = { Footer = "NATIVE_CREATOR_VOICE_TOOLTIP", Image = nil },
         [UI_ITEM_IDS.MAIN__CONFIRM]            = { Footer = "NATIVE_CREATOR_CONFIRM_TOOLTIP", Image = nil },
@@ -494,9 +497,6 @@ UI_ITEM_ID:AddModeAttribute("Action", {
         [UI_ITEM_IDS.WHISTLE__STYLE]         = CHARACTER_ACTION.APPLY_WHISTLE_STYLE,
         [UI_ITEM_IDS.WHISTLE__PITCH]         = CHARACTER_ACTION.APPLY_WHISTLE_PITCH,
         [UI_ITEM_IDS.WHISTLE__CLARITY]       = CHARACTER_ACTION.APPLY_WHISTLE_CLARITY,
-        [UI_ITEM_IDS.ATTRIBUTES__HEALTH]     = CHARACTER_ACTION.APPLY_ATTRIBUTE_HEALTH,
-        [UI_ITEM_IDS.ATTRIBUTES__STAMINA]    = CHARACTER_ACTION.APPLY_ATTRIBUTE_STAMINA,
-        [UI_ITEM_IDS.ATTRIBUTES__DEADEYE]    = CHARACTER_ACTION.APPLY_ATTRIBUTE_DEADEYE,
     },
     [CREATOR_MODE.ADVANCED] = {
         [UI_ITEM_IDS.APPEARANCE__BODY_BUILD] = CHARACTER_ACTION.APPLY_HEIGHT,
@@ -509,6 +509,15 @@ UI_ITEM_ID:AddModeAttribute("Action", {
         [UI_ITEM_IDS.HAIR__BEARD_COLOR]      = CHARACTER_ACTION.APPLY_SKINTONE,
         [UI_ITEM_IDS.WHISTLE__STYLE]         = CHARACTER_ACTION.APPLY_VOICE,
     }
+})
+
+UI_ITEM_ID:AddModeAttribute("CharacterAttribute", {
+    [CREATOR_MODE.DEFAULT] = {
+        [UI_ITEM_IDS.ATTRIBUTES__HEALTH]  = CHARACTER_ATTRIBUTE.HEALTH,
+        [UI_ITEM_IDS.ATTRIBUTES__STAMINA] = CHARACTER_ATTRIBUTE.STAMINA,
+        [UI_ITEM_IDS.ATTRIBUTES__DEADEYE] = CHARACTER_ATTRIBUTE.DEADEYE,
+    },
+    [CREATOR_MODE.ADVANCED] = {}
 })
 
 UI_ITEM_ID:AddModeAttribute("Expressions", {
@@ -697,4 +706,13 @@ UI_ITEM_ID:AddModeAttribute("GridLabels", {
         [UI_ITEM_IDS.LIFESTYLE__FRECKLES]      = { Left = "CHAR_CREATOR_OPACITY_FAINT", Right = "CHAR_CREATOR_OPACITY_STRONG", Bottom = nil, Top = nil },
         [UI_ITEM_IDS.LIFESTYLE__MOLES]         = { Left = "CHAR_CREATOR_OPACITY_FAINT", Right = "CHAR_CREATOR_OPACITY_STRONG", Bottom = nil, Top = nil },
     }
+})
+
+UI_ITEM_ID:AddModeAttribute("SkipEntryCounter", {
+    [CREATOR_MODE.DEFAULT] = {
+        [UI_ITEM_IDS.APPEARANCE__HERITAGE] = true,
+    },
+    [CREATOR_MODE.ADVANCED] = {
+        -- Not applicable
+    },
 })

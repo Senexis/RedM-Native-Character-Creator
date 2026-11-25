@@ -3,7 +3,6 @@
 ---@field GetIdFromName fun(self, name: string): number|nil
 ---@field ToString fun(self, id: number): string
 local CREATOR_MODES = {
-    MENU = 0,
     DEFAULT = 1,
     ADVANCED = 2,
 }
